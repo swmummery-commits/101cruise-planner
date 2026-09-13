@@ -1,5 +1,6 @@
 /* Ship Spotlight / Ship of the Week marketing workspace.
  * Standalone Mailchimp-ready block, deliberately separate from cruise specials.
+ * Uses the same ship facts, room reconciliation and feature normalisation as My Cruise → My Ship.
  */
 (function (global) {
   "use strict";
@@ -13,26 +14,47 @@
   const BODY = "#111111";
   const MUTED = "#545454";
   const DIVIDER = "#E8E8E8";
+  const ROOM_COLORS = ["#8DD9BF", "#5BBFA3", "#245C4E", "#9AA7A3", "#6FA894", "#3D7A6A"];
 
-  const TECHNICAL_STATS = [
-    { key: "passenger_capacity", label: "Guests", icon: "●●" },
-    { key: "stateroom_count", label: "Staterooms", icon: "▤" },
-    { key: "crew_count", label: "Crew", icon: "●" },
-    { key: "year_built", label: "Built", icon: "▣" },
-    { key: "year_refurbished", label: "Refurbished", icon: "↻" },
-    { key: "gross_tonnage", label: "Gross Tonnage", icon: "◆" },
-    { key: "length_metres", label: "Length", icon: "↔" },
-    { key: "beam_metres", label: "Beam", icon: "⇆" },
-    { key: "cruising_speed_knots", label: "Cruising Speed", icon: "≫" },
-    { key: "deck_count", label: "Decks", icon: "≡" }
+  // Exact icons used by the shared My Cruise → My Ship presentation.
+  const MY_SHIP_SUMMARY_ICONS = {
+    passenger_capacity: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    stateroom_count: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></svg>`,
+    crew_count: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/><path d="M4 21a8 8 0 0 1 16 0"/><path d="M12 12v3"/><path d="M9.5 16.5h5"/></svg>`,
+    year_built: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>`,
+    year_refurbished: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>`
+  };
+
+  const MY_SHIP_GLANCE_ICONS = {
+    restaurants: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+    bars: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M12 11v11"/><path d="m19 3-7 8-7-8z"/></svg>`,
+    pools: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M2 16c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M12 4v8"/><path d="M8 8h8"/></svg>`,
+    hot_tubs: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M7 12v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3v-4"/><path d="M9 7c.5-1 1.5-2 3-2s2.5 1 3 2"/><path d="M8 4c.5-1 1.5-2 4-2s3.5 1 4 2"/></svg>`,
+    specialty_dining: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`
+  };
+
+  const SUMMARY_STATS = [
+    { key: "passenger_capacity", label: "Guests" },
+    { key: "stateroom_count", label: "Staterooms" },
+    { key: "crew_count", label: "Crew" },
+    { key: "year_built", label: "Built" },
+    { key: "year_refurbished", label: "Refurbished" }
+  ];
+
+  const TECHNICAL_DETAIL_STATS = [
+    { key: "gross_tonnage", label: "Gross Tonnage" },
+    { key: "length_metres", label: "Length" },
+    { key: "beam_metres", label: "Beam" },
+    { key: "cruising_speed_knots", label: "Cruising Speed" },
+    { key: "deck_count", label: "Decks" }
   ];
 
   const ONBOARD_STATS = [
-    { key: "restaurants", label: "Dining Options", icon: "⌘" },
-    { key: "bars", label: "Bars", icon: "◇" },
-    { key: "pools", label: "Pools", icon: "≈" },
-    { key: "hot_tubs", label: "Hot Tubs", icon: "♨" },
-    { key: "specialty_dining", label: "Specialty Dining", icon: "◈" }
+    { key: "restaurants", label: "Dining Options", aliases: ["restaurants", "restaurant_count", "restaurant"] },
+    { key: "bars", label: "Bars", aliases: ["bars", "bar_count", "bar"] },
+    { key: "pools", label: "Pools", aliases: ["pools", "pool_count", "pool"] },
+    { key: "hot_tubs", label: "Hot Tubs", aliases: ["hot_tubs", "hotTubs", "hot_tub_count", "jacuzzis"] },
+    { key: "specialty_dining", label: "Specialty Dining", aliases: ["specialty_dining", "specialtyDining", "specialty_restaurants"] }
   ];
 
   let loaded = false;
@@ -53,6 +75,10 @@
   const esc = (value) => String(value == null ? "" : value)
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+
+  const escXml = (value) => String(value == null ? "" : value)
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 
   function slugify(value) {
     return String(value || "")
@@ -85,6 +111,14 @@
     return Number.isFinite(n) && n > 0 ? n : null;
   }
 
+  function readFacilityValue(facilities, keys) {
+    if (!facilities || typeof facilities !== "object" || Array.isArray(facilities)) return null;
+    for (const key of keys || []) {
+      if (Object.prototype.hasOwnProperty.call(facilities, key) && facilities[key] !== undefined) return facilities[key];
+    }
+    return null;
+  }
+
   function formatStatValue(ship, key) {
     const raw = ship?.[key];
     if (raw == null || raw === "") return "";
@@ -97,36 +131,126 @@
     return Math.round(n).toLocaleString("en-AU");
   }
 
-  function technicalStats(ship) {
-    return TECHNICAL_STATS.map((item) => {
+  function statsFromDefinitions(ship, definitions) {
+    return definitions.map((item) => {
       const value = formatStatValue(ship, item.key);
       return value ? { ...item, value } : null;
     }).filter(Boolean);
   }
 
+  function summaryStats(ship) { return statsFromDefinitions(ship, SUMMARY_STATS); }
+  function technicalDetailStats(ship) { return statsFromDefinitions(ship, TECHNICAL_DETAIL_STATS); }
+  function technicalStats(ship) { return [...summaryStats(ship), ...technicalDetailStats(ship)]; }
+
   function onboardStats(ship) {
     const facilities = ship?.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
     return ONBOARD_STATS.map((item) => {
-      const value = meaningfulNumber(facilities[item.key]);
+      const value = meaningfulNumber(readFacilityValue(facilities, item.aliases));
       return value == null ? null : { ...item, value: Math.round(value).toLocaleString("en-AU") };
     }).filter(Boolean);
   }
 
-  function featureList(value) {
-    const source = Array.isArray(value) ? value : value ? [value] : [];
-    const out = [];
-    for (const item of source) {
-      String(item || "")
-        .split(/\s*,\s*|\s+and\s+/i)
-        .map((part) => part.replace(/^and\s+/i, "").replace(/[.;]+$/, "").trim())
-        .filter(Boolean)
-        .forEach((part) => { if (!out.includes(part)) out.push(part); });
-    }
-    return out;
+  function normaliseFeatureFallback(raw) {
+    const source = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const items = [];
+    source.forEach((entry) => {
+      if (entry && typeof entry === "object") {
+        const name = String(entry.name || entry.label || "").trim();
+        const description = String(entry.description || "").trim();
+        if (name) items.push({ name, description });
+        return;
+      }
+      const text = String(entry == null ? "" : entry).trim();
+      if (text) items.push({ name: text, description: "" });
+    });
+    return items;
   }
 
-  function exclusiveAreas(ship) { return featureList(ship?.facilities?.exclusive_areas); }
-  function specialtyFeatures(ship) { return featureList(ship?.facilities?.specialty_features); }
+  function exclusiveAreas(ship) {
+    const facilities = ship?.facilities || {};
+    const raw = readFacilityValue(facilities, ["exclusive_areas", "exclusiveAreas", "exclusive"]);
+    const api = global.CiShipFacilities;
+    return api?.normalizeExclusiveAreasForDisplay ? api.normalizeExclusiveAreasForDisplay(raw) : normaliseFeatureFallback(raw);
+  }
+
+  function specialtyFeatures(ship) {
+    const facilities = ship?.facilities || {};
+    const raw = readFacilityValue(facilities, ["specialty_features", "specialtyFeatures", "signature_features"]);
+    const api = global.CiShipFacilities;
+    return api?.normalizeSpecialtyFeaturesForDisplay ? api.normalizeSpecialtyFeaturesForDisplay(raw) : normaliseFeatureFallback(raw);
+  }
+
+  function featureName(item) {
+    if (typeof item === "string") return item.trim();
+    return String(item?.name || item?.label || "").trim();
+  }
+
+  function featureDescription(item) {
+    return item && typeof item === "object" ? String(item.description || "").trim() : "";
+  }
+
+  function roomBreakdown(ship) {
+    const reconcile = global.CiStateroomReconciliation;
+    if (!reconcile?.reconcileStateroomDisplay) return null;
+    const result = reconcile.reconcileStateroomDisplay({
+      stateroomCount: ship?.stateroom_count,
+      stateroomBreakdown: ship?.stateroom_breakdown,
+      legacyBreakdown: ship?.cabin_type_summary || null
+    });
+    if (!result?.canRenderDonut || !Array.isArray(result.renderedCategories) || !result.renderedCategories.length) return null;
+    const total = result.renderedCategories.reduce((sum, item) => sum + Number(item.count || 0), 0);
+    if (!total) return null;
+    const categories = result.renderedCategories.map((item, index) => ({
+      label: String(item.label || `Room type ${index + 1}`),
+      count: Number(item.count || 0),
+      sqm: item.sqm,
+      color: ROOM_COLORS[index % ROOM_COLORS.length]
+    })).filter((item) => item.count > 0);
+    if (!categories.length) return null;
+    return {
+      ...result,
+      total,
+      categories,
+      centreTotal: result.centreMode === "total" && result.authoritativeTotal != null ? Number(result.authoritativeTotal) : null
+    };
+  }
+
+  function buildRoomChartSvg(ship) {
+    const breakdown = roomBreakdown(ship);
+    if (!breakdown) return null;
+    const width = 560;
+    const height = 226;
+    const cx = 94;
+    const cy = 113;
+    const r = 62;
+    const stroke = 28;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    const arcs = breakdown.categories.map((item) => {
+      const length = (item.count / breakdown.total) * circumference;
+      const svg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${item.color}" stroke-width="${stroke}" stroke-dasharray="${length.toFixed(3)} ${(circumference - length).toFixed(3)}" stroke-dashoffset="${(-offset).toFixed(3)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      offset += length;
+      return svg;
+    }).join("");
+    const centre = breakdown.centreTotal != null
+      ? `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="700" fill="#111111">${escXml(breakdown.centreTotal.toLocaleString("en-AU"))}</text><text x="${cx}" y="${cy + 18}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1" fill="#545454">STATEROOMS</text>`
+      : `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1" fill="#545454">ROOM MIX</text>`;
+    const legend = breakdown.categories.slice(0, 6).map((item, index) => {
+      const y = 43 + (index * 29);
+      const pct = Math.round((item.count / breakdown.total) * 100);
+      const count = item.count.toLocaleString("en-AU");
+      return `<rect x="202" y="${y - 10}" width="10" height="10" rx="2" fill="${item.color}"/><text x="222" y="${y}" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#111111">${escXml(item.label)}</text><text x="526" y="${y}" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#545454">${escXml(count)} · ${pct}%</text>`;
+    }).join("");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="560" height="226" rx="8" fill="#FFFFFF"/><text x="202" y="21" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1.4" fill="#245C4E">ROOM TYPES</text><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EEF1F0" stroke-width="${stroke}"/>${arcs}<circle cx="${cx}" cy="${cy}" r="44" fill="#FFFFFF"/>${centre}${legend}</svg>`;
+    let dataUrl = "";
+    try {
+      dataUrl = `data:image/svg+xml;base64,${global.btoa(unescape(encodeURIComponent(svg)))}`;
+    } catch (_error) {
+      dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+    const alt = `Room types: ${breakdown.categories.map((item) => `${item.label} ${item.count.toLocaleString("en-AU")}`).join(", ")}`;
+    return { svg, dataUrl, alt, breakdown };
+  }
 
   function freshDraft(ship) {
     const existing = spotlights.find((row) => row.ship_id === ship.id);
@@ -154,7 +278,7 @@
     busy = true; message = "Loading Ship Spotlights…"; messageTone = ""; render();
     const db = client();
     const [shipRes, lineRes, spotlightRes, mediaRes, researchRes] = await Promise.all([
-      db.from("ci_cruise_ships").select("id,cruise_line_id,name,slug,status,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,active").eq("active", true).order("name"),
+      db.from("ci_cruise_ships").select("id,cruise_line_id,name,slug,status,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,active").eq("active", true).order("name"),
       db.from("ci_cruise_lines").select("id,name,slug,logo_url,active,sold_by_101cruise").order("name"),
       db.from("ship_spotlights").select("*").order("updated_at", { ascending: false }),
       db.from("media_library").select("id,title,alt_text,public_url,ship_id,is_default,is_active,media_type").eq("media_type", "ship").eq("is_active", true),
@@ -192,51 +316,58 @@
 
   function publicUrl() { return draft?.public_slug ? `${PUBLIC_BASE}${encodeURIComponent(draft.public_slug)}` : ""; }
 
-  function renderTechnicalStatCell(item) {
-    return `<td class="cr101-ss-stat-cell" width="33.33%" valign="top" align="center" style="width:33.33%;padding:10px 6px;vertical-align:top;text-align:center;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:18px;line-height:20px;color:${BRAND_DARK_GREEN};height:22px;">${esc(item.icon)}</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;line-height:24px;color:${BODY};margin-top:4px;">${esc(item.value)}</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;line-height:14px;letter-spacing:.7px;text-transform:uppercase;color:${MUTED};margin-top:2px;">${esc(item.label)}</div>
+  function iconSvg(svg, size = 24) {
+    if (!svg) return "";
+    return svg.replace("<svg ", `<svg width="${size}" height="${size}" aria-hidden="true" style="display:block;margin:0 auto;color:${BRAND_DARK_GREEN};" `);
+  }
+
+  function renderSummaryStatCell(item) {
+    return `<td class="cr101-ss-summary-cell" width="20%" valign="top" align="center" style="width:20%;padding:12px 4px;vertical-align:top;text-align:center;">
+      <div style="height:26px;line-height:26px;color:${BRAND_DARK_GREEN};">${iconSvg(MY_SHIP_SUMMARY_ICONS[item.key], 24)}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;line-height:22px;color:${BODY};margin-top:5px;">${esc(item.value)}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:700;line-height:13px;letter-spacing:.65px;text-transform:uppercase;color:${MUTED};margin-top:2px;">${esc(item.label)}</div>
     </td>`;
   }
 
-  function renderTechnicalGrid(items) {
+  function renderSummaryGrid(items) {
     if (!items.length) return "";
-    const rows = [];
-    for (let i = 0; i < items.length; i += 3) {
-      const group = items.slice(i, i + 3);
-      while (group.length < 3) group.push(null);
-      rows.push(`<tr>${group.map((item) => item ? renderTechnicalStatCell(item) : '<td class="cr101-ss-stat-empty" width="33.33%" style="width:33.33%;padding:0;"></td>').join("")}</tr>`);
-    }
-    return `<tr><td align="center" style="padding:30px 0 0;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:12px;">SHIP AT A GLANCE</div>
-      <table role="presentation" class="cr101-ss-stat-grid" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border-top:1px solid ${DIVIDER};border-bottom:1px solid ${DIVIDER};">${rows.join("")}</table>
-    </td></tr>`;
+    return `<tr><td align="center" style="padding:30px 0 0;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:12px;">SHIP AT A GLANCE</div><table role="presentation" class="cr101-ss-summary-grid" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border-top:1px solid ${DIVIDER};border-bottom:1px solid ${DIVIDER};"><tr>${items.map(renderSummaryStatCell).join("")}</tr></table></td></tr>`;
+  }
+
+  function renderTechnicalDetails(items) {
+    if (!items.length) return "";
+    const cells = items.map((item) => `<td class="cr101-ss-detail-cell" width="20%" valign="top" align="center" style="width:20%;padding:9px 4px;vertical-align:top;text-align:center;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;line-height:18px;color:${BODY};">${esc(item.value)}</div><div style="font-family:Helvetica,Arial,sans-serif;font-size:8.5px;font-weight:700;line-height:12px;letter-spacing:.45px;text-transform:uppercase;color:${MUTED};margin-top:2px;">${esc(item.label)}</div></td>`).join("");
+    return `<tr><td align="center" style="padding:8px 0 0;"><table role="presentation" class="cr101-ss-detail-grid" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background:#FFFFFF;">${cells ? `<tr>${cells}</tr>` : ""}</table></td></tr>`;
   }
 
   function renderOnboardCell(item) {
-    return `<td class="cr101-ss-onboard-cell" width="20%" valign="top" align="center" style="width:20%;padding:8px 5px;vertical-align:top;text-align:center;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:20px;line-height:22px;color:${BRAND_DARK_GREEN};height:23px;">${esc(item.icon)}</div>
+    return `<td class="cr101-ss-onboard-cell" width="20%" valign="top" align="center" style="width:20%;padding:10px 5px;vertical-align:top;text-align:center;">
+      <div style="height:27px;line-height:27px;color:${BRAND_DARK_GREEN};">${iconSvg(MY_SHIP_GLANCE_ICONS[item.key], 25)}</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;line-height:22px;color:${BODY};margin-top:4px;">${esc(item.value)}</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;line-height:13px;letter-spacing:.35px;text-transform:uppercase;color:${BRAND_DARK_GREEN};margin-top:2px;">${esc(item.label)}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:700;line-height:13px;letter-spacing:.35px;text-transform:uppercase;color:${BRAND_DARK_GREEN};margin-top:2px;">${esc(item.label)}</div>
     </td>`;
   }
 
   function renderOnboardGrid(items) {
     if (!items.length) return "";
-    return `<tr><td align="center" style="padding:30px 0 0;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:10px;">ON BOARD</div>
-      <table role="presentation" class="cr101-ss-onboard-grid" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border:1px solid ${BRAND_GREEN};background:#FFFFFF;"><tr>${items.map(renderOnboardCell).join("")}</tr></table>
-    </td></tr>`;
+    return `<tr><td align="center" style="padding:30px 0 0;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:10px;">ON BOARD</div><table role="presentation" class="cr101-ss-onboard-grid" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border:1px solid ${BRAND_GREEN};background:#FFFFFF;"><tr>${items.map(renderOnboardCell).join("")}</tr></table></td></tr>`;
+  }
+
+  function renderRoomTypes(ship) {
+    const chart = buildRoomChartSvg(ship);
+    if (!chart) return "";
+    return `<tr><td align="center" style="padding:30px 0 0;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:10px;">ROOM TYPES</div><img class="cr101-ss-room-chart" src="${esc(chart.dataUrl)}" alt="${esc(chart.alt)}" width="560" border="0" style="display:block;width:100%;max-width:560px;height:auto;border:0;margin:0 auto;"></td></tr>`;
   }
 
   function renderFeatureList(title, items) {
-    if (!items.length) return "";
-    const rows = items.map((text) => `<tr><td width="15" valign="top" style="width:15px;padding:5px 5px 5px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${BRAND_DARK_GREEN};">•</td><td valign="top" style="padding:5px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${BODY};">${esc(text)}</td></tr>`).join("");
-    return `<td class="cr101-ss-feature-col" width="50%" valign="top" style="width:50%;padding:16px 18px;vertical-align:top;border:1px solid ${DIVIDER};background:#FFFFFF;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:${BRAND_DARK_GREEN};margin-bottom:7px;">${esc(title)}</div>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>
-    </td>`;
+    const valid = (items || []).filter((item) => featureName(item));
+    if (!valid.length) return "";
+    const rows = valid.map((item) => {
+      const name = featureName(item);
+      const description = featureDescription(item);
+      return `<tr><td width="15" valign="top" style="width:15px;padding:5px 5px 5px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${BRAND_DARK_GREEN};">•</td><td valign="top" style="padding:5px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${BODY};"><strong style="font-weight:700;">${esc(name)}</strong>${description ? `<div style="font-size:11px;line-height:16px;color:${MUTED};margin-top:2px;">${esc(description)}</div>` : ""}</td></tr>`;
+    }).join("");
+    return `<td class="cr101-ss-feature-col" width="50%" valign="top" style="width:50%;padding:16px 18px;vertical-align:top;border:1px solid ${DIVIDER};background:#FFFFFF;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:${BRAND_DARK_GREEN};margin-bottom:7px;">${esc(title)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table></td>`;
   }
 
   function renderFeatures(ship) {
@@ -246,14 +377,21 @@
     return `<tr><td align="center" style="padding:24px 0 0;"><table role="presentation" class="cr101-ss-features" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>${exclusive.length ? renderFeatureList("Exclusive Areas", exclusive) : '<td class="cr101-ss-feature-col" width="50%" style="width:50%;"></td>'}${specialty.length ? renderFeatureList("Specialty Features", specialty) : '<td class="cr101-ss-feature-col" width="50%" style="width:50%;"></td>'}</tr></table></td></tr>`;
   }
 
+  function renderLineIdentity(line) {
+    const logo = String(line?.logo_url || "").trim();
+    if (/^https:\/\//i.test(logo)) {
+      return `<tr><td align="center" style="padding:0 0 20px;"><img src="${esc(logo)}" alt="${esc(line?.name || "Cruise line")}" width="170" border="0" style="display:block;width:auto;max-width:170px;max-height:48px;height:auto;border:0;margin:0 auto;"></td></tr>`;
+    }
+    return line?.name ? `<tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#000000;text-align:center;padding:0 0 20px;">${esc(line.name)}</td></tr>` : "";
+  }
+
   function emailStyleBlock() {
     return `<style type="text/css">
       @media only screen and (max-width:620px) {
         .cr101-ss-wrapper { width:100% !important; }
-        .cr101-ss-stat-cell { display:inline-block !important;width:50% !important;max-width:50% !important;box-sizing:border-box !important;padding:12px 5px !important; }
-        .cr101-ss-stat-empty { display:none !important; }
-        .cr101-ss-onboard-cell { display:inline-block !important;width:50% !important;max-width:50% !important;box-sizing:border-box !important;padding:11px 5px !important; }
+        .cr101-ss-summary-cell,.cr101-ss-detail-cell,.cr101-ss-onboard-cell { display:inline-block !important;width:50% !important;max-width:50% !important;box-sizing:border-box !important;padding:12px 5px !important; }
         .cr101-ss-feature-col { display:block !important;width:100% !important;max-width:100% !important;box-sizing:border-box !important;border-left:1px solid ${DIVIDER} !important;border-right:1px solid ${DIVIDER} !important; }
+        .cr101-ss-room-chart { width:100% !important;height:auto !important; }
       }
     </style>`;
   }
@@ -262,7 +400,8 @@
     capture();
     const ship = currentShip(); const line = currentLine();
     if (!ship || !draft || !draft.hero_image_url) return "";
-    const technical = technicalStats(ship);
+    const summary = summaryStats(ship);
+    const details = technicalDetailStats(ship);
     const onboard = onboardStats(ship);
     const intro = String(draft.editorial_intro || "").trim();
     const ctaUrl = publicUrl();
@@ -271,12 +410,14 @@
     return `${emailStyleBlock()}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;border-collapse:collapse;background-color:${PAGE_BG};"><tr><td align="center" bgcolor="${PAGE_BG}" style="padding:0;background-color:${PAGE_BG};"><table role="presentation" class="cr101-ss-wrapper" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${PAGE_BG};"><tr><td align="center" style="padding:24px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
 <tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:${MUTED};text-align:center;padding:0 0 18px;">${esc(draft.eyebrow || "SHIP SPOTLIGHT")}</td></tr>
-<tr><td align="center" style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.35;color:#000000;text-align:center;padding:0 12px 8px;">${esc(draft.newsletter_heading || ship.name)}</td></tr>
-<tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#000000;text-align:center;padding:0 0 24px;">${esc(line?.name || "")}</td></tr>
+<tr><td align="center" style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;line-height:1.3;color:#000000;text-align:center;padding:0 12px 10px;">${esc(draft.newsletter_heading || ship.name)}</td></tr>
+${renderLineIdentity(line)}
 <tr><td align="center" style="padding:0;"><img src="${esc(draft.hero_image_url)}" alt="${esc(ship.name)}" width="${MAX_WIDTH}" border="0" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;"></td></tr>
-${renderTechnicalGrid(technical)}
+${intro ? `<tr><td align="center" style="padding:24px 16px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;color:${BODY};text-align:center;line-height:1.65;">${esc(intro)}</td></tr>` : ""}
+${renderRoomTypes(ship)}
+${renderSummaryGrid(summary)}
+${renderTechnicalDetails(details)}
 ${renderOnboardGrid(onboard)}
-${intro ? `<tr><td align="center" style="padding:34px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr><td height="1" style="height:1px;line-height:1px;font-size:0;background-color:${DIVIDER};">&nbsp;</td></tr></table></td></tr><tr><td align="center" style="padding:34px 12px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;color:${BODY};text-align:center;line-height:1.65;">${esc(intro)}</td></tr>` : ""}
 ${renderFeatures(ship)}
 ${cta}
 <tr><td align="center" style="padding:28px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr><td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;">&nbsp;</td></tr></table></td></tr>
@@ -310,17 +451,60 @@ ${cta}
     busy = false; if (!quiet) { message = "Ship Spotlight saved."; messageTone = "success"; } render(); return true;
   }
 
+  function emailAssetsForCurrentShip() {
+    const ship = currentShip();
+    const line = currentLine();
+    if (!ship || !draft) return [];
+    const assets = [];
+    const hero = String(draft.hero_image_url || "").trim();
+    if (!/^https:\/\//i.test(hero)) throw new Error("The hero image must have an absolute https address before the newsletter block can be copied.");
+    assets.push({
+      raw_url: hero,
+      request: { source_url: hero, asset_type: "hero", label: ship.name || "ship" }
+    });
+    const logo = String(line?.logo_url || "").trim();
+    if (/^https:\/\//i.test(logo)) {
+      assets.push({
+        raw_url: logo,
+        request: { source_url: logo, asset_type: "route_map", label: `${line?.name || "cruise line"} logo` }
+      });
+    }
+    const roomChart = buildRoomChartSvg(ship);
+    if (roomChart) {
+      assets.push({
+        raw_url: roomChart.dataUrl,
+        request: {
+          source_url: `https://101cruise.com.au/generated/ship-spotlight-room-chart/${encodeURIComponent(slugify(ship.name))}.svg`,
+          inline_svg: roomChart.svg,
+          asset_type: "route_map",
+          label: `${ship.name || "ship"} room types`
+        }
+      });
+    }
+    return assets;
+  }
+
   async function prepareHostedHtml() {
     const saved = await save({ quiet: true }); if (!saved) return "";
-    const rawHtml = emailHtml();
-    const sourceUrl = draft.hero_image_url;
-    if (!sourceUrl) return rawHtml;
-    message = "Preparing Ship Spotlight image…"; messageTone = ""; busy = true; render();
+    let html = emailHtml();
+    const assets = emailAssetsForCurrentShip();
+    if (!assets.length) return html;
+    message = `Preparing Ship Spotlight images 1 of ${assets.length}…`; messageTone = ""; busy = true; render();
     const headers = typeof global.adminAuthHeaders === "function" ? await global.adminAuthHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
-    const response = await fetch(EMAIL_ASSET_ENDPOINT, { method: "POST", headers, body: JSON.stringify({ spotlight_id: draft.id, asset_index: 1, asset_total: 1, assets: [{ source_url: sourceUrl, asset_type: "hero", label: currentShip()?.name || "ship" }] }) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.success === false || !data.mappings?.[0]?.mailchimp_file_url) throw new Error(data.error || "Could not prepare the Ship Spotlight image.");
-    return rawHtml.split(sourceUrl).join(data.mappings[0].mailchimp_file_url);
+    for (let i = 0; i < assets.length; i += 1) {
+      message = `Preparing Ship Spotlight images ${i + 1} of ${assets.length}…`; render();
+      const asset = assets[i];
+      const response = await fetch(EMAIL_ASSET_ENDPOINT, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ spotlight_id: draft.id, asset_index: i + 1, asset_total: assets.length, assets: [asset.request] })
+      });
+      const data = await response.json().catch(() => ({}));
+      const hostedUrl = data.mappings?.[0]?.mailchimp_file_url;
+      if (!response.ok || data.success === false || !hostedUrl) throw new Error(data.error || "Could not prepare a Ship Spotlight image.");
+      html = html.split(asset.raw_url).join(hostedUrl);
+    }
+    return html;
   }
 
   async function copyNewsletterBlock() {
@@ -352,7 +536,12 @@ ${cta}
 
   function openPreview() { capture(); previewOpen = true; render(); }
   function closePreview() { previewOpen = false; render(); }
-  function useMediaLibrary() { close(); if (typeof global.setActiveTab === "function") global.setActiveTab("media-library"); }
+  function useMediaLibrary() {
+    close();
+    const candidates = Array.from(document.querySelectorAll("button,a"));
+    const target = candidates.find((el) => /media library/i.test(String(el.textContent || "").trim()));
+    if (target && typeof target.click === "function") target.click();
+  }
 
   function renderPreview() {
     if (!previewOpen || !draft) return "";
@@ -364,9 +553,15 @@ ${cta}
     return items.length ? items.map((item) => `<div class="ss-auto-stat"><strong>${esc(item.value)}</strong><span>${esc(item.label)}</span></div>`).join("") : '<p class="admin-muted">No populated ship statistics are available yet.</p>';
   }
 
+  function adminRoomSummary(ship) {
+    const room = roomBreakdown(ship);
+    if (!room) return '<p class="admin-muted">No reconciled room-type breakdown is available for this ship.</p>';
+    return `<div class="ss-room-summary">${room.categories.map((item) => `<span><i style="background:${esc(item.color)}"></i><strong>${esc(item.label)}</strong> ${esc(item.count.toLocaleString("en-AU"))}</span>`).join("")}</div>`;
+  }
+
   function adminFeatureSummary(ship) {
-    const exclusive = exclusiveAreas(ship);
-    const specialty = specialtyFeatures(ship);
+    const exclusive = exclusiveAreas(ship).map(featureName).filter(Boolean);
+    const specialty = specialtyFeatures(ship).map(featureName).filter(Boolean);
     return `<div class="ss-grid two"><div><h4>Exclusive Areas</h4>${exclusive.length ? `<p>${exclusive.map(esc).join(" · ")}</p>` : '<p class="admin-muted">None recorded.</p>'}</div><div><h4>Specialty Features</h4>${specialty.length ? `<p>${specialty.map(esc).join(" · ")}</p>` : '<p class="admin-muted">None recorded.</p>'}</div></div>`;
   }
 
@@ -379,10 +574,11 @@ ${cta}
     const heroOptions = allImageUrls.map((url, i) => `<option value="${esc(url)}" ${url === draft.hero_image_url ? "selected" : ""}>${esc(images.find((m) => m.public_url === url)?.title || (url === ship.hero_image_url ? "Ship hero image" : `Ship image ${i + 1}`))}</option>`).join("");
 
     return `<div class="ss-form"><div class="ss-identity"><div>${draft.hero_image_url ? `<img src="${esc(draft.hero_image_url)}" alt="">` : ""}</div><div><p class="admin-nav-eyebrow">${esc(line?.name || "Cruise line")}</p><h2>${esc(ship.name)}</h2><p class="admin-muted">${esc([ship.ship_class, ship.year_built ? `Built ${ship.year_built}` : ""].filter(Boolean).join(" · "))}</p></div></div>
-      <section><h3>Newsletter presentation</h3><p class="admin-muted">Uses the same typography, width, spacing and brand colours as the current 101cruise newsletter. The block is responsive and stacks for phone screens.</p><div class="ss-grid two"><div class="admin-field"><label>Eyebrow</label><input id="ssEyebrow" value="${esc(draft.eyebrow)}"></div><div class="admin-field"><label>Heading</label><input id="ssHeading" value="${esc(draft.newsletter_heading)}"></div></div><div class="admin-field"><label>Short introduction</label><textarea id="ssIntro" rows="4" placeholder="40–60 words works best in the newsletter.">${esc(draft.editorial_intro)}</textarea></div></section>
-      <section><h3>Ship statistics</h3><p class="admin-muted">Automatic. Every populated approved statistic is shown; blank fields are omitted completely. Calendar years are never thousands-formatted.</p><div class="ss-auto-stat-grid">${adminStatCards(ship)}</div></section>
-      <section><h3>Areas & features</h3><p class="admin-muted">Pulled directly from the ship record. The newsletter uses these instead of a generic Highlights section.</p>${adminFeatureSummary(ship)}</section>
-      <section><div class="ss-section-head"><div><h3>Hero image</h3><p class="admin-muted">The newsletter uses one full-width hero image only. Supporting imagery can be dealt with when we design the full ship page.</p></div><button class="admin-button secondary small" onclick="ShipSpotlightAdmin.useMediaLibrary()">Open Media Library</button></div><div class="admin-field"><label>Hero image</label><select id="ssHero" onchange="ShipSpotlightAdmin.capture(); ShipSpotlightAdmin.render()"><option value="">Select image</option>${heroOptions}</select></div></section>
+      <section><h3>Newsletter presentation</h3><p class="admin-muted">The ship name is followed by the cruise-line logo, then the hero image and your description. The layout uses the same 600px newsletter canvas and remains separate from Cruise Specials.</p><div class="ss-grid two"><div class="admin-field"><label>Eyebrow</label><input id="ssEyebrow" value="${esc(draft.eyebrow)}"></div><div class="admin-field"><label>Heading</label><input id="ssHeading" value="${esc(draft.newsletter_heading)}"></div></div><div class="admin-field"><label>Short introduction</label><textarea id="ssIntro" rows="4" placeholder="40–60 words works best in the newsletter.">${esc(draft.editorial_intro)}</textarea></div></section>
+      <section><h3>Room types</h3><p class="admin-muted">Automatic. Uses the same reconciled stateroom breakdown and category order as My Cruise → My Ship. The donut is converted to a static Mailchimp-hosted image when you copy the block.</p>${adminRoomSummary(ship)}</section>
+      <section><h3>Ship statistics</h3><p class="admin-muted">Automatic. The main cards use the actual My Ship icons. Other populated ship specifications are shown without invented icons.</p><div class="ss-auto-stat-grid">${adminStatCards(ship)}</div></section>
+      <section><h3>Areas & features</h3><p class="admin-muted">Pulled directly from the ship record using the same feature normalisation as My Ship. Object-based features are displayed by name, not as [object Object].</p>${adminFeatureSummary(ship)}</section>
+      <section><div class="ss-section-head"><div><h3>Hero image</h3><p class="admin-muted">The hero, cruise-line logo and room chart are prepared through the Ship Spotlight Mailchimp image pipeline before the block is copied.</p></div><button class="admin-button secondary small" onclick="ShipSpotlightAdmin.useMediaLibrary()">Open Media Library</button></div><div class="admin-field"><label>Hero image</label><select id="ssHero" onchange="ShipSpotlightAdmin.capture(); ShipSpotlightAdmin.render()"><option value="">Select image</option>${heroOptions}</select></div></section>
       <section><h3>Public ship page</h3><div class="ss-grid two"><div class="admin-field"><label>Public slug</label><input id="ssSlug" value="${esc(draft.public_slug)}"></div><label class="ss-publish"><input id="ssPublished" type="checkbox" ${draft.publication_status === "published" ? "checked" : ""}> Publish this Ship Spotlight page</label></div><div class="admin-helper">${esc(publicUrl())}</div></section>
       <div class="ss-actions"><button class="admin-button secondary" onclick="ShipSpotlightAdmin.openPreview()">Preview Newsletter Block</button><button class="admin-button secondary" onclick="ShipSpotlightAdmin.save()" ${busy ? "disabled" : ""}>Save Spotlight</button><button class="admin-button black" onclick="ShipSpotlightAdmin.${hostedHtmlCache ? "copyAgainIfReady" : "copyNewsletterBlock"}()" ${busy ? "disabled" : ""}>${busy ? "Preparing…" : "Copy Newsletter Block"}</button></div></div>`;
   }
@@ -390,7 +586,7 @@ ${cta}
   function styles() {
     if (document.getElementById("shipSpotlightStyles")) return;
     const el = document.createElement("style"); el.id = "shipSpotlightStyles";
-    el.textContent = `.ss-nav-btn{display:block;width:100%;border:0;background:transparent;text-align:left;padding:9px 14px 9px 28px;font:inherit;color:inherit;cursor:pointer}.ss-nav-btn:hover{background:rgba(0,0,0,.05)}.ss-overlay{position:fixed;inset:0;z-index:9998;background:#f4f5f6;overflow:auto}.ss-shell{max-width:1180px;margin:0 auto;padding:22px}.ss-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.ss-top h1{margin:2px 0 5px}.ss-top-actions{display:flex;gap:8px;align-items:center}.ss-card{background:#fff;border:1px solid #e3e6e8;border-radius:12px;padding:20px;box-shadow:0 8px 28px rgba(20,30,40,.05)}.ss-selector{display:flex;gap:12px;align-items:end;margin-bottom:16px}.ss-selector .admin-field{flex:1;margin:0}.ss-form section{padding:20px 0;border-top:1px solid #e8ebed}.ss-form section:first-of-type{border-top:0}.ss-form h3{margin:0 0 8px}.ss-form h4{margin:0 0 7px}.ss-grid{display:grid;gap:12px}.ss-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-identity{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;padding-bottom:20px}.ss-identity img{width:150px;height:95px;object-fit:cover;border-radius:9px}.ss-identity h2{margin:0 0 5px}.ss-section-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.ss-auto-stat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}.ss-auto-stat{border:1px solid #dfe3e6;border-radius:8px;padding:11px 8px;text-align:center;background:#fff}.ss-auto-stat strong{display:block;font-size:16px;color:#111}.ss-auto-stat span{display:block;margin-top:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#66727c}.ss-publish{display:flex;align-items:center;gap:8px;padding-top:27px}.ss-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:18px}.ss-message{margin:0 0 14px;padding:10px 12px;border-radius:8px;background:#eef2f4}.ss-message.success{background:#e9f7ef;color:#17633f}.ss-message.error{background:#fff0f0;color:#9a2525}.ss-preview-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(20,25,30,.75);overflow:auto;padding:30px}.ss-preview-modal{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden}.ss-preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e7e9}.ss-preview-canvas{background:#f7f7f7;padding:18px}@media(max-width:900px){.ss-auto-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.ss-grid.two{grid-template-columns:1fr}.ss-auto-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-top{display:block}.ss-top-actions{margin-top:10px}.ss-identity{grid-template-columns:1fr}.ss-selector{display:block}.ss-selector .admin-field{margin-bottom:8px}.ss-section-head{display:block}.ss-section-head .admin-button{margin-top:8px}}`;
+    el.textContent = `.ss-nav-btn{display:block;width:100%;border:0;background:transparent;text-align:left;padding:9px 14px 9px 28px;font:inherit;color:inherit;cursor:pointer}.ss-nav-btn:hover{background:rgba(0,0,0,.05)}.ss-overlay{position:fixed;inset:0;z-index:9998;background:#f4f5f6;overflow:auto}.ss-shell{max-width:1180px;margin:0 auto;padding:22px}.ss-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.ss-top h1{margin:2px 0 5px}.ss-top-actions{display:flex;gap:8px;align-items:center}.ss-card{background:#fff;border:1px solid #e3e6e8;border-radius:12px;padding:20px;box-shadow:0 8px 28px rgba(20,30,40,.05)}.ss-selector{display:flex;gap:12px;align-items:end;margin-bottom:16px}.ss-selector .admin-field{flex:1;margin:0}.ss-form section{padding:20px 0;border-top:1px solid #e8ebed}.ss-form section:first-of-type{border-top:0}.ss-form h3{margin:0 0 8px}.ss-form h4{margin:0 0 7px}.ss-grid{display:grid;gap:12px}.ss-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-identity{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;padding-bottom:20px}.ss-identity img{width:150px;height:95px;object-fit:cover;border-radius:9px}.ss-identity h2{margin:0 0 5px}.ss-section-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.ss-auto-stat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}.ss-auto-stat{border:1px solid #dfe3e6;border-radius:8px;padding:11px 8px;text-align:center;background:#fff}.ss-auto-stat strong{display:block;font-size:16px;color:#111}.ss-auto-stat span{display:block;margin-top:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#66727c}.ss-room-summary{display:flex;flex-wrap:wrap;gap:8px 14px}.ss-room-summary span{font-size:12px;color:#48525a;display:flex;align-items:center;gap:5px}.ss-room-summary i{display:inline-block;width:10px;height:10px;border-radius:2px}.ss-publish{display:flex;align-items:center;gap:8px;padding-top:27px}.ss-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:18px}.ss-message{margin:0 0 14px;padding:10px 12px;border-radius:8px;background:#eef2f4}.ss-message.success{background:#e9f7ef;color:#17633f}.ss-message.error{background:#fff0f0;color:#9a2525}.ss-preview-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(20,25,30,.75);overflow:auto;padding:30px}.ss-preview-modal{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden}.ss-preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e7e9}.ss-preview-canvas{background:#f7f7f7;padding:18px}@media(max-width:900px){.ss-auto-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.ss-grid.two{grid-template-columns:1fr}.ss-auto-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ss-top{display:block}.ss-top-actions{margin-top:10px}.ss-identity{grid-template-columns:1fr}.ss-selector{display:block}.ss-selector .admin-field{margin-bottom:8px}.ss-section-head{display:block}.ss-section-head .admin-button{margin-top:8px}}`;
     document.head.appendChild(el);
   }
 
@@ -424,5 +620,5 @@ ${cta}
   styles(); injectNav();
   new MutationObserver(injectNav).observe(document.documentElement, { childList: true, subtree: true });
 
-  global.ShipSpotlightAdmin = { open, close, ensureLoaded, selectShip, render, capture, save, openPreview, closePreview, copyNewsletterBlock, copyAgainIfReady, useMediaLibrary, emailHtml };
+  global.ShipSpotlightAdmin = { open, close, ensureLoaded, selectShip, render, capture, save, openPreview, closePreview, copyNewsletterBlock, copyAgainIfReady, useMediaLibrary, emailHtml, buildRoomChartSvg };
 })(window);
