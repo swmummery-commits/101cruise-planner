@@ -27,8 +27,11 @@
     const directDivs = Array.from(col.children || []).filter((node) => node.tagName === "DIV");
     const existing = directDivs.find((node) => /exclusive areas|specialty features/i.test(String(node.textContent || "")));
     if (existing) {
-      existing.textContent = title;
-      existing.classList.add("cr101-ss-feature-title");
+      // IMPORTANT: only mutate when something actually differs. This function is
+      // called from a MutationObserver; rewriting identical text would trigger
+      // the observer again and could trap feature-rich previews in a render loop.
+      if (String(existing.textContent || "").trim() !== title) existing.textContent = title;
+      if (!existing.classList.contains("cr101-ss-feature-title")) existing.classList.add("cr101-ss-feature-title");
       return;
     }
     const heading = document.createElement("div");
@@ -59,9 +62,10 @@
     const remaining = featureColumns(root);
     const width = remaining.length === 1 ? "100%" : "50%";
     remaining.forEach((col) => {
-      col.setAttribute("width", remaining.length === 1 ? "100%" : "50%");
-      col.style.width = width;
-      col.style.maxWidth = width;
+      const targetWidth = remaining.length === 1 ? "100%" : "50%";
+      if (col.getAttribute("width") !== targetWidth) col.setAttribute("width", targetWidth);
+      if (col.style.width !== width) col.style.width = width;
+      if (col.style.maxWidth !== width) col.style.maxWidth = width;
     });
   }
 
