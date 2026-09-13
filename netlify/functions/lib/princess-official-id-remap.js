@@ -136,7 +136,27 @@ async function loadCollidingPrincessRows(sb, { cruiseLineId, officialSailingId, 
   };
 }
 
-async function applyPrincessOfficialIdRemap(sb, { existingRow, insert, cruiseLineId, runId }) {
+async function applyPrincessOfficialIdRemap(sb, { existingRow, insert, cruiseLineId, runId, productionRows = null }) {
+  const productionForMatch = Array.isArray(productionRows) && productionRows.length ? productionRows : [existingRow];
+  const { classifyPrincessP3bCandidate } = require("./princess-voyage-identity-classifier");
+  const p3b = classifyPrincessP3bCandidate(insert, productionForMatch);
+  if (p3b.classification === "MULTIPLE_PRODUCTION_MATCHES") {
+    return {
+      ok: false,
+      reason: "multiple_production_matches",
+      classification: p3b.classification,
+      discovered_cruise_id: existingRow?.id || null,
+      matching_production_ids: (p3b.matching_production || []).map((row) => row.id)
+    };
+  }
+  if (p3b.classification === "TRUE_NEW") {
+    return {
+      ok: false,
+      reason: "remap_would_duplicate_or_not_voyage_equivalent",
+      classification: p3b.classification,
+      discovered_cruise_id: existingRow?.id || null
+    };
+  }
   const classified = classifyPrincessProposedInsert(insert, [existingRow]);
   if (classified.classification !== "OFFICIAL_ID_REMAP") {
     return {

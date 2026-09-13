@@ -14,6 +14,17 @@ const {
 const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
 const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
+const {
+  classifyPrincessP3bCandidate,
+  indexProduction
+} = require("./princess-voyage-identity-classifier");
+
+const RECOGNISED_P3B = new Set([
+  "RECOGNISED_CURRENT_ID",
+  "UNIQUE_OFFICIAL_ID_REMAP",
+  "UNIQUE_ALTERNATE_ID_FORMAT"
+]);
+const REVIEW_P3B = new Set(["MULTIPLE_PRODUCTION_MATCHES", "AMBIGUOUS", "SOURCE_DUPLICATE"]);
 
 function princessExternalKey(cruiseLineId, productKey) {
   const basis = [ADAPTER_ID, cruiseLineId || "", productKey || ""].join("|");
@@ -59,10 +70,11 @@ function buildPrincessUpsertCandidate(row, cruiseLine) {
   };
 }
 
-function classifyProposedAction(row, existing) {
+function classifyProposedAction(row, existing, recognition = null) {
   if (isPrincessCruisetour(row.product_type)) return "cruisetour_skip";
   if (row.product_type === "unknown") return "invalid_skip";
   if (!row.complete_high_confidence) return "incomplete_skip";
+  if (REVIEW_P3B.has(recognition?.classification)) return "update_identity_review_required";
   if (!existing) return "insert_active";
 
   const existingKey =
@@ -84,14 +96,21 @@ function classifyProposedAction(row, existing) {
     return changed ? "update_exact_legacy_match" : "duplicate_skip";
   }
 
+  if (
+    recognition?.classification === "UNIQUE_OFFICIAL_ID_REMAP" ||
+    recognition?.classification === "UNIQUE_ALTERNATE_ID_FORMAT"
+  ) {
+    return "update_identity_review_required";
+  }
+
   return "insert_active";
 }
 
-function buildManifestEntry(row, cruiseLine, destinations, existing) {
+function buildManifestEntry(row, cruiseLine, destinations, existing, recognition = null) {
   const productKey = officialProductKey(row.raw);
   const groupKey = officialGroupKey(row.raw);
   const dest = destinations.find((d) => d.slug === row.destination_resolution?.destinationKey);
-  const action = classifyProposedAction(row, existing);
+  const action = classifyProposedAction(row, existing, recognition);
   const candidate = buildPrincessUpsertCandidate(row, cruiseLine);
 
   const rollback =
@@ -137,6 +156,9 @@ function buildManifestEntry(row, cruiseLine, destinations, existing) {
     existing_record_match: existing?.id || null,
     existing_record_status: existing?.status || null,
     proposed_action: action,
+    recognition_classification: recognition?.classification || null,
+    recognition_reason: recognition?.reason || null,
+    matching_production_ids: (recognition?.matching || []).map((item) => item.id).filter(Boolean),
     rollback,
     official_url: row.raw?.official_url || row.candidate?.official_url || null,
     candidate
@@ -151,7 +173,7 @@ async function indexExistingPrincessRecords(supabase, cruiseLineId) {
   const pageSize = 1000;
   while (true) {
     const batch = await supabase(
-      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=${select}&limit=${pageSize}&offset=${offset}`
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=${select}&order=id.asc&limit=${pageSize}&offset=${offset}`
     );
     if (!batch?.length) break;
     rows.push(...batch);
@@ -163,22 +185,68 @@ async function indexExistingPrincessRecords(supabase, cruiseLineId) {
     const pk = row.official_sailing_id || row.raw_extract?.princess_sailing_id || null;
     if (pk) byProductKey.set(pk, row);
   }
-  return { rows: rows || [], byProductKey };
+  return { rows: rows || [], byProductKey, p3b: indexProduction(rows || []) };
 }
 
-function findExistingRecord(indexes, row) {
+function sourceOfficialCountsFromProducts(products = []) {
+  const counts = new Map();
+  for (const row of products || []) {
+    const key = officialProductKey(row.raw);
+    if (!key) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return counts;
+}
+
+function recognisePrincessExisting(indexes, row, cruiseLine) {
   const productKey = officialProductKey(row.raw);
-  return indexes.byProductKey.get(productKey) || null;
+  if (productKey && indexes.byProductKey?.has(productKey)) {
+    return {
+      existing: indexes.byProductKey.get(productKey),
+      classification: "RECOGNISED_CURRENT_ID",
+      reason: "unique_official_sailing_id",
+      matching: [indexes.byProductKey.get(productKey)]
+    };
+  }
+  const candidate = cruiseLine ? buildPrincessUpsertCandidate(row, cruiseLine) : null;
+  const p3b = classifyPrincessP3bCandidate(
+    {
+      official_sailing_id: productKey,
+      external_key: candidate?.external_key,
+      identity_key: candidate?.identity_key,
+      ship_id: row.candidate?.ship_id || row.ship_resolution?.ship?.id,
+      departure_date: row.candidate?.departure_date,
+      return_date: row.candidate?.return_date,
+      nights: row.candidate?.nights,
+      departure_port: row.candidate?.departure_port,
+      destination_id: row.candidate?.destination_id
+    },
+    indexes.rows || [],
+    indexes.p3b,
+    indexes.sourceOfficialCounts
+  );
+  const recognised = RECOGNISED_P3B.has(p3b.classification);
+  return {
+    existing: recognised ? p3b.matching_production?.[0] || null : null,
+    classification: p3b.classification,
+    reason: p3b.reason,
+    matching: p3b.matching_production || []
+  };
+}
+
+function findExistingRecord(indexes, row, cruiseLine) {
+  return recognisePrincessExisting(indexes, row, cruiseLine).existing;
 }
 
 async function buildPrincessBatchManifest({ products, cruiseLine, destinations, supabase, runId }) {
   const indexes = supabase
     ? await indexExistingPrincessRecords(supabase, cruiseLine.id)
-    : { byProductKey: new Map() };
+    : { byProductKey: new Map(), rows: [], p3b: indexProduction([]) };
+  indexes.sourceOfficialCounts = sourceOfficialCountsFromProducts(products);
 
   const entries = (products || []).map((row) => {
-    const existing = findExistingRecord(indexes, row);
-    return buildManifestEntry(row, cruiseLine, destinations, existing);
+    const recognition = recognisePrincessExisting(indexes, row, cruiseLine);
+    return buildManifestEntry(row, cruiseLine, destinations, recognition.existing, recognition);
   });
 
   return {
@@ -272,6 +340,7 @@ async function applyPrincessBatchWritesBody({
 
   let writesRemaining = maxWrites;
   const indexes = supabase ? await indexExistingPrincessRecords(supabase, cruiseLine.id) : null;
+  if (indexes) indexes.sourceOfficialCounts = sourceOfficialCountsFromProducts(products);
   const upsertStats = { new: 0, upserted_active: 0, cruises_inserted: 0, cruises_updated: 0 };
 
   for (const row of products || []) {
@@ -284,13 +353,18 @@ async function applyPrincessBatchWritesBody({
       continue;
     }
 
-    const existing = indexes ? findExistingRecord(indexes, row) : null;
-    const action = classifyProposedAction(row, existing);
+    const recognition = indexes ? recognisePrincessExisting(indexes, row, cruiseLine) : { existing: null };
+    const existing = recognition.existing || null;
+    const action = classifyProposedAction(row, existing, recognition);
     if (action === "duplicate_skip") {
       stats.duplicate_skips += 1;
       continue;
     }
     if (action === "incomplete_skip" || action === "invalid_skip" || action === "cruisetour_skip") {
+      stats.invalid_skips += 1;
+      continue;
+    }
+    if (action === "update_identity_review_required") {
       stats.invalid_skips += 1;
       continue;
     }
@@ -397,6 +471,7 @@ module.exports = {
   buildPrincessBatchManifest,
   applyPrincessBatchWrites,
   indexExistingPrincessRecords,
+  recognisePrincessExisting,
   classifyProposedAction,
   assertPrincessWriteCandidate,
   recoverCommittedWriteAfterFetchFailure,

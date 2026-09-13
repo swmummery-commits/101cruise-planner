@@ -1170,6 +1170,831 @@ test("stale-run watchdog covers all commissioned lines", () => {
   }
 });
 
+test("Disney current master-plan serial catch-up stays at batch cap 30", () => {
+  const controlled = require(path.join(root, "netlify/functions/lib/disney-controlled-batch"));
+  if (controlled.P2_CATCHUP_DISNEY_BATCH !== 30) throw new Error("do not raise Disney catch-up cap");
+  const identities = Array.from({ length: 67 }, (_, i) => `2028-01-01|DCL-${String(i).padStart(3, "0")}`);
+  const batches = [];
+  for (let i = 0; i < identities.length; i += 30) {
+    batches.push(identities.slice(i, i + 30));
+  }
+  if (batches.length !== 3) throw new Error(`expected 3 serial batches, got ${batches.length}`);
+  if (batches.some((batch) => batch.length > 30)) throw new Error("batch exceeded 30");
+  if (batches.reduce((acc, batch) => acc + batch.length, 0) !== 67) throw new Error("master plan lost identities");
+});
+
+await testAsync("Disney same dispatch id is a background no-op", async () => {
+  const sb = memoryLockStore();
+  const created = [];
+  const sourceRuns = [];
+  const wrapped = async (p, options = {}) => {
+    const method = (options.method || "GET").toUpperCase();
+    if (p === "cruise_discovery_runs" && method === "POST") {
+      created.push(JSON.parse(options.body));
+      return [{ id: `disney-run-${created.length}`, status: "running", stats: {} }];
+    }
+    return sb(p, options);
+  };
+  const first = await cron.executeWeeklyMaintenance({
+    lineSlug: "disney-cruise-line",
+    cruiseLineId: "disney",
+    runType: "disney_weekly_maintenance",
+    assertEnabled: () => {},
+    runMaintenance: async () => {
+      sourceRuns.push("first");
+      return { ok: true, success: true, summary: { inserts: 0, updates: 0 } };
+    },
+    dryRun: true,
+    supabaseClient: wrapped,
+    dispatchId: "p3b-disney-dispatch-same"
+  });
+  const second = await cron.executeWeeklyMaintenance({
+    lineSlug: "disney-cruise-line",
+    cruiseLineId: "disney",
+    runType: "disney_weekly_maintenance",
+    assertEnabled: () => {},
+    runMaintenance: async () => {
+      sourceRuns.push("second");
+      return { ok: true, success: true, summary: { inserts: 0, updates: 0 } };
+    },
+    dryRun: true,
+    supabaseClient: wrapped,
+    dispatchId: "p3b-disney-dispatch-same"
+  });
+  if (created.length !== 1) throw new Error(`disney dispatch created ${created.length} runs`);
+  if (sourceRuns.join(",") !== "first") throw new Error("second disney dispatch must not re-run source");
+  if (first.duplicate_background_invocation === true) throw new Error("first disney dispatch must execute");
+  if (second.duplicate_background_invocation !== true) throw new Error("second disney dispatch must no-op");
+});
+
+test("Princess and NCL production indexes paginate with a stable id order", () => {
+  const princessWrites = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/princess-discovery-writes.js"),
+    "utf8"
+  );
+  const nclWrites = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/norwegian-discovery-writes.js"),
+    "utf8"
+  );
+  if (!princessWrites.includes("order=id.asc")) {
+    throw new Error("Princess inventory index must order by id to avoid offset pagination gaps");
+  }
+  if (!nclWrites.includes("order=id.asc")) {
+    throw new Error("NCL inventory index must order by id to avoid offset pagination gaps");
+  }
+});
+
+test("Princess P3B identity waterfall accounts every eligible candidate once", () => {
+  const classifier = require(path.join(root, "netlify/functions/lib/princess-voyage-identity-classifier"));
+  const production = [
+    {
+      id: "uuid-recognised",
+      official_sailing_id: "OLD|GP|2026-09-26",
+      ship_id: "s1",
+      departure_date: "2026-09-26",
+      return_date: "2026-10-03",
+      nights: 7,
+      departure_port: "Fort Lauderdale",
+      destination_id: "d1"
+    },
+    {
+      id: "uuid-remap",
+      official_sailing_id: "OLD-REMAP",
+      ship_id: "s2",
+      departure_date: "2027-01-06",
+      return_date: "2027-01-13",
+      nights: 7,
+      departure_port: "Miami",
+      destination_id: "d2"
+    },
+    {
+      id: "uuid-dup-a",
+      official_sailing_id: "DUP-A",
+      ship_id: "s3",
+      departure_date: "2028-02-01",
+      return_date: "2028-02-08",
+      nights: 7,
+      departure_port: "Rome",
+      destination_id: "d3"
+    },
+    {
+      id: "uuid-dup-b",
+      official_sailing_id: "DUP-B",
+      ship_id: "s3",
+      departure_date: "2028-02-01",
+      return_date: "2028-02-08",
+      nights: 7,
+      departure_port: "Rome",
+      destination_id: "d3"
+    }
+  ];
+  const eligible = [
+    {
+      official_sailing_id: "OLD|GP|2026-09-26",
+      ship_id: "s1",
+      departure_date: "2026-09-26",
+      return_date: "2026-10-03",
+      nights: 7,
+      departure_port: "Fort Lauderdale",
+      destination_id: "d1"
+    },
+    {
+      official_sailing_id: "NEW-REMAP",
+      ship_id: "s2",
+      departure_date: "2027-01-06",
+      return_date: "2027-01-13",
+      nights: 7,
+      departure_port: "Miami",
+      destination_id: "d2"
+    },
+    {
+      official_sailing_id: "TRUE-NEW",
+      ship_id: "brand-new",
+      departure_date: "2029-01-01",
+      return_date: "2029-01-08",
+      nights: 7,
+      departure_port: "Barcelona",
+      destination_id: "d4"
+    },
+    {
+      official_sailing_id: "MULTI-SRC",
+      ship_id: "s3",
+      departure_date: "2028-02-01",
+      return_date: "2028-02-08",
+      nights: 7,
+      departure_port: "Rome",
+      destination_id: "d3"
+    }
+  ];
+  const waterfall = classifier.classifyPrincessP3bEligibleSet(eligible, production);
+  if (waterfall.total !== eligible.length) throw new Error("waterfall total must equal eligible");
+  if (waterfall.accounting_ok !== true) throw new Error("P3B counts must sum to eligible");
+  const counted = Object.values(waterfall.counts).reduce((acc, n) => acc + n, 0);
+  if (counted !== eligible.length) throw new Error(`counted ${counted} vs eligible ${eligible.length}`);
+  if (waterfall.counts.RECOGNISED_CURRENT_ID !== 1) throw new Error("recognised");
+  if (waterfall.counts.UNIQUE_OFFICIAL_ID_REMAP !== 1) throw new Error("unique remap");
+  if (waterfall.counts.TRUE_NEW !== 1) throw new Error("true new");
+  if (waterfall.counts.MULTIPLE_PRODUCTION_MATCHES !== 1) throw new Error("multiple production");
+});
+
+await testAsync("Princess multiple-production match blocks remap", async () => {
+  const remap = require(path.join(root, "netlify/functions/lib/princess-official-id-remap"));
+  const insert = {
+    official_sailing_id: "NEW|GP|2026-09-26",
+    ship_id: "s",
+    departure_date: "2026-09-26",
+    return_date: "2026-10-03",
+    nights: 7,
+    departure_port: "Fort Lauderdale",
+    destination_id: "d"
+  };
+  const production = [
+    { id: "uuid-a", official_sailing_id: "OLD-A", ...insert, official_sailing_id: "OLD-A" },
+    { id: "uuid-b", official_sailing_id: "OLD-B", ...insert, official_sailing_id: "OLD-B" }
+  ];
+  production[0].official_sailing_id = "OLD-A";
+  production[1].official_sailing_id = "OLD-B";
+  const refused = await remap.applyPrincessOfficialIdRemap(async () => [], {
+    existingRow: production[0],
+    insert,
+    cruiseLineId: "princess",
+    runId: "p3b-multi",
+    productionRows: production
+  });
+  if (refused.ok !== false) throw new Error("multiple production UUIDs must block remap");
+  if (refused.reason !== "multiple_production_matches") throw new Error(refused.reason);
+});
+
+await testAsync("Princess unique remap preserves UUID", async () => {
+  const remap = require(path.join(root, "netlify/functions/lib/princess-official-id-remap"));
+  const existing = {
+    id: "uuid-keep",
+    official_sailing_id: "OLD|GP|2026-09-26",
+    ship_id: "s",
+    departure_date: "2026-09-26",
+    return_date: "2026-10-03",
+    nights: 7,
+    departure_port: "Fort Lauderdale",
+    destination_id: "d",
+    status: "active",
+    official_url: "https://example.test/old",
+    raw_extract: { princess_sailing_id: "OLD|GP|2026-09-26" }
+  };
+  const insert = {
+    official_sailing_id: "NEW|GP|2026-09-26",
+    ship_id: "s",
+    departure_date: "2026-09-26",
+    return_date: "2026-10-03",
+    nights: 7,
+    departure_port: "Fort Lauderdale",
+    destination_id: "d",
+    official_url: "https://example.test/new",
+    itinerary: "Caribbean"
+  };
+  let patchedId = null;
+  const sb = async (path, options = {}) => {
+    if (String(path).startsWith("discovered_cruises?id=eq.uuid-keep") && options.method === "PATCH") {
+      patchedId = "uuid-keep";
+      return [{ ...existing, ...options.body, id: "uuid-keep" }];
+    }
+    return [];
+  };
+  const result = await remap.applyPrincessOfficialIdRemap(sb, {
+    existingRow: existing,
+    insert,
+    cruiseLineId: "c19f40a7-c160-4035-a845-14dada550e1f",
+    runId: "p3b-unique-remap",
+    productionRows: [existing]
+  });
+  if (result.ok !== true) throw new Error(result.reason || "unique remap failed");
+  if (result.discovered_cruise_id !== "uuid-keep") throw new Error("UUID must be preserved");
+  if (patchedId !== "uuid-keep") throw new Error("PATCH must target existing UUID");
+  if (result.created === true) throw new Error("remap must not insert");
+});
+
+test("Princess genuine insert does not duplicate an existing voyage", () => {
+  const classifier = require(path.join(root, "netlify/functions/lib/princess-voyage-identity-classifier"));
+  const genuine = classifier.classifyPrincessP3bCandidate(
+    {
+      official_sailing_id: "BRAND-NEW",
+      ship_id: "new-ship",
+      departure_date: "2029-06-01",
+      return_date: "2029-06-08",
+      nights: 7,
+      departure_port: "Seattle",
+      destination_id: "alaska"
+    },
+    [
+      {
+        id: "existing",
+        official_sailing_id: "OTHER",
+        ship_id: "other-ship",
+        departure_date: "2028-01-01",
+        return_date: "2028-01-08",
+        nights: 7,
+        departure_port: "Miami",
+        destination_id: "carib"
+      }
+    ]
+  );
+  if (genuine.classification !== "TRUE_NEW") throw new Error(genuine.classification);
+  if (classifier.princessP3bWriteAllowed("MULTIPLE_PRODUCTION_MATCHES")) {
+    throw new Error("multiple production matches must not be auto-written");
+  }
+  const duplicateVoyage = classifier.classifyPrincessP3bCandidate(
+    {
+      official_sailing_id: "NEW-ID",
+      ship_id: "s",
+      departure_date: "2026-09-26",
+      return_date: "2026-10-03",
+      nights: 7,
+      departure_port: "Fort Lauderdale",
+      destination_id: "d"
+    },
+    [
+      {
+        id: "uuid-1",
+        official_sailing_id: "OLD-1",
+        ship_id: "s",
+        departure_date: "2026-09-26",
+        return_date: "2026-10-03",
+        nights: 7,
+        departure_port: "Fort Lauderdale",
+        destination_id: "d"
+      },
+      {
+        id: "uuid-2",
+        official_sailing_id: "OLD-2",
+        ship_id: "s",
+        departure_date: "2026-09-26",
+        return_date: "2026-10-03",
+        nights: 7,
+        departure_port: "Fort Lauderdale",
+        destination_id: "d"
+      }
+    ]
+  );
+  if (duplicateVoyage.classification !== "MULTIPLE_PRODUCTION_MATCHES") {
+    throw new Error("genuine insert path must not treat a duplicated voyage as TRUE_NEW");
+  }
+});
+
+test("NCL true total outstanding is distinct from the capped plan", () => {
+  const nclClassifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const eligible = Array.from({ length: 5 }, (_, i) => ({
+    official_sailing_id: `SRC-${i}`,
+    ship_id: `ship-${i}`,
+    departure_date: `2028-01-0${i + 1}`,
+    return_date: `2028-01-1${i + 1}`,
+    nights: 7,
+    departure_port: "Miami"
+  }));
+  const waterfall = nclClassifier.classifyNorwegianP3bEligibleSet(eligible, []);
+  if (waterfall.counts.TRUE_NEW !== 5) throw new Error("all unmatched NCL source rows are outstanding");
+  const cap = ncl.NCL_MAX_WEEKLY_WRITES || 200;
+  const planned = Math.min(waterfall.outstanding_total, cap);
+  if (waterfall.outstanding_total === planned && waterfall.outstanding_total > cap) {
+    throw new Error("capped plan masqueraded as true total");
+  }
+  if (planned !== 5) throw new Error("under-cap plan should equal true outstanding when below cap");
+});
+
+test("NCL multiple production match blocks write", () => {
+  const nclClassifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const classified = nclClassifier.classifyNorwegianP3bCandidate(
+    {
+      official_sailing_id: "NEW-NCL",
+      ship_id: "ship",
+      departure_date: "2028-03-01",
+      return_date: "2028-03-08",
+      nights: 7,
+      departure_port: "Miami"
+    },
+    [
+      {
+        id: "a",
+        official_sailing_id: "OLD-A",
+        status: "active",
+        ship_id: "ship",
+        departure_date: "2028-03-01",
+        return_date: "2028-03-08",
+        nights: 7,
+        departure_port: "Miami"
+      },
+      {
+        id: "b",
+        official_sailing_id: "OLD-B",
+        status: "active",
+        ship_id: "ship",
+        departure_date: "2028-03-01",
+        return_date: "2028-03-08",
+        nights: 7,
+        departure_port: "Miami"
+      }
+    ]
+  );
+  if (classified.classification !== "MULTIPLE_PRODUCTION_MATCHES") throw new Error(classified.classification);
+  if (nclClassifier.norwegianP3bWriteAllowed(classified.classification)) {
+    throw new Error("multiple production matches must stay REVIEW_REQUIRED");
+  }
+  if (!nclClassifier.norwegianMultipleProductionMatchBlocksWrite(classified.classification)) {
+    throw new Error("NCL multiple production match must block write");
+  }
+});
+
+test("NCL match_required enrichment/promotion remains a legitimate outstanding class", () => {
+  const nclClassifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const classified = nclClassifier.classifyNorwegianP3bCandidate(
+    {
+      official_sailing_id: "NCL-MR",
+      ship_id: "ship",
+      departure_date: "2028-04-01",
+      return_date: "2028-04-08",
+      nights: 7,
+      departure_port: "Miami"
+    },
+    [
+      {
+        id: "mr-1",
+        official_sailing_id: "NCL-MR",
+        status: "match_required",
+        ship_id: "ship",
+        departure_date: "2028-04-01",
+        return_date: "2028-04-08",
+        nights: 7,
+        departure_port: "Miami"
+      }
+    ]
+  );
+  if (classified.classification !== "ALREADY_MATCH_REQUIRED") throw new Error(classified.classification);
+  if (!nclClassifier.norwegianP3bWriteAllowed(classified.classification)) {
+    throw new Error("legitimate match_required rows remain eligible for enrichment/promotion");
+  }
+});
+
+await testAsync("Silversea deployed-style duplicate dispatch is a no-op", async () => {
+  const sb = memoryLockStore();
+  const created = [];
+  const maintenanceRuns = [];
+  const wrapped = async (p, options = {}) => {
+    const method = (options.method || "GET").toUpperCase();
+    if (p === "cruise_discovery_runs" && method === "POST") {
+      created.push(JSON.parse(options.body));
+      return [{ id: `silversea-${created.length}`, status: "running", stats: {} }];
+    }
+    return sb(p, options);
+  };
+  const first = await cron.executeWeeklyMaintenance({
+    lineSlug: "silversea-cruises",
+    cruiseLineId: "silversea",
+    runType: "silversea_weekly_maintenance",
+    assertEnabled: () => {},
+    runMaintenance: async () => {
+      maintenanceRuns.push("source");
+      return { ok: true, success: true, summary: { inserts: 0, updates: 0, dry_run: true } };
+    },
+    dryRun: true,
+    supabaseClient: wrapped,
+    dispatchId: "p3b-silversea-validation-dispatch"
+  });
+  const second = await cron.executeWeeklyMaintenance({
+    lineSlug: "silversea-cruises",
+    cruiseLineId: "silversea",
+    runType: "silversea_weekly_maintenance",
+    assertEnabled: () => {},
+    runMaintenance: async () => {
+      maintenanceRuns.push("second-source");
+      return { ok: true, success: true, summary: { inserts: 1, updates: 1 } };
+    },
+    dryRun: true,
+    supabaseClient: wrapped,
+    dispatchId: "p3b-silversea-validation-dispatch"
+  });
+  if (created.length !== 1) throw new Error("silversea duplicate dispatch created a second run");
+  if (maintenanceRuns.length !== 1) throw new Error("duplicate silversea dispatch must not execute source");
+  if (second.duplicate_background_invocation !== true) throw new Error("expected duplicate_background_invocation");
+  if ((second.summary?.inserts || 0) !== 0 || (second.summary?.updates || 0) !== 0) {
+    throw new Error("duplicate silversea dispatch must write nothing");
+  }
+  if (first.summary?.dry_run !== true && first.duplicate_background_invocation) throw new Error("first should execute");
+});
+
+test("Royal enumeration stays fail-closed", () => {
+  const royalHealth = require(path.join(root, "netlify/functions/lib/royal-caribbean-weekly-health"));
+  const enumeration = require(path.join(root, "netlify/functions/lib/royal-caribbean-source-enumeration"));
+  const result = royalHealth.evaluateRoyalCaribbeanWeeklyHealth({
+    sourceRuntimeOk: true,
+    enumerationHealth: { royal_caribbean_source_enumeration_ok: false, failures: ["production_ids_missing_from_union"] },
+    reconciliationArithmeticOk: true,
+    shipResolutionOk: true,
+    embarkationResolutionOk: true
+  });
+  if (result.weekly_maintenance_healthy === true) throw new Error("unhealthy enumeration must fail closed");
+  if (!result.failures.includes("source_enumeration_unhealthy")) throw new Error("missing source_enumeration_unhealthy");
+  const src = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/royal-caribbean-source-enumeration.js"),
+    "utf8"
+  );
+  if (/maxLookups\s*=\s*25/.test(src)) {
+    throw new Error("Royal detail lookup must not leave missing production IDs unexamined at a 25-row cap");
+  }
+  const unexplained = enumeration.evaluateWeeklyAuthoritativeEnumerationHealth({
+    simulationOk: true,
+    unionSailingIds: new Set(["A"]),
+    productionSailingIds: new Set(["A", "MISSING"]),
+    duplicateSailingIds: 0,
+    detailLookupResults: [{ official_sailing_id: "MISSING", detail_ok: false, retrievable: false }]
+  });
+  if (unexplained.royal_caribbean_source_enumeration_ok === true) {
+    throw new Error("unexplained production IDs must keep enumeration fail-closed");
+  }
+  if (!unexplained.failures.includes("production_ids_missing_from_union")) {
+    throw new Error("missing production_ids_missing_from_union");
+  }
+});
+
+test("Seabourn ambiguous collision remains review", () => {
+  const rec = seabournRec.buildSeabournReconciliationSummary({
+    activeProductionTotal: 10,
+    eligibleTotal: 11,
+    recognisedExistingEligible: 9,
+    outstandingEligibleInserts: 1,
+    proposedUpdates: 0,
+    proposedIdentityReviewUpdates: 1,
+    sourceAbsentActive: 0,
+    writesExecuted: 0
+  });
+  if (rec.outstanding_eligible_inserts !== 1) throw new Error("ambiguous insert stays outstanding");
+  if (rec.writes_executed !== 0) throw new Error("ambiguous collision must not write");
+  const src = fs.readFileSync(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner.js"), "utf8");
+  if (!/review_required/.test(src)) throw new Error("Seabourn review_required path missing");
+});
+
+test("Princess canonical runner uses unique voyage recognition", () => {
+  const writes = require(path.join(root, "netlify/functions/lib/princess-discovery-writes"));
+  const classifier = require(path.join(root, "netlify/functions/lib/princess-voyage-identity-classifier"));
+  const production = [
+    {
+      id: "uuid-keep",
+      official_sailing_id: "OLD|GP|2026-09-26",
+      cruise_line_id: "princess",
+      ship_id: "s",
+      departure_date: "2026-09-26",
+      return_date: "2026-10-03",
+      nights: 7,
+      departure_port: "Fort Lauderdale",
+      destination_id: "d",
+      status: "active"
+    },
+    {
+      id: "uuid-csr-k",
+      official_sailing_id: "CSR14K",
+      cruise_line_id: "princess",
+      ship_id: "kp",
+      departure_date: "2027-02-28",
+      return_date: "2027-03-14",
+      nights: 14,
+      departure_port: "Fort Lauderdale",
+      destination_id: "carib",
+      status: "active"
+    },
+    {
+      id: "uuid-csr-r",
+      official_sailing_id: "CSR14R",
+      cruise_line_id: "princess",
+      ship_id: "kp",
+      departure_date: "2027-02-28",
+      return_date: "2027-03-14",
+      nights: 14,
+      departure_port: "Fort Lauderdale",
+      destination_id: "carib",
+      status: "active"
+    }
+  ];
+  const indexes = {
+    rows: production,
+    byProductKey: new Map(production.map((row) => [row.official_sailing_id, row])),
+    p3b: classifier.indexProduction(production),
+    sourceOfficialCounts: new Map()
+  };
+  const cruiseLine = { id: "princess" };
+  const none = writes.recognisePrincessExisting(
+    indexes,
+    {
+      complete_high_confidence: true,
+      product_type: "cruise",
+      raw: { official_sailing_id: "BRAND-NEW" },
+      candidate: {
+        ship_id: "new-ship",
+        departure_date: "2029-06-01",
+        return_date: "2029-06-08",
+        nights: 7,
+        departure_port: "Seattle",
+        destination_id: "alaska"
+      }
+    },
+    cruiseLine
+  );
+  if (none.classification !== "TRUE_NEW") throw new Error(none.classification);
+  if (writes.classifyProposedAction({ complete_high_confidence: true, product_type: "cruise", raw: {} }, none.existing, none) !== "insert_active") {
+    throw new Error("zero strict match must remain an insert");
+  }
+
+  const one = writes.recognisePrincessExisting(
+    indexes,
+    {
+      complete_high_confidence: true,
+      product_type: "cruise",
+      raw: { official_sailing_id: "NEW|GP|2026-09-26" },
+      candidate: {
+        ship_id: "s",
+        departure_date: "2026-09-26",
+        return_date: "2026-10-03",
+        nights: 7,
+        departure_port: "Fort Lauderdale",
+        destination_id: "d"
+      }
+    },
+    cruiseLine
+  );
+  if (one.classification !== "UNIQUE_OFFICIAL_ID_REMAP") throw new Error(one.classification);
+  if (one.existing?.id !== "uuid-keep") throw new Error("unique remap must keep existing UUID");
+  if (
+    writes.classifyProposedAction(
+      { complete_high_confidence: true, product_type: "cruise", raw: { official_sailing_id: "NEW|GP|2026-09-26" } },
+      one.existing,
+      one
+    ) !== "update_identity_review_required"
+  ) {
+    throw new Error("unique remap must not insert");
+  }
+
+  const many = writes.recognisePrincessExisting(
+    indexes,
+    {
+      complete_high_confidence: true,
+      product_type: "cruise",
+      raw: { official_sailing_id: "CSR14X" },
+      candidate: {
+        ship_id: "kp",
+        departure_date: "2027-02-28",
+        return_date: "2027-03-14",
+        nights: 14,
+        departure_port: "Fort Lauderdale",
+        destination_id: "carib"
+      }
+    },
+    cruiseLine
+  );
+  if (many.classification !== "MULTIPLE_PRODUCTION_MATCHES") throw new Error(many.classification);
+  if (many.existing) throw new Error("duplicate group must not pick a UUID");
+  if (
+    writes.classifyProposedAction(
+      { complete_high_confidence: true, product_type: "cruise", raw: { official_sailing_id: "CSR14X" } },
+      many.existing,
+      many
+    ) !== "update_identity_review_required"
+  ) {
+    throw new Error("multiple strict matches must stay review");
+  }
+
+  const knownK = writes.recognisePrincessExisting(
+    indexes,
+    {
+      complete_high_confidence: true,
+      product_type: "cruise",
+      raw: { official_sailing_id: "CSR14K" },
+      candidate: {
+        ship_id: "kp",
+        departure_date: "2027-02-28",
+        return_date: "2027-03-14",
+        nights: 14,
+        departure_port: "Fort Lauderdale",
+        destination_id: "carib"
+      }
+    },
+    cruiseLine
+  );
+  if (knownK.classification !== "RECOGNISED_CURRENT_ID") throw new Error("known duplicate official id must recognise itself");
+  if (knownK.existing?.id !== "uuid-csr-k") throw new Error("CSR14K must keep its own UUID");
+});
+
+test("Princess production-equivalent path no longer treats remaps as hundreds of inserts", () => {
+  const writes = require(path.join(root, "netlify/functions/lib/princess-discovery-writes"));
+  const classifier = require(path.join(root, "netlify/functions/lib/princess-voyage-identity-classifier"));
+  const products = [];
+  const production = [];
+  for (let i = 0; i < 12; i += 1) {
+    production.push({
+      id: `uuid-${i}`,
+      official_sailing_id: `OLD${i}`,
+      cruise_line_id: "princess",
+      ship_id: `ship-${i}`,
+      departure_date: `2028-01-${String(i + 1).padStart(2, "0")}`,
+      return_date: `2028-01-${String(i + 8).padStart(2, "0")}`,
+      nights: 7,
+      departure_port: "Miami",
+      destination_id: "carib",
+      status: "active"
+    });
+    products.push({
+      complete_high_confidence: true,
+      completeness: "complete_high_confidence",
+      product_type: "cruise",
+      official_sailing_id: `NEW${i}`,
+      ship_id: `ship-${i}`,
+      departure_date: `2028-01-${String(i + 1).padStart(2, "0")}`,
+      return_date: `2028-01-${String(i + 8).padStart(2, "0")}`,
+      nights: 7,
+      departure_port: "Miami",
+      destination_id: "carib"
+    });
+  }
+  const waterfall = classifier.classifyPrincessP3bEligibleSet(products, production);
+  if (waterfall.counts.UNIQUE_OFFICIAL_ID_REMAP !== 12) throw new Error(JSON.stringify(waterfall.counts));
+  if (waterfall.counts.TRUE_NEW !== 0) throw new Error("false inserts must disappear");
+  const inserts = products.filter((product, index) => {
+    const classified = waterfall.classified[index];
+    return writes.classifyProposedAction(
+      { complete_high_confidence: true, product_type: "cruise", raw: { sailing_id: product.official_sailing_id } },
+      classified.matching_production?.[0] || null,
+      classified
+    ) === "insert_active";
+  });
+  if (inserts.length !== 0) throw new Error(`canonical path proposed ${inserts.length} false inserts`);
+});
+
+test("Princess accepted baseline is not manually advanced", () => {
+  const lifecycle = require(path.join(root, "netlify/functions/lib/princess-accepted-baseline-lifecycle"));
+  const decision = lifecycle.evaluatePrincessBaselineAcceptance({
+    triggerType: "weekly_dry_run",
+    dryRun: true,
+    summary: { quality_gate: { passed: true, source_accounting: { passed: true, accounting: { accounting_exact: true } } } }
+  });
+  if (decision.accept === true) throw new Error("dry-run must not advance accepted baseline");
+});
+
+test("Disney additive source convergence freezes the latest stable snapshot", () => {
+  const disney = require(path.join(root, "netlify/functions/lib/disney-source-convergence"));
+  if (disney.DISNEY_CATCHUP_BATCH_CAP !== 30) throw new Error("Disney catch-up cap changed");
+  const a = { identities: ["A", "B"], eligible: 2 };
+  const b = { identities: ["A", "B", "C"], eligible: 3 };
+  const c = { identities: ["A", "B", "C"], eligible: 3 };
+  const waiting = disney.evaluateDisneySourceConvergence([a, b]);
+  if (waiting.converged !== false) throw new Error("A vs additive B must wait for C");
+  const converged = disney.evaluateDisneySourceConvergence([a, b, c]);
+  if (converged.converged !== true) throw new Error("B==C must freeze");
+  if (converged.frozen.hash !== disney.hashIdentitySet(c)) throw new Error("must freeze latest stable set");
+});
+
+test("Disney disappearing identity blocks catch-up", () => {
+  const disney = require(path.join(root, "netlify/functions/lib/disney-source-convergence"));
+  const blocked = disney.evaluateDisneySourceConvergence([
+    { identities: ["A", "B", "C"], eligible: 3 },
+    { identities: ["A", "B"], eligible: 2 }
+  ]);
+  if (blocked.classification !== "SOURCE_REPAIR_REQUIRED") throw new Error(blocked.classification);
+  if (blocked.catch_up_blocked !== true) throw new Error("disappearing identities must block writes");
+  if (blocked.frozen) throw new Error("must not freeze an unstable snapshot");
+});
+
+test("NCL ambiguity reasons are specific and review-only is not a technical failure", () => {
+  const nclClassifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const incomplete = nclClassifier.classifyNorwegianAmbiguityReason(
+    { official_sailing_id: "SRC", ship_id: "s", departure_date: "2028-01-01" },
+    []
+  );
+  if (incomplete.ambiguity_reason !== "SOURCE_FIELD_INCOMPLETE") throw new Error(incomplete.ambiguity_reason);
+  const destOnly = nclClassifier.classifyNorwegianAmbiguityReason(
+    {
+      official_sailing_id: "SRC-NEW",
+      ship_id: "s",
+      departure_date: "2028-01-01",
+      return_date: "2028-01-08",
+      nights: 7,
+      departure_port: "Miami",
+      destination_id: "alaska"
+    },
+    [
+      {
+        id: "prod",
+        official_sailing_id: "SRC-OLD",
+        ship_id: "s",
+        departure_date: "2028-01-01",
+        return_date: "2028-01-08",
+        nights: 7,
+        departure_port: "Miami",
+        destination_id: "carib"
+      }
+    ]
+  );
+  if (destOnly.ambiguity_reason !== "DESTINATION_ONLY_DIFFERENCE") throw new Error(destOnly.ambiguity_reason);
+  const ncl = require(path.join(root, "netlify/functions/lib/norwegian-weekly-maintenance"));
+  if (ncl.NCL_MAX_WEEKLY_WRITES !== 200) throw new Error("do not raise NCL write cap");
+});
+
+await testAsync("NCL match_required enrichment is not a duplicate insert", async () => {
+  const nclManifest = require(path.join(root, "netlify/functions/lib/norwegian-weekly-manifest"));
+  const manifest = await nclManifest.buildNorwegianWeeklyManifest({
+    simulation: {
+      products: [
+        {
+          official_sailing_id: "EXISTING|2028-01-01",
+          complete_eligible: true,
+          itinerary_classification: { category: "ocean" },
+          ship_id: "ship-1",
+          departure_date: "2028-01-01",
+          return_date: "2028-01-08",
+          nights: 7,
+          departure_port: "Miami"
+        }
+      ],
+      eligibility: { raw_sailings: 1, ocean_sailings: 1 }
+    },
+    productionRows: [
+      {
+        id: "mr-1",
+        official_sailing_id: "EXISTING|2028-01-01",
+        status: "match_required",
+        ship_id: "ship-1",
+        departure_date: "2028-01-01",
+        return_date: "2028-01-08",
+        nights: 7,
+        departure_port: "Miami",
+        raw_extract: { norwegian_official_sailing_id: "EXISTING|2028-01-01" }
+      }
+    ],
+    cruiseLine: { id: "ncl", slug: "norwegian-cruise-line" },
+    destinations: [],
+    supabase: async () => [],
+    today: "2026-09-09",
+    runId: "ncl-match-required"
+  });
+  if (manifest.inserts.length !== 0) throw new Error("match_required row must not insert a duplicate");
+  if (manifest.already_match_required !== 1) throw new Error("match_required must be counted");
+});
+
+test("Silversea scheduled mode stays dry-run review", () => {
+  const dispatchMod = require(path.join(root, "netlify/functions/lib/silversea-weekly-maintenance-dispatch"));
+  process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED = "true";
+  delete process.env.SILVERSEA_DISCOVERY_WRITE_ENABLED;
+  if (dispatchMod.resolveDryRun({}, process.env) !== true) {
+    throw new Error("Silversea Monday scheduled execution must remain dry-run");
+  }
+});
+
+test("Royal fail-closed and daily expiry cutoff unchanged", () => {
+  const cutoff = require(path.join(root, "netlify/functions/lib/public-discovered-cruise-inventory"));
+  if (cutoff.PUBLIC_BOOKING_CUTOFF_DAYS !== 21) throw new Error("21-day cutoff changed");
+  const royal = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/royal-caribbean-weekly-maintenance.js"),
+    "utf8"
+  );
+  if (!/SOURCE_REPAIR_REQUIRED|fail-closed|enumeration/.test(royal)) {
+    throw new Error("Royal weekly path must remain fail-closed");
+  }
+});
+
 if (failures.length) {
   console.error(`\ntest-weekly-maintenance-reliability-p0: ${passed} passed, ${failures.length} failed`);
   process.exit(1);

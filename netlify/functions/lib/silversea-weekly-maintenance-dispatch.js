@@ -37,11 +37,13 @@ function siteBaseUrl(env = process.env) {
 
 function resolveDryRun(body = {}, env = process.env) {
   if (body.dry_run === true || body.dryRun === true) return true;
+  const writesEnabled =
+    String(env.SILVERSEA_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
   const enabled =
     String(env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
-  if (!enabled) return true;
+  if (!enabled || !writesEnabled) return true;
   if (body.dry_run === false || body.dryRun === false) return false;
-  return !isNetlifyPlatformScheduledInvocation({ body, headers: { "x-netlify-event": "schedule" } });
+  return true;
 }
 
 function resolveTriggerType(event, body = {}) {

@@ -48,7 +48,10 @@ const {
   buildPrincessBatchManifest,
   applyPrincessBatchWrites
 } = require("./princess-discovery-writes");
-const { classifyPrincessVoyageInsertSet } = require("./princess-voyage-identity-classifier");
+const {
+  classifyPrincessVoyageInsertSet,
+  classifyPrincessP3bEligibleSet
+} = require("./princess-voyage-identity-classifier");
 const {
   buildExploraBatchManifest,
   applyExploraBatchWrites
@@ -1026,6 +1029,42 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       }
     }
 
+    const princessInsertClassification = classifyPrincessP3bEligibleSet(
+      (manifest.products || [])
+        .filter((entry) => entry.completeness === "complete_high_confidence")
+        .map((entry) => ({
+          official_sailing_id: entry.official_princess_sailing_id || entry.candidate?.official_sailing_id,
+          external_key: entry.candidate?.external_key,
+          identity_key: entry.candidate?.identity_key,
+          ship_id: entry.canonical_ship_id || entry.candidate?.ship_id,
+          departure_date: entry.departure_date || entry.candidate?.departure_date,
+          return_date: entry.return_date || entry.candidate?.return_date,
+          nights: entry.nights ?? entry.candidate?.nights,
+          departure_port: entry.canonical_departure_port || entry.candidate?.departure_port,
+          destination_id: entry.destination_id || entry.candidate?.destination_id
+        })),
+      manifest.existing_records || []
+    );
+    const classifiedByOfficial = new Map(
+      (princessInsertClassification.classified || []).map((row) => [row.official_sailing_id, row])
+    );
+    for (const entry of manifest.products || []) {
+      if (entry.proposed_action !== "insert_active") continue;
+      const official = entry.official_princess_sailing_id || entry.candidate?.official_sailing_id;
+      const classified = classifiedByOfficial.get(official);
+      if (!classified || classified.classification === "TRUE_NEW") continue;
+      if (
+        classified.classification === "RECOGNISED_CURRENT_ID" ||
+        (classified.classification === "UNIQUE_ALTERNATE_ID_FORMAT" &&
+          classified.previous_official_sailing_id === official)
+      ) {
+        entry.proposed_action = "duplicate_skip";
+      } else {
+        entry.proposed_action = "update_identity_review_required";
+      }
+      entry.recognition_classification = classified.classification;
+      entry.recognition_reason = classified.reason;
+    }
     const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
     const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match");
     const proposedSafeUpdates = manifest.products.filter(
@@ -1035,20 +1074,6 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       (p) => p.proposed_action === "update_identity_review_required"
     );
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
-    const princessInsertClassification = classifyPrincessVoyageInsertSet(
-      proposedInserts.map((entry) => ({
-        official_sailing_id: entry.official_princess_sailing_id || entry.candidate?.official_sailing_id,
-        external_key: entry.candidate?.external_key,
-        identity_key: entry.candidate?.identity_key,
-        ship_id: entry.canonical_ship_id || entry.candidate?.ship_id,
-        departure_date: entry.departure_date || entry.candidate?.departure_date,
-        return_date: entry.return_date || entry.candidate?.return_date,
-        nights: entry.nights ?? entry.candidate?.nights,
-        departure_port: entry.canonical_departure_port || entry.candidate?.departure_port,
-        destination_id: entry.destination_id || entry.candidate?.destination_id
-      })),
-      manifest.existing_records || []
-    );
     delete manifest.existing_records;
     const sourceAbsent = await findSourceAbsentActive({
       supabase: sb,
@@ -1128,6 +1153,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
         (p) => p.official_princess_sailing_id || p.stable_identity_key
       ),
+      duplicate_match_items: princessInsertClassification.counts.MULTIPLE_PRODUCTION_MATCHES || 0,
+      review_items: proposedIdentityReviewUpdates.length,
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,

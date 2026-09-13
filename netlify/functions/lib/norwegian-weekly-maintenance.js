@@ -72,6 +72,8 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
   });
 
   const outstanding = Number(manifest.outstanding_eligible || 0);
+  const reviewItems = manifest.review_items || [];
+  const reviewRequired = reviewItems.length > 0 || outstanding > Number(maxWrites || NCL_MAX_WEEKLY_WRITES);
   const backlogExceedsWeeklyCap = outstanding > Number(maxWrites || NCL_MAX_WEEKLY_WRITES);
 
   let applyResult = null;
@@ -90,8 +92,11 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
       outstanding_eligible: outstanding,
       total_outstanding_inserts: outstanding,
       planned_this_run: Number(manifest.planned_this_run ?? (manifest.inserts || []).length),
-      proposed_inserts: outstanding,
+      proposed_inserts: Number(manifest.planned_this_run ?? (manifest.inserts || []).length),
       insert_classification_counts: manifest.insert_classification_counts || null,
+      p3b_classification_counts: manifest.p3b_classification_counts || null,
+      review_items: reviewItems,
+      review_sailing_ids: manifest.review_sailing_ids || [],
       review_required: true,
       terminal_status: "review_required",
       hard_deletes: 0,
@@ -178,8 +183,12 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     outstanding_eligible: outstanding,
     total_outstanding_inserts: outstanding,
     planned_this_run: Number(manifest.planned_this_run ?? (manifest.inserts || []).length),
-    proposed_inserts: outstanding,
+    proposed_inserts: Number(manifest.planned_this_run ?? (manifest.inserts || []).length),
     insert_classification_counts: manifest.insert_classification_counts || null,
+    p3b_classification_counts: manifest.p3b_classification_counts || null,
+    review_items: reviewItems,
+    review_sailing_ids: manifest.review_sailing_ids || [],
+    review_required: reviewRequired,
     proposed_promotions: (manifest.promotions || []).length,
     proposed_cutoff_hides: (manifest.cutoff_hides || []).length,
     proposed_source_absence_hides: (manifest.source_absence_hides || []).length,
@@ -197,8 +206,8 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     ok: summary.success,
     success: summary.success,
     blocked: false,
-    review_required: backlogExceedsWeeklyCap,
-    reason: backlogExceedsWeeklyCap
+    review_required: reviewRequired,
+    reason: reviewRequired
       ? "REVIEW REQUIRED — NO WRITES"
       : summary.success
         ? null
@@ -207,7 +216,8 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     run_id: runId,
     manifest,
     summary,
-    apply: applyResult
+    apply: applyResult,
+    simulation
   };
 }
 

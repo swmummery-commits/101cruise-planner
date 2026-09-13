@@ -62,7 +62,9 @@ async function fetchAllPaginated(rootDir, restPath, { pageSize = 1000, maxRows =
   const rows = [];
   let offset = 0;
   while (true) {
-    const batch = await sb.get(`${restPath}${separator}limit=${pageSize}&offset=${offset}`);
+    const orderedPath = /[?&]order=/.test(restPath) ? restPath : `${restPath}${separator}order=id.asc`;
+    const pageSep = orderedPath.includes("?") ? "&" : "?";
+    const batch = await sb.get(`${orderedPath}${pageSep}limit=${pageSize}&offset=${offset}`);
     if (!Array.isArray(batch) || !batch.length) break;
     rows.push(...batch);
     if (maxRows != null && rows.length >= maxRows) return rows.slice(0, maxRows);

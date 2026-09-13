@@ -343,10 +343,12 @@ function computeSourceSnapshotIdFromSailingIds(sailingIds = []) {
 async function auditProductionIdsViaDetailLookup({
   missingSailingIds = [],
   productionBySailingId = new Map(),
-  maxLookups = 25
+  maxLookups = null
 } = {}) {
   const results = [];
-  for (const sailingId of missingSailingIds.slice(0, maxLookups)) {
+  const ids = [...missingSailingIds];
+  const limit = maxLookups == null ? ids.length : Math.max(0, Number(maxLookups) || 0);
+  for (const sailingId of ids.slice(0, limit)) {
     const row = productionBySailingId.get(sailingId);
     const groupId =
       row?.raw_extract?.royal_caribbean_group_id ||
@@ -401,6 +403,7 @@ function evaluateWeeklyAuthoritativeEnumerationHealth({
     failures,
     production_absent_from_union_count: absentFromUnion.length,
     production_absent_from_union_ids: absentFromUnion.slice(0, 20),
+    production_absent_from_union_ids_all: absentFromUnion,
     detail_lookup_recoverable_count: enumerationGaps.length,
     confirmed_source_removed_count: confirmedSourceRemoved.length,
     unexplained_production_absent_count: unexplainedAbsent.length,

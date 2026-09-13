@@ -15,6 +15,16 @@ const CLASSIFICATIONS = Object.freeze([
   "UNRESOLVED"
 ]);
 
+const P3B_CLASSIFICATIONS = Object.freeze([
+  "RECOGNISED",
+  "UNIQUE_ID_REMAP",
+  "TRUE_NEW",
+  "ALREADY_MATCH_REQUIRED",
+  "MULTIPLE_PRODUCTION_MATCHES",
+  "SOURCE_DUPLICATE",
+  "AMBIGUOUS"
+]);
+
 function normaliseComparable(value) {
   if (value == null) return "";
   return String(value).trim();
@@ -39,28 +49,61 @@ function voyageKeyComplete(key) {
   return parts.length === 5 && parts.every((part) => part !== "");
 }
 
+function pushIndex(map, key, row) {
+  if (!key) return;
+  if (!map.has(key)) map.set(key, []);
+  map.get(key).push(row);
+}
+
 function indexProduction(productionRows = []) {
   const byOfficial = new Map();
+  const byOfficialAll = new Map();
   const byExternal = new Map();
+  const byExternalAll = new Map();
   const byIdentity = new Map();
+  const byIdentityAll = new Map();
   const byCompactOfficial = new Map();
   const byVoyage = new Map();
+  const seenIds = new Set();
   for (const row of productionRows || []) {
+    if (row?.id) {
+      if (seenIds.has(row.id)) continue;
+      seenIds.add(row.id);
+    }
     if (row.official_sailing_id) {
-      byOfficial.set(normaliseComparable(row.official_sailing_id), row);
+      const official = normaliseComparable(row.official_sailing_id);
+      byOfficial.set(official, row);
+      pushIndex(byOfficialAll, official, row);
       const compact = compactOfficialId(row.official_sailing_id);
       if (compact) {
         if (!byCompactOfficial.has(compact)) byCompactOfficial.set(compact, []);
         byCompactOfficial.get(compact).push(row);
       }
     }
-    if (row.external_key) byExternal.set(normaliseComparable(row.external_key), row);
-    if (row.identity_key) byIdentity.set(normaliseComparable(row.identity_key), row);
+    if (row.external_key) {
+      const external = normaliseComparable(row.external_key);
+      byExternal.set(external, row);
+      pushIndex(byExternalAll, external, row);
+    }
+    if (row.identity_key) {
+      const identity = normaliseComparable(row.identity_key);
+      byIdentity.set(identity, row);
+      pushIndex(byIdentityAll, identity, row);
+    }
     const voyage = voyageEquivalenceKey(row);
     if (!byVoyage.has(voyage)) byVoyage.set(voyage, []);
     byVoyage.get(voyage).push(row);
   }
-  return { byOfficial, byExternal, byIdentity, byCompactOfficial, byVoyage };
+  return {
+    byOfficial,
+    byOfficialAll,
+    byExternal,
+    byExternalAll,
+    byIdentity,
+    byIdentityAll,
+    byCompactOfficial,
+    byVoyage
+  };
 }
 
 function statusBucket(row) {
@@ -182,9 +225,348 @@ function classifyNorwegianVoyageInsertSet(inserts = [], productionRows = []) {
   };
 }
 
+function emptyP3bCounts() {
+  return Object.fromEntries(P3B_CLASSIFICATIONS.map((name) => [name, 0]));
+}
+
+function classifyNorwegianP3bCandidate(candidate = {}, productionRows = [], indexes = null, sourceOfficialCounts = null) {
+  const idx = indexes || indexProduction(productionRows);
+  const official = normaliseComparable(candidate.official_sailing_id);
+  const external = normaliseComparable(candidate.external_key || candidate.candidate?.external_key);
+  const identity = normaliseComparable(candidate.identity_key || candidate.candidate?.identity_key);
+  const voyage = voyageEquivalenceKey({
+    ship_id: candidate.ship_id || candidate.candidate?.ship_id,
+    departure_date: candidate.departure_date || candidate.candidate?.departure_date,
+    return_date: candidate.return_date || candidate.candidate?.return_date,
+    nights: candidate.nights ?? candidate.candidate?.nights,
+    departure_port: candidate.departure_port || candidate.candidate?.departure_port
+  });
+
+  if (official && sourceOfficialCounts && (sourceOfficialCounts.get(official) || 0) > 1) {
+    return {
+      classification: "SOURCE_DUPLICATE",
+      reason: "duplicate_official_id_in_source_eligible_set",
+      matching_production: idx.byOfficialAll.get(official) || []
+    };
+  }
+
+  const officialMatches = official ? idx.byOfficialAll.get(official) || [] : [];
+  if (officialMatches.length === 1) {
+    const existing = officialMatches[0];
+    if (existing.status === "match_required") {
+      return {
+        classification: "ALREADY_MATCH_REQUIRED",
+        reason: "official_sailing_id_present_match_required",
+        matching_production: officialMatches,
+        existing_uuid: existing.id
+      };
+    }
+    return {
+      classification: "RECOGNISED",
+      reason: "unique_official_sailing_id",
+      matching_production: officialMatches,
+      existing_uuid: existing.id
+    };
+  }
+  if (officialMatches.length > 1) {
+    return {
+      classification: "MULTIPLE_PRODUCTION_MATCHES",
+      reason: "official_sailing_id_matches_multiple_production_rows",
+      matching_production: officialMatches
+    };
+  }
+
+  const externalMatches = external ? idx.byExternalAll.get(external) || [] : [];
+  if (externalMatches.length > 1) {
+    return {
+      classification: "MULTIPLE_PRODUCTION_MATCHES",
+      reason: "external_key_matches_multiple_production_rows",
+      matching_production: externalMatches
+    };
+  }
+  const identityMatches = identity ? idx.byIdentityAll.get(identity) || [] : [];
+  if (identityMatches.length > 1) {
+    return {
+      classification: "MULTIPLE_PRODUCTION_MATCHES",
+      reason: "identity_key_matches_multiple_production_rows",
+      matching_production: identityMatches
+    };
+  }
+
+  const compact = compactOfficialId(official);
+  const compactMatches = compact ? idx.byCompactOfficial.get(compact) || [] : [];
+  if (compactMatches.length > 1) {
+    return {
+      classification: "MULTIPLE_PRODUCTION_MATCHES",
+      reason: "multiple_compact_official_id_matches",
+      matching_production: compactMatches
+    };
+  }
+
+  if (!voyageKeyComplete(voyage)) {
+    return { classification: "AMBIGUOUS", reason: "incomplete_voyage_equivalence", matching_production: [] };
+  }
+
+  const voyageMatches = idx.byVoyage.get(voyage) || [];
+  if (voyageMatches.length > 1) {
+    return {
+      classification: "MULTIPLE_PRODUCTION_MATCHES",
+      reason: "multiple_production_rows_same_voyage",
+      matching_production: voyageMatches
+    };
+  }
+  if (voyageMatches.length === 1) {
+    const existing = voyageMatches[0];
+    if (existing.status === "match_required") {
+      return {
+        classification: "ALREADY_MATCH_REQUIRED",
+        reason: "unique_voyage_match_required",
+        matching_production: voyageMatches,
+        existing_uuid: existing.id,
+        previous_official_sailing_id: existing.official_sailing_id,
+        next_official_sailing_id: official
+      };
+    }
+    return {
+      classification: "UNIQUE_ID_REMAP",
+      reason: "unique_voyage_equivalence_different_official_id",
+      matching_production: voyageMatches,
+      existing_uuid: existing.id,
+      previous_official_sailing_id: existing.official_sailing_id,
+      next_official_sailing_id: official
+    };
+  }
+
+  if (externalMatches.length === 1) {
+    const existing = externalMatches[0];
+    if (existing.status === "match_required") {
+      return {
+        classification: "ALREADY_MATCH_REQUIRED",
+        reason: "unique_external_key_match_required",
+        matching_production: externalMatches,
+        existing_uuid: existing.id
+      };
+    }
+    return {
+      classification: "UNIQUE_ID_REMAP",
+      reason: "unique_external_key",
+      matching_production: externalMatches,
+      existing_uuid: existing.id
+    };
+  }
+  if (identityMatches.length === 1) {
+    const existing = identityMatches[0];
+    if (existing.status === "match_required") {
+      return {
+        classification: "ALREADY_MATCH_REQUIRED",
+        reason: "unique_identity_key_match_required",
+        matching_production: identityMatches,
+        existing_uuid: existing.id
+      };
+    }
+    return {
+      classification: "UNIQUE_ID_REMAP",
+      reason: "unique_identity_key",
+      matching_production: identityMatches,
+      existing_uuid: existing.id
+    };
+  }
+  if (compactMatches.length === 1) {
+    const existing = compactMatches[0];
+    if (existing.status === "match_required") {
+      return {
+        classification: "ALREADY_MATCH_REQUIRED",
+        reason: "compact_official_id_match_required",
+        matching_production: compactMatches,
+        existing_uuid: existing.id
+      };
+    }
+    return {
+      classification: "UNIQUE_ID_REMAP",
+      reason: "official_id_punctuation_or_case_variant",
+      matching_production: compactMatches,
+      existing_uuid: existing.id,
+      previous_official_sailing_id: existing.official_sailing_id,
+      next_official_sailing_id: official
+    };
+  }
+
+  return {
+    classification: "TRUE_NEW",
+    reason: "no_official_external_identity_or_voyage_match",
+    matching_production: []
+  };
+}
+
+function classifyNorwegianP3bEligibleSet(eligibleProducts = [], productionRows = []) {
+  const indexes = indexProduction(productionRows);
+  const sourceOfficialCounts = new Map();
+  for (const product of eligibleProducts || []) {
+    const official = normaliseComparable(product.official_sailing_id);
+    if (!official) continue;
+    sourceOfficialCounts.set(official, (sourceOfficialCounts.get(official) || 0) + 1);
+  }
+  const classified = (eligibleProducts || []).map((product) => ({
+    official_sailing_id: product.official_sailing_id || null,
+    ...product,
+    ...classifyNorwegianP3bCandidate(product, productionRows, indexes, sourceOfficialCounts)
+  }));
+  const counts = emptyP3bCounts();
+  for (const row of classified) {
+    counts[row.classification] = (counts[row.classification] || 0) + 1;
+  }
+  const sum = P3B_CLASSIFICATIONS.reduce((acc, name) => acc + (counts[name] || 0), 0);
+  const outstanding = classified.filter((row) => row.classification !== "RECOGNISED");
+  return {
+    total: classified.length,
+    counts,
+    accounting_ok: sum === classified.length,
+    classified,
+    outstanding_total: outstanding.length,
+    authorised_automatic: classified.filter((row) =>
+      ["UNIQUE_ID_REMAP", "TRUE_NEW", "ALREADY_MATCH_REQUIRED"].includes(row.classification)
+    ),
+    review_required: classified.filter((row) =>
+      ["MULTIPLE_PRODUCTION_MATCHES", "AMBIGUOUS", "SOURCE_DUPLICATE"].includes(row.classification)
+    )
+  };
+}
+
+function norwegianP3bWriteAllowed(classification) {
+  return ["UNIQUE_ID_REMAP", "TRUE_NEW", "ALREADY_MATCH_REQUIRED"].includes(classification);
+}
+
+function norwegianMultipleProductionMatchBlocksWrite(classification) {
+  return classification === "MULTIPLE_PRODUCTION_MATCHES";
+}
+
+const AMBIGUITY_REASONS = Object.freeze([
+  "SOURCE_FIELD_INCOMPLETE",
+  "PRODUCTION_FIELD_INCOMPLETE",
+  "IDENTITY_FORMAT_DIFFERENCE",
+  "DATE_OR_DURATION_DIFFERENCE",
+  "PORT_DIFFERENCE",
+  "DESTINATION_ONLY_DIFFERENCE",
+  "OTHER"
+]);
+
+function fieldPresent(value) {
+  if (value == null) return false;
+  const text = String(value).trim();
+  return text !== "" && text !== "undefined" && text !== "null";
+}
+
+function sourceVoyageFields(row = {}) {
+  return {
+    ship_id: row.ship_id || row.canonical_ship_id || row.candidate?.ship_id || null,
+    departure_date: String(row.departure_date || row.candidate?.departure_date || "").slice(0, 10) || null,
+    return_date: String(row.return_date || row.candidate?.return_date || "").slice(0, 10) || null,
+    nights: row.nights ?? row.candidate?.nights ?? null,
+    departure_port: row.departure_port || row.canonical_departure_port || row.candidate?.departure_port || null,
+    destination_id: row.destination_id || row.destination || row.candidate?.destination_id || null
+  };
+}
+
+function scoreNearestNorwegianProduction(source = {}, productionRows = []) {
+  const src = sourceVoyageFields(source);
+  let best = [];
+  let bestScore = -1;
+  for (const row of productionRows || []) {
+    let score = 0;
+    if (src.ship_id && row.ship_id === src.ship_id) score += 8;
+    if (src.departure_date && String(row.departure_date || "").slice(0, 10) === src.departure_date) score += 6;
+    if (src.return_date && String(row.return_date || "").slice(0, 10) === src.return_date) score += 3;
+    if (src.nights != null && Number(row.nights) === Number(src.nights)) score += 2;
+    if (src.departure_port && normaliseComparable(row.departure_port) === normaliseComparable(src.departure_port)) {
+      score += 2;
+    }
+    if (src.destination_id && (row.destination_id || row.destination) === src.destination_id) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      best = [row];
+    } else if (score === bestScore && score > 0) {
+      best.push(row);
+    }
+  }
+  return { nearest: best, score: bestScore };
+}
+
+function classifyNorwegianAmbiguityReason(candidate = {}, productionRows = []) {
+  const src = sourceVoyageFields(candidate);
+  const sourceIncomplete = ["ship_id", "departure_date", "return_date", "nights", "departure_port"].some(
+    (field) => !fieldPresent(src[field])
+  );
+  if (sourceIncomplete) {
+    return {
+      ambiguity_reason: "SOURCE_FIELD_INCOMPLETE",
+      detail: "source voyage fingerprint missing ship, dates, nights, or departure port"
+    };
+  }
+
+  const { nearest } = scoreNearestNorwegianProduction(candidate, productionRows);
+  if (!nearest.length) {
+    return { ambiguity_reason: "OTHER", detail: "no scored production neighbour" };
+  }
+
+  const productionIncomplete = nearest.some((row) =>
+    ["ship_id", "departure_date", "return_date", "nights", "departure_port"].some((field) => !fieldPresent(row[field]))
+  );
+  if (productionIncomplete) {
+    return {
+      ambiguity_reason: "PRODUCTION_FIELD_INCOMPLETE",
+      detail: "nearest production candidate missing voyage fingerprint fields"
+    };
+  }
+
+  const sameShip = nearest.filter((row) => row.ship_id === src.ship_id);
+  const compare = sameShip[0] || nearest[0];
+  const prodDate = String(compare.departure_date || "").slice(0, 10);
+  const prodReturn = String(compare.return_date || "").slice(0, 10);
+  if (prodDate !== src.departure_date || prodReturn !== src.return_date || Number(compare.nights) !== Number(src.nights)) {
+    return {
+      ambiguity_reason: "DATE_OR_DURATION_DIFFERENCE",
+      detail: "nearest production neighbour differs in departure, return, or nights"
+    };
+  }
+  if (normaliseComparable(compare.departure_port) !== normaliseComparable(src.departure_port)) {
+    return { ambiguity_reason: "PORT_DIFFERENCE", detail: "nearest production neighbour differs in departure port" };
+  }
+
+  const srcOfficial = compactOfficialId(candidate.official_sailing_id);
+  const prodOfficial = compactOfficialId(compare.official_sailing_id);
+  if (srcOfficial && prodOfficial && srcOfficial !== prodOfficial) {
+    const sharedPrefix =
+      srcOfficial.slice(0, 8) && prodOfficial.startsWith(srcOfficial.slice(0, 8));
+    if (sharedPrefix) {
+      return {
+        ambiguity_reason: "IDENTITY_FORMAT_DIFFERENCE",
+        detail: "official sailing id format differs from nearest production neighbour"
+      };
+    }
+  }
+
+  const srcDest = normaliseComparable(src.destination_id);
+  const prodDest = normaliseComparable(compare.destination_id || compare.destination);
+  if (srcDest && prodDest && srcDest !== prodDest) {
+    return {
+      ambiguity_reason: "DESTINATION_ONLY_DIFFERENCE",
+      detail: "protected voyage fields agree; destination is the only disagreement"
+    };
+  }
+
+  return { ambiguity_reason: "OTHER", detail: candidate.reason || "unresolved_norwegian_identity" };
+}
+
 module.exports = {
   CLASSIFICATIONS,
+  P3B_CLASSIFICATIONS,
+  AMBIGUITY_REASONS,
   voyageEquivalenceKey,
   classifyNorwegianVoyageInsert,
-  classifyNorwegianVoyageInsertSet
+  classifyNorwegianVoyageInsertSet,
+  classifyNorwegianP3bCandidate,
+  classifyNorwegianP3bEligibleSet,
+  classifyNorwegianAmbiguityReason,
+  norwegianP3bWriteAllowed,
+  norwegianMultipleProductionMatchBlocksWrite
 };

@@ -21,7 +21,26 @@ const {
   extractPreviousAbsentSailingIds
 } = require("./norwegian-source-absence");
 const { shouldRemoveFromPublicInventory } = require("./public-discovered-cruise-inventory");
-const { classifyNorwegianVoyageInsertSet } = require("./norwegian-voyage-identity-classifier");
+const {
+  classifyNorwegianVoyageInsertSet,
+  classifyNorwegianP3bEligibleSet,
+  classifyNorwegianAmbiguityReason
+} = require("./norwegian-voyage-identity-classifier");
+
+function mapNorwegianIdentityFields(product = {}) {
+  return {
+    official_sailing_id: product.official_sailing_id,
+    external_key: product.external_key,
+    identity_key: product.identity_key,
+    ship_id: product.ship_id || product.ship_resolution?.ship?.id,
+    departure_date: product.departure_date || product.raw?.departure_date,
+    return_date: product.return_date || product.raw?.return_date,
+    nights: product.nights ?? product.raw?.duration,
+    departure_port: product.departure_port || product.departure_port_meta?.canonicalPortName,
+    destination_id: product.destination_id || product.destination_resolution?.destination?.id,
+    itinerary: product.itinerary || product.raw?.itinerary || null
+  };
+}
 
 async function buildNorwegianWeeklyManifest({
   simulation,
@@ -44,10 +63,38 @@ async function buildNorwegianWeeklyManifest({
     genuineRows.filter((r) => r.official_sailing_id).map((r) => [r.official_sailing_id, r])
   );
 
+  const identityMapped = eligibleProducts.map((p) => ({ product: p, mapped: mapNorwegianIdentityFields(p) }));
+  const p3bClassification = classifyNorwegianP3bEligibleSet(
+    identityMapped.map((row) => row.mapped),
+    genuineRows
+  );
+  const classifiedByOfficial = new Map(
+    (p3bClassification.classified || []).map((row) => [row.official_sailing_id, row])
+  );
   const newProducts = eligibleProducts.filter((p) => !productionByOfficial.has(p.official_sailing_id));
-  const insertClassification = classifyNorwegianVoyageInsertSet(newProducts, genuineRows);
+  const insertClassification = classifyNorwegianVoyageInsertSet(
+    newProducts.map((p) => mapNorwegianIdentityFields(p)),
+    genuineRows
+  );
+  const trueNewProducts = eligibleProducts.filter((p) => {
+    const classified = classifiedByOfficial.get(p.official_sailing_id);
+    return classified?.classification === "TRUE_NEW";
+  });
+  const reviewItems = (p3bClassification.review_required || []).map((row) => {
+    const ambiguity =
+      row.classification === "AMBIGUOUS" ? classifyNorwegianAmbiguityReason(row, genuineRows) : null;
+    return {
+      official_sailing_id: row.official_sailing_id,
+      classification: row.classification,
+      reason: row.reason,
+      ambiguity_reason: ambiguity?.ambiguity_reason || null,
+      ambiguity_detail: ambiguity?.detail || null,
+      matching_production_ids: (row.matching_production || []).map((item) => item.id).filter(Boolean)
+    };
+  });
   const limitedNew =
-    maxNewInserts == null ? newProducts : newProducts.slice(0, Math.max(0, maxNewInserts));
+    maxNewInserts == null ? trueNewProducts : trueNewProducts.slice(0, Math.max(0, maxNewInserts));
+  const trueOutstanding = trueNewProducts.length + reviewItems.length + (p3bClassification.counts.UNIQUE_ID_REMAP || 0);
 
   const insertManifest = await buildManifestFromEntries({
     entries: limitedNew,
@@ -134,11 +181,16 @@ async function buildNorwegianWeeklyManifest({
       within_cutoff: simulation?.eligibility?.within_public_booking_cutoff ?? null
     },
     production_genuine: genuineRows.length,
-    recognised_eligible: eligibleProducts.filter((p) => productionByOfficial.has(p.official_sailing_id)).length,
-    outstanding_eligible: newProducts.length,
-    total_outstanding_inserts: newProducts.length,
+    recognised_eligible: p3bClassification.counts.RECOGNISED || 0,
+    outstanding_eligible: trueOutstanding,
+    total_outstanding_inserts: trueOutstanding,
     planned_this_run: limitedNew.length,
     insert_classification_counts: insertClassification.counts,
+    p3b_classification_counts: p3bClassification.counts,
+    review_items: reviewItems,
+    review_sailing_ids: reviewItems.map((row) => row.official_sailing_id).filter(Boolean),
+    unique_id_remaps: (p3bClassification.classified || []).filter((row) => row.classification === "UNIQUE_ID_REMAP"),
+    already_match_required: p3bClassification.counts.ALREADY_MATCH_REQUIRED || 0,
     inserts: insertManifest.entries || [],
     insert_manifest: insertManifest,
     promotions,
