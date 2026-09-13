@@ -1,9 +1,6 @@
 /**
- * Cruise line newsletter room-type selector enhancements.
- *
- * Keeps Administration → Stateroom Types manual ordering intact, while making
- * the Cruise Lines → Room Types checklist easier to scan and allowing admins
- * to create/select a missing canonical room type without leaving the line.
+ * Cruise Database → Cruise Lines → Room Types.
+ * Uses the canonical Administration → Stateroom Types catalogue.
  */
 (function (global) {
   "use strict";
@@ -26,27 +23,18 @@
 
   function alphaTypes(rows) {
     return (Array.isArray(rows) ? rows.slice() : []).sort((a, b) =>
-      String(a?.name || "").localeCompare(String(b?.name || ""), "en", {
-        sensitivity: "base",
-        numeric: true
-      })
+      String(a?.name || "").localeCompare(String(b?.name || ""), "en", { sensitivity: "base", numeric: true })
     );
   }
 
   function checkedTypeIds() {
-    return new Set(
-      Array.from(document.querySelectorAll(".ci-line-stateroom-type-cb:checked"))
-        .map((el) => String(el.value || "").trim())
-        .filter(Boolean)
-    );
+    return new Set(Array.from(document.querySelectorAll(".ci-line-stateroom-type-cb:checked"))
+      .map((el) => String(el.value || "").trim()).filter(Boolean));
   }
 
   function rerender() {
-    if (typeof global.renderCiAdmin === "function") {
-      global.renderCiAdmin();
-      return;
-    }
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
+    if (typeof global.renderCiAdmin === "function") global.renderCiAdmin();
+    else if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
 
   function applyCheckedTypeIds(ids) {
@@ -54,21 +42,12 @@
     document.querySelectorAll(".ci-line-stateroom-type-cb").forEach((el) => {
       el.checked = selected.has(String(el.value || ""));
     });
-    if (typeof global.updateCiLineSaveButtonState === "function") {
-      global.updateCiLineSaveButtonState();
-    }
+    if (typeof global.updateCiLineSaveButtonState === "function") global.updateCiLineSaveButtonState();
   }
 
   function messageHtml() {
     if (!addMessage) return "";
-    const klass =
-      addMessageTone === "error"
-        ? "admin-error"
-        : addMessageTone === "success"
-          ? "admin-success"
-          : addMessageTone === "running"
-            ? "admin-running"
-            : "";
+    const klass = addMessageTone === "error" ? "admin-error" : addMessageTone === "success" ? "admin-success" : addMessageTone === "running" ? "admin-running" : "";
     return `<div class="admin-message ${klass}">${escapeHtml(addMessage)}</div>`;
   }
 
@@ -76,183 +55,104 @@
     if (!addOpen) return messageHtml();
     return `
       <div class="admin-field" style="margin-top:12px; max-width:520px;">
-        <label for="ciLineNewRoomType">New room type</label>
-        <input
-          id="ciLineNewRoomType"
-          type="text"
-          maxlength="120"
-          autocomplete="off"
-          placeholder="e.g. Ocean Penthouse Suite"
-          value="${escapeHtml(addDraft)}"
+        <label for="ciLineNewRoomType">New stateroom type</label>
+        <input id="ciLineNewRoomType" type="text" maxlength="120" autocomplete="off"
+          placeholder="e.g. Ocean Penthouse Suite" value="${escapeHtml(addDraft)}"
           oninput="setCiLineNewsletterRoomTypeDraft(this.value)"
-          onkeydown="if (event.key === 'Enter') { event.preventDefault(); addCiLineNewsletterRoomType(); }"
-          ${addBusy ? "disabled" : ""}
-        >
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addCiLineNewsletterRoomType();}" ${addBusy ? "disabled" : ""}>
       </div>
       <div class="admin-form-actions" style="margin-top:-8px; margin-bottom:8px;">
-        <button type="button" class="admin-button small" onclick="addCiLineNewsletterRoomType()" ${addBusy ? "disabled" : ""}>
-          ${addBusy ? "Adding…" : "Add & select"}
-        </button>
+        <button type="button" class="admin-button small" onclick="addCiLineNewsletterRoomType()" ${addBusy ? "disabled" : ""}>${addBusy ? "Adding…" : "Add & select"}</button>
         <button type="button" class="admin-button secondary small" onclick="cancelCiLineNewsletterRoomTypeAdd()" ${addBusy ? "disabled" : ""}>Cancel</button>
       </div>
-      ${messageHtml()}
-    `;
+      ${messageHtml()}`;
   }
 
   function roomTypeGridHtml(types, assigned) {
-    if (!types.length) {
-      return `<p class="admin-small">No active room types exist yet. Add the first room type here, or manage the full catalogue under Administration → Stateroom Types.</p>`;
-    }
+    if (!types.length) return `<p class="admin-small">No stateroom types exist yet. Add the first type here or under Administration → Stateroom Types.</p>`;
     return `
       <div class="ci-checkbox-row ci-stateroom-type-grid">
-        ${types
-          .map(
-            (type) => `
+        ${types.map((type) => `
           <label class="ci-check-control">
             <input type="checkbox" class="ci-line-stateroom-type-cb" value="${escapeHtml(type.id)}" ${assigned.has(String(type.id)) ? "checked" : ""}>
             ${escapeHtml(type.name)}
-          </label>
-        `
-          )
-          .join("")}
-      </div>
-    `;
+          </label>`).join("")}
+      </div>`;
   }
 
-  // Override only the Cruise Line room-type section. The canonical Stateroom
-  // Types page keeps its drag-defined display_order for pricing dropdowns.
-  global.renderCiLineStateroomTypesSection = function renderCiLineStateroomTypesSectionAlpha(line) {
+  global.renderCiLineStateroomTypesSection = function renderCiLineStateroomTypesSectionCanonical(line) {
     if (!line?.id) return "";
     if (stateroomTypesCatalogLoading) {
-      return `
-        <div class="ci-stateroom-types-panel">
-          <h4>Room types for newsletter pricing</h4>
-          <p class="admin-muted admin-running-status" role="status">Loading stateroom types…</p>
-        </div>`;
+      return `<div class="ci-stateroom-types-panel"><h4>Room Types</h4><p class="admin-muted admin-running-status">Loading stateroom types…</p></div>`;
     }
     if (stateroomTypesLoadError) {
-      return `
-        <div class="ci-stateroom-types-panel">
-          <h4>Room types for newsletter pricing</h4>
-          <div class="admin-message admin-error">${escapeHtml(stateroomTypesLoadError)}</div>
-          <button type="button" class="admin-button secondary small" onclick="loadStateroomTypesForPricing({ rerender: true })">Retry</button>
-        </div>`;
+      return `<div class="ci-stateroom-types-panel"><h4>Room Types</h4><div class="admin-message admin-error">${escapeHtml(stateroomTypesLoadError)}</div><button type="button" class="admin-button secondary small" onclick="loadStateroomTypesForPricing({rerender:true})">Retry</button></div>`;
     }
 
     const types = alphaTypes(stateroomTypesActive);
     const assigned = new Set((cruiseLineStateroomAllocations[line.id] || []).map(String));
-
     return `
       <div class="ci-stateroom-types-panel">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <h4 style="margin-bottom:0;">Room types for newsletter pricing</h4>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <h4 style="margin-bottom:0;">Room Types</h4>
           <button type="button" class="admin-button secondary small" onclick="openCiLineNewsletterRoomTypeAdd()" ${addBusy ? "disabled" : ""}>+ Add room type</button>
         </div>
-        <p class="admin-small" style="margin-top:8px;">Select the room types available when entering newsletter prices for this cruise line. Leave all unchecked to allow every active type. Room types are shown A–Z.</p>
+        <p class="admin-small" style="margin-top:8px;">These are the canonical stateroom types available to this cruise line. Checked means available; unchecked means not available. Types are shown A–Z.</p>
         ${addFormHtml()}
         ${roomTypeGridHtml(types, assigned)}
       </div>`;
   };
 
-  global.openCiLineNewsletterRoomTypeAdd = function openCiLineNewsletterRoomTypeAdd() {
+  global.openCiLineNewsletterRoomTypeAdd = function () {
     if (addBusy) return;
-    addOpen = true;
-    addMessage = "";
-    addMessageTone = "";
-    rerender();
+    addOpen = true; addMessage = ""; addMessageTone = ""; rerender();
     setTimeout(() => document.getElementById("ciLineNewRoomType")?.focus(), 0);
   };
 
-  global.cancelCiLineNewsletterRoomTypeAdd = function cancelCiLineNewsletterRoomTypeAdd() {
+  global.cancelCiLineNewsletterRoomTypeAdd = function () {
     if (addBusy) return;
-    addOpen = false;
-    addDraft = "";
-    addMessage = "";
-    addMessageTone = "";
-    rerender();
+    addOpen = false; addDraft = ""; addMessage = ""; addMessageTone = ""; rerender();
   };
 
-  global.setCiLineNewsletterRoomTypeDraft = function setCiLineNewsletterRoomTypeDraft(value) {
-    addDraft = String(value ?? "");
-  };
+  global.setCiLineNewsletterRoomTypeDraft = function (value) { addDraft = String(value ?? ""); };
 
-  global.addCiLineNewsletterRoomType = async function addCiLineNewsletterRoomType() {
-    const svc = global.StateroomTypesService;
-    if (!svc || addBusy) return;
-
+  global.addCiLineNewsletterRoomType = async function () {
+    const service = global.StateroomTypesService;
+    if (!service || addBusy) return;
     const input = document.getElementById("ciLineNewRoomType");
     addDraft = String(input?.value ?? addDraft ?? "");
-    const requestedName = svc.trimName(addDraft);
+    const requestedName = service.trimName(addDraft);
     if (!requestedName) {
-      addMessage = "Enter a room type name.";
-      addMessageTone = "error";
-      addOpen = true;
-      rerender();
+      addMessage = "Enter a room type name."; addMessageTone = "error"; addOpen = true; rerender();
       setTimeout(() => document.getElementById("ciLineNewRoomType")?.focus(), 0);
       return;
     }
 
     const selectedBefore = checkedTypeIds();
     addBusy = true;
-    if (input) input.disabled = true;
-    const addButton = document.querySelector('[onclick="addCiLineNewsletterRoomType()"]');
-    if (addButton) addButton.disabled = true;
-
     try {
-      const allTypes = await svc.listAllStateroomTypes();
-      const normalized = svc.normalizeName(requestedName);
-      let target = (allTypes || []).find((row) => svc.normalizeName(row?.name) === normalized) || null;
-      let outcome = "selected";
-
-      if (target?.is_active === false) {
-        const validation = svc.validateStateroomTypeInput({
-          name: target.name,
-          is_active: true,
-          existingRows: allTypes,
-          editingId: target.id
-        });
+      const allTypes = await service.listAllStateroomTypes();
+      const key = service.normalizeName(requestedName);
+      let target = allTypes.find((row) => service.normalizeName(row?.name) === key) || null;
+      let created = false;
+      if (!target) {
+        const validation = service.buildCreatePayload({ name: requestedName, existingRows: allTypes });
         if (!validation.ok) throw new Error(validation.error);
-        target = await svc.updateStateroomType(target.id, validation.payload);
-        outcome = "reactivated";
-      } else if (!target) {
-        const validation = svc.buildCreatePayload({
-          name: requestedName,
-          is_active: true,
-          existingRows: allTypes
-        });
-        if (!validation.ok) throw new Error(validation.error);
-        target = await svc.createStateroomType(validation.payload);
-        outcome = "created";
+        target = await service.createStateroomType(validation.payload);
+        created = true;
       }
-
-      if (!target?.id) throw new Error("The room type was saved but no room type id was returned.");
-
+      if (!target?.id) throw new Error("The room type was saved but no id was returned.");
       selectedBefore.add(String(target.id));
       await global.loadStateroomTypesForPricing({ rerender: false });
-
-      addOpen = false;
-      addDraft = "";
-      addMessageTone = "success";
-      addMessage =
-        outcome === "created"
-          ? `“${target.name || requestedName}” was added and selected. Click Save line to save this cruise-line selection.`
-          : outcome === "reactivated"
-            ? `“${target.name || requestedName}” already existed but was inactive. It has been reactivated and selected. Click Save line to save this cruise-line selection.`
-            : `“${target.name || requestedName}” already exists and has been selected. Click Save line to save this cruise-line selection.`;
-
-      addBusy = false;
+      addOpen = false; addDraft = ""; addBusy = false; addMessageTone = "success";
+      addMessage = created
+        ? `“${target.name || requestedName}” was added to the master list and selected. Click Save line to save this cruise-line allocation.`
+        : `“${target.name || requestedName}” already exists and has been selected. Click Save line to save this cruise-line allocation.`;
       rerender();
       setTimeout(() => applyCheckedTypeIds(selectedBefore), 0);
     } catch (error) {
-      addBusy = false;
-      addOpen = true;
-      addMessage = error?.message || "Could not add the room type.";
-      addMessageTone = "error";
-      rerender();
-      setTimeout(() => {
-        applyCheckedTypeIds(selectedBefore);
-        document.getElementById("ciLineNewRoomType")?.focus();
-      }, 0);
+      addBusy = false; addOpen = true; addMessage = error?.message || "Could not add the room type."; addMessageTone = "error"; rerender();
+      setTimeout(() => { applyCheckedTypeIds(selectedBefore); document.getElementById("ciLineNewRoomType")?.focus(); }, 0);
     }
   };
 })(typeof window !== "undefined" ? window : globalThis);
