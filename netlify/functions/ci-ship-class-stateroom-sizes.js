@@ -1,8 +1,9 @@
 /**
- * Admin save ship-class room size defaults and propagate them to class ships.
+ * Admin load/save ship-class room size defaults.
+ * Saving propagates defaults to class ships without overwriting ship overrides.
  *
+ * GET  /.netlify/functions/ci-ship-class-stateroom-sizes?cruise_line_id=&class_name=
  * POST /.netlify/functions/ci-ship-class-stateroom-sizes
- * Body: { cruise_line_id, class_name, source_ship_id, stateroom_sizes }
  */
 const { requireAdmin } = require("./admin-auth");
 const {
@@ -108,29 +109,57 @@ function applyDefaultsToShip(ship, defaultsByLabel, sourceShipId) {
   return { changed, rows };
 }
 
-exports.handler = async function (event) {
-  if (event.httpMethod === "OPTIONS") {
-    return jsonResponse(200, {}, "POST, OPTIONS");
-  }
-  if (event.httpMethod !== "POST") {
-    return jsonResponse(405, { success: false, error: "METHOD_NOT_ALLOWED" }, "POST, OPTIONS");
-  }
-
+async function authorize(event, methods) {
   try {
     await requireAdmin(event);
+    return null;
   } catch (error) {
     return jsonResponse(error.statusCode || 401, {
       success: false,
       error: error.code || "UNAUTHORIZED",
       detail: error.message
-    }, "POST, OPTIONS");
+    }, methods);
+  }
+}
+
+exports.handler = async function (event) {
+  const methods = "GET, POST, OPTIONS";
+  if (event.httpMethod === "OPTIONS") return jsonResponse(200, {}, methods);
+  if (event.httpMethod !== "GET" && event.httpMethod !== "POST") {
+    return jsonResponse(405, { success: false, error: "METHOD_NOT_ALLOWED" }, methods);
+  }
+
+  const authError = await authorize(event, methods);
+  if (authError) return authError;
+
+  if (event.httpMethod === "GET") {
+    const params = event.queryStringParameters || {};
+    const cruiseLineId = String(params.cruise_line_id || "").trim();
+    const className = String(params.class_name || "").trim();
+    if (!cruiseLineId || !className || !ClassTpl.normalizeClassKey(className)) {
+      return jsonResponse(400, { success: false, error: "INVALID_CLASS" }, methods);
+    }
+    try {
+      const template = await fetchTemplateForClass(cruiseLineId, className);
+      return jsonResponse(200, {
+        success: true,
+        class_name: className,
+        stateroom_sizes: Array.isArray(template && template.stateroom_sizes) ? template.stateroom_sizes : []
+      }, methods);
+    } catch (error) {
+      return jsonResponse(error.status || 500, {
+        success: false,
+        error: "LOAD_FAILED",
+        detail: String(error.message || error)
+      }, methods);
+    }
   }
 
   let body = {};
   try {
     body = event.body ? JSON.parse(event.body) : {};
   } catch (_error) {
-    return jsonResponse(400, { success: false, error: "INVALID_JSON" }, "POST, OPTIONS");
+    return jsonResponse(400, { success: false, error: "INVALID_JSON" }, methods);
   }
 
   const cruiseLineId = String(body.cruise_line_id || "").trim();
@@ -138,7 +167,7 @@ exports.handler = async function (event) {
   const sourceShipId = String(body.source_ship_id || "").trim();
   const classKey = ClassTpl.normalizeClassKey(className);
   if (!cruiseLineId || !className || !classKey) {
-    return jsonResponse(400, { success: false, error: "INVALID_CLASS" }, "POST, OPTIONS");
+    return jsonResponse(400, { success: false, error: "INVALID_CLASS" }, methods);
   }
 
   const cleaned = sanitizeDefaults(body.stateroom_sizes);
@@ -147,7 +176,7 @@ exports.handler = async function (event) {
       success: false,
       error: cleaned.error,
       detail: cleaned.label ? `Invalid room or balcony size for ${cleaned.label}.` : "Invalid size."
-    }, "POST, OPTIONS");
+    }, methods);
   }
 
   try {
@@ -208,12 +237,12 @@ exports.handler = async function (event) {
       stateroom_sizes: cleaned.rows,
       class_ship_count: classShips.length,
       updated_ship_count: updatedShips
-    }, "POST, OPTIONS");
+    }, methods);
   } catch (error) {
     return jsonResponse(error.status || 500, {
       success: false,
       error: "SAVE_FAILED",
       detail: String(error.message || error)
-    }, "POST, OPTIONS");
+    }, methods);
   }
 };
