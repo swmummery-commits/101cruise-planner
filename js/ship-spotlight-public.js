@@ -2,9 +2,13 @@
   "use strict";
 
   const page = document.getElementById("shipPage");
+  const mount = document.getElementById("shipPresentationMount");
+  const extras = document.getElementById("shipPublicExtras");
   const loading = document.getElementById("shipLoading");
   const errorBox = document.getElementById("shipError");
   const errorText = document.getElementById("shipErrorText");
+  const lightbox = document.getElementById("shipLightbox");
+  const lightboxImage = document.getElementById("shipLightboxImage");
 
   const esc = (value) => String(value == null ? "" : value)
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
@@ -17,162 +21,241 @@
     return new URLSearchParams(location.search).get("slug") || "";
   }
 
-  function date(value) {
+  function formatDate(value) {
     if (!value) return "";
     const parsed = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) return value;
+    if (Number.isNaN(parsed.getTime())) return String(value);
     return parsed.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
   }
 
-  function number(value, suffix = "") {
-    if (value == null || value === "") return "";
-    const n = Number(value);
-    return `${Number.isFinite(n) ? n.toLocaleString("en-AU", { maximumFractionDigits: 1 }) : value}${suffix}`;
-  }
-
-  function year(value) {
-    if (value == null || value === "") return "";
-    const n = Number(value);
-    return Number.isFinite(n) && n > 0 ? String(Math.trunc(n)) : String(value);
-  }
-
-  function stat(label, value) {
-    if (!value) return "";
-    return `<div class="stat"><div class="stat-label">${esc(label)}</div><div class="stat-value">${esc(value)}</div></div>`;
-  }
-
-  function flattenEditorial(value, out = []) {
-    if (out.length >= 6 || value == null) return out;
-    if (typeof value === "string") {
-      const text = value.replace(/\s+/g, " ").trim();
-      if (text.length >= 45 && text.length <= 650 && !out.includes(text)) out.push(text);
-      return out;
-    }
-    if (Array.isArray(value)) {
-      for (const item of value) flattenEditorial(item, out);
-      return out;
-    }
-    if (typeof value === "object") {
-      for (const item of Object.values(value)) flattenEditorial(item, out);
-    }
-    return out;
-  }
-
-  function fallbackFeatureList(raw) {
-    const source = Array.isArray(raw) ? raw : [];
-    return source.map((entry) => {
-      if (entry && typeof entry === "object") {
-        const name = String(entry.name || entry.label || "").trim();
-        const description = String(entry.description || "").trim();
-        return name ? { name, description } : null;
-      }
-      const name = String(entry || "").trim();
-      return name ? { name, description: "" } : null;
-    }).filter(Boolean);
-  }
-
-  function featureList(ship, type) {
-    const facilities = ship?.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
-    const raw = type === "exclusive"
-      ? (facilities.exclusive_areas || facilities.exclusiveAreas || facilities.exclusive || [])
-      : (facilities.specialty_features || facilities.specialtyFeatures || facilities.signature_features || []);
-    const api = window.CiShipFacilities;
-    if (type === "exclusive" && api?.normalizeExclusiveAreasForDisplay) return api.normalizeExclusiveAreasForDisplay(raw);
-    if (type === "specialty" && api?.normalizeSpecialtyFeaturesForDisplay) return api.normalizeSpecialtyFeaturesForDisplay(raw);
-    return fallbackFeatureList(raw);
-  }
-
-  function descriptionParagraphs(value) {
+  function paragraphsHtml(value) {
     const text = String(value || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
     if (!text) return "";
     return text
       .split(/\n+/)
-      .map((paragraph) => paragraph.trim())
+      .map((part) => part.trim())
       .filter(Boolean)
-      .map((paragraph) => `<p>${esc(paragraph)}</p>`)
+      .map((part) => `<p>${esc(part)}</p>`)
       .join("");
   }
 
-  function renderFeatureCard(title, items) {
-    const valid = (items || []).filter((item) => String(item?.name || item?.label || "").trim());
-    if (!valid.length) return "";
-    const rows = valid.map((item) => {
-      const name = String(item.name || item.label || "").trim();
-      const description = descriptionParagraphs(item.description);
-      return `<article class="feature-item"><h3>${esc(name)}</h3>${description ? `<div class="feature-description">${description}</div>` : ""}</article>`;
-    }).join("");
-    return `<section class="feature-card"><div class="eyebrow" style="color:var(--green)">${esc(title)}</div><div class="feature-items">${rows}</div></section>`;
+  function forcePublicH1(root) {
+    const heading = root?.querySelector(".ship-identity-name");
+    if (!heading || heading.tagName === "H1") return;
+    const h1 = document.createElement("h1");
+    h1.className = heading.className;
+    h1.innerHTML = heading.innerHTML;
+    Array.from(heading.attributes || []).forEach((attribute) => {
+      if (attribute.name !== "class") h1.setAttribute(attribute.name, attribute.value);
+    });
+    heading.replaceWith(h1);
   }
 
-  function renderFeatureDetails(ship) {
-    const exclusive = featureList(ship, "exclusive");
-    const specialty = featureList(ship, "specialty");
-    const cards = [
-      renderFeatureCard("EXCLUSIVE AREAS", exclusive),
-      renderFeatureCard("SPECIALTY FEATURES", specialty)
-    ].filter(Boolean);
-    if (!cards.length) return "";
-    return `<section class="feature-section"><div class="feature-grid ${cards.length === 1 ? "single" : ""}">${cards.join("")}</div></section>`;
+  function insertSpotlightIntro(root, spotlight) {
+    const intro = String(spotlight?.intro || "").trim();
+    if (!intro) return;
+    const hero = root?.querySelector(".ship-hero");
+    if (!hero) return;
+    const section = document.createElement("section");
+    section.className = "public-spotlight-intro ship-reveal-block";
+    section.style.setProperty("--ship-delay", "20ms");
+    section.innerHTML = `
+      <div class="public-spotlight-eyebrow">${esc(spotlight.eyebrow || "SHIP SPOTLIGHT")}</div>
+      <p>${esc(intro)}</p>`;
+    hero.insertAdjacentElement("afterend", section);
+  }
+
+  function removeUnavailableSummaryFacts(root) {
+    root?.querySelectorAll(".ship-summary-stat").forEach((stat) => {
+      const value = String(stat.querySelector(".ship-summary-value")?.textContent || "").trim().toLowerCase();
+      if (value === "not listed") stat.remove();
+    });
+    root?.querySelectorAll(".ship-glance-item.is-empty").forEach((item) => item.remove());
+  }
+
+  function enhanceFeatureColumn(column, items) {
+    if (!column) return;
+    const rows = Array.from(column.querySelectorAll(".ship-feature-item"));
+    rows.forEach((row, index) => {
+      const description = String(items?.[index]?.description || "").trim();
+      const copy = row.querySelector(".ship-feature-copy");
+      if (!copy) return;
+      let descriptionNode = copy.querySelector(".ship-feature-description");
+      if (!description) {
+        if (descriptionNode) descriptionNode.remove();
+        return;
+      }
+      if (!descriptionNode) {
+        descriptionNode = document.createElement("div");
+        descriptionNode.className = "ship-feature-description planner-muted";
+        copy.appendChild(descriptionNode);
+      }
+      descriptionNode.innerHTML = paragraphsHtml(description);
+    });
+  }
+
+  function enhanceFeatureLayout(root, profile) {
+    const exclusive = Array.isArray(profile?.exclusiveAreas) ? profile.exclusiveAreas : [];
+    const specialty = Array.isArray(profile?.specialtyFeatures) ? profile.specialtyFeatures : [];
+    const grid = root?.querySelector(".ship-feature-experiences-grid");
+    if (!grid) return;
+
+    const exclusiveColumn = grid.querySelector(".ship-feature-column--exclusive");
+    const specialtyColumn = grid.querySelector(".ship-feature-column--specialty");
+    const divider = grid.querySelector(".ship-feature-column-divider");
+
+    enhanceFeatureColumn(exclusiveColumn, exclusive);
+    enhanceFeatureColumn(specialtyColumn, specialty);
+
+    if (!exclusive.length && exclusiveColumn) exclusiveColumn.remove();
+    if (!specialty.length && specialtyColumn) specialtyColumn.remove();
+
+    const hasExclusive = exclusive.length > 0;
+    const hasSpecialty = specialty.length > 0;
+    if (hasExclusive && hasSpecialty) return;
+
+    if (divider) divider.remove();
+    if (hasExclusive) {
+      grid.style.gridTemplateColumns = "minmax(0,1fr)";
+      grid.style.gridTemplateAreas = '"exclusive" "deckplans"';
+    } else if (hasSpecialty) {
+      grid.style.gridTemplateColumns = "minmax(0,1fr)";
+      grid.style.gridTemplateAreas = '"specialty" "deckplans"';
+    }
+  }
+
+  function galleryHtml(data) {
+    const ship = data.ship || {};
+    const heroUrl = String(data.spotlight?.hero_image_url || "").trim();
+    const gallery = (data.gallery || [])
+      .filter((row) => row?.url && String(row.url).trim() !== heroUrl)
+      .slice(0, 12);
+    if (!gallery.length) return "";
+    return `
+      <section class="public-extra-section" aria-labelledby="shipGalleryHeading">
+        <div class="public-section-head">
+          <div>
+            <div class="public-section-eyebrow">ON BOARD</div>
+            <h2 id="shipGalleryHeading">More photos of ${esc(ship.name)}</h2>
+          </div>
+        </div>
+        <div class="public-gallery-grid">
+          ${gallery.map((row, index) => `
+            <button class="public-gallery-item" type="button" data-gallery-index="${index}" data-gallery-src="${esc(row.url)}" data-gallery-alt="${esc(row.alt || row.title || ship.name)}">
+              <img src="${esc(row.url)}" alt="${esc(row.alt || row.title || ship.name)}" loading="lazy">
+            </button>`).join("")}
+        </div>
+      </section>`;
+  }
+
+  function sailingCard(row, shipName) {
+    const title = String(row.destination || row.itinerary || `${shipName} cruise`).trim();
+    const meta = [
+      row.nights ? `${row.nights} nights` : "",
+      row.departure_port ? `from ${row.departure_port}` : ""
+    ].filter(Boolean).join(" · ");
+    const fare = String(row.fare || "").trim();
+    return `
+      <article class="public-sailing-card">
+        <div class="public-sailing-date">${esc(formatDate(row.departure_date))}</div>
+        <div class="public-sailing-title">${esc(title)}</div>
+        ${meta ? `<div class="public-sailing-meta">${esc(meta)}</div>` : ""}
+        ${fare ? `<div class="public-sailing-fare">From ${esc(fare)}</div>` : ""}
+      </article>`;
+  }
+
+  function cruisesHtml(data) {
+    const ship = data.ship || {};
+    const sailings = Array.isArray(data.sailings) ? data.sailings : [];
+    const cards = sailings.slice(0, 6).map((row) => sailingCard(row, ship.name)).join("");
+    const finderUrl = "/cruise-finder";
+    return `
+      <section class="public-extra-section" aria-labelledby="shipCruisesHeading">
+        <div class="public-section-head">
+          <div>
+            <div class="public-section-eyebrow">CURRENT CRUISES</div>
+            <h2 id="shipCruisesHeading">Cruise on ${esc(ship.name)}</h2>
+            <p>Upcoming validated sailings currently in the 101CRUISE cruise database.</p>
+          </div>
+        </div>
+        ${cards ? `<div class="public-sailings">${cards}</div>` : `<div class="public-sailing-empty">There are no current validated sailings to show for ${esc(ship.name)} right now.</div>`}
+        <div class="public-cruise-cta">
+          <div class="public-cruise-cta-copy">
+            <strong>Looking for the right cruise?</strong>
+            <span>Use Cruise Finder to narrow down dates, duration, departure point and holiday style.</span>
+          </div>
+          <a href="${finderUrl}">Search Cruise Finder →</a>
+        </div>
+      </section>`;
+  }
+
+  function bindGallery() {
+    document.querySelectorAll("[data-gallery-src]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const src = button.getAttribute("data-gallery-src") || "";
+        if (!src || !lightbox || !lightboxImage) return;
+        lightboxImage.src = src;
+        lightboxImage.alt = button.getAttribute("data-gallery-alt") || "Ship photo";
+        lightbox.classList.add("is-open");
+        lightbox.setAttribute("aria-hidden", "false");
+      });
+    });
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightboxImage) return;
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxImage.src = "";
+  }
+
+  function bindLightboxChrome() {
+    lightbox?.querySelector(".public-lightbox-close")?.addEventListener("click", closeLightbox);
+    lightbox?.addEventListener("click", (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && lightbox?.classList.contains("is-open")) closeLightbox();
+    });
   }
 
   function render(data) {
-    const s = data.spotlight || {};
+    const spotlight = data.spotlight || {};
     const ship = data.ship || {};
     const line = data.line || {};
     const editorial = data.editorial || {};
-    const gallery = (data.gallery || []).filter((row) => row?.url);
-    const sailings = data.sailings || [];
+    const presentation = window.CiShipPresentation;
 
-    document.title = editorial.seo_title || `${ship.name} | 101cruise Ship Spotlight`;
+    if (!presentation?.buildProfile || !presentation?.mountPresentation) {
+      throw new Error("The ship presentation could not be loaded.");
+    }
+
+    document.title = editorial.seo_title || `${ship.name} | 101CRUISE Ship Spotlight`;
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.content = editorial.meta_description || s.intro || `Explore ${ship.name} with 101cruise.`;
+    if (meta) meta.content = editorial.meta_description || spotlight.intro || `Explore ${ship.name} with 101CRUISE.`;
 
-    const stats = [
-      stat("Launched", year(ship.year_built)),
-      stat("Refurbished", year(ship.year_refurbished)),
-      stat("Guests", number(ship.passenger_capacity)),
-      stat("Crew", number(ship.crew_count)),
-      stat("Tonnage", number(ship.gross_tonnage, " GT")),
-      stat("Length", number(ship.length_metres, " m")),
-      stat("Beam", number(ship.beam_metres, " m")),
-      stat("Decks", number(ship.deck_count)),
-      stat("Staterooms", number(ship.stateroom_count)),
-      stat("Cruising speed", number(ship.cruising_speed_knots, " kn"))
-    ].filter(Boolean).join("");
+    const profile = presentation.buildProfile(ship, {
+      shipName: ship.name,
+      cruiseLine: line.name || ""
+    });
 
-    const highlights = (s.highlights || []).filter(Boolean).slice(0, 5);
-    const extraEditorial = flattenEditorial(editorial.content || {}).filter((text) => text !== s.intro && text !== editorial.summary).slice(0, 3);
-    const descriptive = extraEditorial.length
-      ? extraEditorial.map((text) => `<p>${esc(text)}</p>`).join("")
-      : editorial.summary && editorial.summary !== s.intro
-        ? `<p>${esc(editorial.summary)}</p>`
-        : `<p>Explore the ship's key facilities, accommodation and current sailings below.</p>`;
+    presentation.mountPresentation(mount, profile, {
+      mode: "public",
+      cruiseLineLogo: line.logo_url || "",
+      shipImage: spotlight.hero_image_url || data.gallery?.[0]?.url || ""
+    });
 
-    const galleryHtml = gallery.slice(0, 12).map((row) => `<img src="${esc(row.url)}" alt="${esc(row.alt || ship.name)}" loading="lazy">`).join("");
-    const sailingsHtml = sailings.map((row) => {
-      const destination = row.destination || row.itinerary || "Cruise itinerary";
-      const details = [date(row.departure_date), row.nights ? `${row.nights} nights` : "", row.departure_port ? `from ${row.departure_port}` : ""].filter(Boolean).join(" · ");
-      return `<a class="sailing" href="${esc(row.official_url || "/cruise-finder")}" ${row.official_url ? 'target="_blank" rel="noopener"' : ""}><div class="sailing-destination">${esc(destination)}</div><div class="sailing-meta">${esc(details)}</div>${row.fare ? `<div class="sailing-fare">From ${esc(row.fare)}</div>` : ""}</a>`;
-    }).join("");
+    const root = mount.querySelector(".ship-page");
+    if (root) {
+      root.classList.add("public-ship-page");
+      forcePublicH1(root);
+      insertSpotlightIntro(root, spotlight);
+      removeUnavailableSummaryFacts(root);
+      enhanceFeatureLayout(root, profile);
+    }
 
-    page.innerHTML = `
-      <section class="hero">
-        <img class="hero-image" src="${esc(s.hero_image_url || gallery[0]?.url || "")}" alt="${esc(ship.name)}">
-        <div class="hero-copy">
-          <div class="eyebrow">${esc(s.eyebrow || "SHIP SPOTLIGHT")}</div>
-          <h1>${esc(s.heading || ship.name)}</h1>
-          <div class="line-name">${esc(line.name || "")}${ship.ship_class ? ` · ${esc(ship.ship_class)}` : ""}</div>
-          ${s.intro ? `<p class="intro">${esc(s.intro)}</p>` : ""}
-        </div>
-      </section>
-      <section class="stats">${stats}</section>
-      <section class="grid">
-        <article class="card"><h2>About ${esc(ship.name)}</h2>${descriptive}${highlights.length ? `<div class="highlights">${highlights.map((text) => `<div class="highlight">${esc(text)}</div>`).join("")}</div>` : ""}</article>
-        <aside class="card"><h2>At a glance</h2>${line.description ? `<p>${esc(line.description)}</p>` : `<p>${esc(line.name || "Cruise line")}</p>`}${editorial.pauls_tip ? `<div class="tip"><strong>Paul's tip</strong><p>${esc(editorial.pauls_tip)}</p></div>` : ""}<div class="actions">${ship.deck_plan_url ? `<a class="button secondary" href="${esc(ship.deck_plan_url)}" target="_blank" rel="noopener">View deck plan</a>` : ""}<a class="button" href="/cruise-finder">Find a cruise</a></div></aside>
-      </section>
-      ${renderFeatureDetails(ship)}
-      ${galleryHtml ? `<section><div class="gallery-head"><div><div class="eyebrow" style="color:var(--green)">ON BOARD</div><h2>Explore ${esc(ship.name)}</h2></div></div><div class="gallery">${galleryHtml}</div></section>` : ""}
-      <section><div class="sailings-head"><div><div class="eyebrow" style="color:var(--green)">CURRENT CRUISES</div><h2>Sail aboard ${esc(ship.name)}</h2></div></div>${sailingsHtml ? `<div class="sailings">${sailingsHtml}</div>` : `<div class="empty">There are no current validated sailings to show for this ship right now. <a href="/cruise-finder">Search Cruise Finder</a>.</div>`}</section>`;
+    extras.innerHTML = `${galleryHtml(data)}${cruisesHtml(data)}`;
+    bindGallery();
 
     loading.hidden = true;
     errorBox.style.display = "none";
@@ -182,17 +265,26 @@
   async function load() {
     const slug = slugFromPath();
     if (!slug) {
-      loading.hidden = true; errorText.textContent = "No ship was selected."; errorBox.style.display = "block"; return;
+      loading.hidden = true;
+      errorText.textContent = "No ship was selected.";
+      errorBox.style.display = "block";
+      return;
     }
+
     try {
       const response = await fetch(`/.netlify/functions/public-ship-spotlight?slug=${encodeURIComponent(slug)}`);
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || data.success === false) throw new Error(data.error || "This Ship Spotlight is unavailable.");
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || "This Ship Spotlight is unavailable.");
+      }
       render(data);
     } catch (error) {
-      loading.hidden = true; errorText.textContent = error.message || "This Ship Spotlight could not be loaded."; errorBox.style.display = "block";
+      loading.hidden = true;
+      errorText.textContent = error.message || "This Ship Spotlight could not be loaded.";
+      errorBox.style.display = "block";
     }
   }
 
+  bindLightboxChrome();
   load();
 })();
