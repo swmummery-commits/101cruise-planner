@@ -245,6 +245,15 @@
     "node_modules/@img/**"
   ]
 
+[functions."ship-spotlight-mailchimp-assets"]
+  # Ship Spotlight hero/logo/generated room chart: optimise + Mailchimp File Manager upload.
+  timeout = 60
+  external_node_modules = ["sharp"]
+  included_files = [
+    "node_modules/sharp/**",
+    "node_modules/@img/**"
+  ]
+
 [functions."social-pack-generate"]
   # Weekly newsletter social pack: destination images + SVG → PNG + ZIP.
   timeout = 60
