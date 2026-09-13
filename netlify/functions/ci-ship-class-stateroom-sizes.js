@@ -61,7 +61,6 @@ function sanitizeDefaults(rows) {
     if (sqm === null || balconySqm === null) {
       return { ok: false, error: "INVALID_SIZE", label };
     }
-    if (sqm === "" && balconySqm === "") continue;
 
     seen.add(key);
     const next = { label };
@@ -75,11 +74,13 @@ function sanitizeDefaults(rows) {
 function applyDefaultValue(row, field, sourceField, value, forceClass) {
   const current = row[field];
   const source = String(row[sourceField] || "").trim();
-  const mayInherit = forceClass || source === "class" || current === "" || current === null || current === undefined;
+  const currentBlank = current === "" || current === null || current === undefined;
+  const sameAsDefault = value !== "" && value !== null && value !== undefined && String(current ?? "") === String(value);
+  const mayInherit = forceClass || source === "class" || (!source && (currentBlank || sameAsDefault));
   if (!mayInherit) return false;
 
   if (value === "" || value === null || value === undefined) {
-    if (source !== "class" && !forceClass) return false;
+    if (source !== "class" && !forceClass && !currentBlank) return false;
     const hadValue = Object.prototype.hasOwnProperty.call(row, field) || Object.prototype.hasOwnProperty.call(row, sourceField);
     delete row[field];
     delete row[sourceField];
