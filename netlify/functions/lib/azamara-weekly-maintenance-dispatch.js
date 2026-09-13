@@ -10,6 +10,7 @@ const {
 const { runAzamaraWeeklyMaintenance, AZAMARA_MAX_WEEKLY_WRITES } = require("./azamara-weekly-maintenance");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
 const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+const { weeklyDispatchStatus } = require("./weekly-maintenance-write-accounting");
 
 const {
   assertAzamaraWeeklyAuth,
@@ -177,12 +178,7 @@ async function runAzamaraWeeklyBackgroundMaintenance({
     dry_run: dryRun === true,
     dispatch_id: dispatchId,
     phase: "background_maintenance",
-    status:
-      result.blocked && result.already_running
-        ? "already_running"
-        : result.success
-          ? "completed"
-          : "failed"
+    status: weeklyDispatchStatus(result)
   };
 }
 

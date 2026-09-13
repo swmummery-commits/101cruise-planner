@@ -22,7 +22,10 @@ async function runCclWeeklyMaintenance(context = {}) {
   if (!sb) throw new Error("Carnival weekly maintenance requires an explicit supabase client");
 
   const dryRun = context.dryRun !== false && context.dry_run !== false;
-  const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const requestedWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const writeGate = resolveCarnivalDiscoveryMode("weekly_maintenance");
+  const writesCommissioned = writeGate.writes_allowed === true;
+  const performWrites = requestedWrites && writesCommissioned;
   const runId = String(context.runId || context.run_id || `ccl-weekly-${Date.now()}`).trim();
   const today = context.today || perthCalendarDate();
   const maxWrites = context.maxWrites ?? context.max_writes ?? CCL_MAX_WEEKLY_WRITES;
@@ -116,6 +119,9 @@ async function runCclWeeklyMaintenance(context = {}) {
     run_type: CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE,
     line_slug: CCL_LINE_SLUG,
     dry_run: !performWrites,
+    not_yet_commissioned: !writesCommissioned,
+    commissioning_status: writesCommissioned ? "commissioned" : "not_yet_commissioned",
+    terminal_status: writesCommissioned ? "completed" : "not_yet_commissioned",
     global_lock: globalLockReport,
     perth_today: today,
     elapsed_ms: Date.now() - startedAt,
@@ -142,7 +148,13 @@ async function runCclWeeklyMaintenance(context = {}) {
     success: summary.success,
     blocked: false,
     review_required: false,
-    reason: summary.success ? null : "carnival_weekly_writes_failed",
+    not_yet_commissioned: !writesCommissioned,
+    terminal_status: writesCommissioned ? (summary.success ? "completed" : null) : "not_yet_commissioned",
+    reason: writesCommissioned
+      ? summary.success
+        ? null
+        : "carnival_weekly_writes_failed"
+      : "NOT_YET_COMMISSIONED",
     dry_run: !performWrites,
     run_id: runId,
     manifest,

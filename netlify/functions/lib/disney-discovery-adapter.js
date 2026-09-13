@@ -812,34 +812,59 @@ async function fetchDisneyCompleteSnapshot(options = {}) {
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const requestDelayMs = options.requestDelayMs ?? 100;
   const maxApiCalls = options.maxApiCalls ?? source.PHASE2_MAX_API_CALLS;
+  const deadlineAt = options.deadlineAt || (options.deadlineMs ? Date.now() + Number(options.deadlineMs) : null);
+  const stageTimings = [];
+  const mark = async (stage, fn) => {
+    const started = Date.now();
+    source.assertDisneySourceDeadline(deadlineAt, stage);
+    const result = await fn();
+    stageTimings.push({ stage, duration_ms: Date.now() - started });
+    return result;
+  };
 
-  const auth = await source.authenticateDisneySession({ fetchImpl, requestDelayMs });
-  const filters = await source.fetchDisneyFilterOptions({
-    fetchImpl,
-    cookieJar: auth.cookieJar,
-    requestDelayMs
-  });
+  const auth = await mark("bootstrap", () => source.authenticateDisneySession({ fetchImpl, requestDelayMs }));
+  const filters = await mark("product enumeration", () =>
+    source.fetchDisneyFilterOptions({
+      fetchImpl,
+      cookieJar: auth.cookieJar,
+      requestDelayMs
+    })
+  );
 
-  const harvest = await source.harvestDisneyProductCatalogue({
-    fetchImpl,
-    cookieJar: filters.cookieJar,
-    requestDelayMs,
-    filterOptions: filters,
-    maxApiCalls,
-    phase2: true,
-    useLosslessCatalogue: true
-  });
+  const harvest = await mark("product enumeration", () =>
+    source.harvestDisneyProductCatalogue({
+      fetchImpl,
+      cookieJar: filters.cookieJar,
+      requestDelayMs,
+      filterOptions: filters,
+      maxApiCalls,
+      phase2: true,
+      useLosslessCatalogue: true,
+      deadlineAt
+    })
+  );
 
-  const expansion = await source.expandDisneySailingCatalogueLossless(harvest.products, {
-    fetchImpl,
-    cookieJar: harvest.cookieJar,
-    requestDelayMs,
-    maxApiCalls: maxApiCalls - harvest.api_calls,
-    losslessCatalogue: harvest.lossless_catalogue,
-    preserveFilterContext: false
-  });
+  const expansion = await mark("per-product/date expansion", () =>
+    source.expandDisneySailingCatalogueLossless(harvest.products, {
+      fetchImpl,
+      cookieJar: harvest.cookieJar,
+      requestDelayMs,
+      maxApiCalls: maxApiCalls - harvest.api_calls,
+      losslessCatalogue: harvest.lossless_catalogue,
+      preserveFilterContext: false,
+      deadlineAt,
+      concurrency: options.concurrency
+    })
+  );
 
-  return { harvest, expansion, filters, api_calls: harvest.api_calls + expansion.api_calls };
+  return {
+    harvest,
+    expansion,
+    filters,
+    api_calls: harvest.api_calls + expansion.api_calls,
+    stage_timings: stageTimings,
+    deadline_at: deadlineAt || null
+  };
 }
 
 async function simulateDisneyDiscovery(context = {}) {
@@ -855,10 +880,18 @@ async function simulateDisneyDiscovery(context = {}) {
     maxApiCalls = source.PHASE2_MAX_API_CALLS,
     phase2aBaselineIdentities = [],
     existingRows = [],
-    supabaseQuery = null
+    supabaseQuery = null,
+    deadlineMs = source.DISNEY_SOURCE_DEADLINE_MS,
+    deadlineAt = null
   } = context;
 
-  const snapshot = await fetchDisneyCompleteSnapshot({ fetchImpl, requestDelayMs, maxApiCalls });
+  const snapshot = await fetchDisneyCompleteSnapshot({
+    fetchImpl,
+    requestDelayMs,
+    maxApiCalls,
+    deadlineMs,
+    deadlineAt
+  });
   const rawVoyages = enrichSailingsFromCatalogue(snapshot.expansion.unique_sailings, snapshot.harvest.lossless_catalogue);
 
   const identitySet = new Set(rawVoyages.map((r) => r.official_product_key));

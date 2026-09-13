@@ -153,11 +153,27 @@ function isGenuineSuccessfulRefresh(run) {
   if (s.dry_run === true) return false;
   if (s.blocked_by_lock === true) return false;
   if (s.review_required === true) return false;
+  if (s.source_repair_required === true) return false;
+  if (s.source_unstable === true) return false;
+  if (s.not_yet_commissioned === true) return false;
+  if (s.read_only === true) return false;
   if (s.blocked_by_global_lock === true) return false;
   if (s.already_dispatched === true) return false;
   if (s.terminal_status === "completed_with_staged_rows") return false;
   if (s.terminal_status === "partial_write_failure") return false;
   if (s.terminal_status === "failed_before_writes") return false;
+  if (
+    [
+      "review_required",
+      "source_repair_required",
+      "source_unstable",
+      "read_only",
+      "not_yet_commissioned",
+      "disabled"
+    ].includes(String(s.terminal_status || ""))
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -301,7 +317,29 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const lastAttempt = runs[0] || null;
   const lastSuccess = runs.find(isGenuineSuccessfulRefresh) || null;
   const lastFailed = runs.find((r) => r.status === "failed") || null;
-  const lastReview = runs.find((r) => r.status === "completed" && r.stats?.review_required === true) || null;
+  const lastReview =
+    runs.find(
+      (r) =>
+        r.status === "completed" &&
+        (r.stats?.review_required === true || r.stats?.terminal_status === "review_required")
+    ) || null;
+  const lastSourceRepair =
+    runs.find(
+      (r) =>
+        r.status === "completed" &&
+        (r.stats?.source_repair_required === true ||
+          r.stats?.terminal_status === "source_repair_required" ||
+          r.stats?.terminal_status === "source_unstable")
+    ) || null;
+  const lastCommissioning =
+    runs.find(
+      (r) =>
+        r.status === "completed" &&
+        (r.stats?.not_yet_commissioned === true || r.stats?.terminal_status === "not_yet_commissioned")
+    ) || null;
+  const lastReadOnly =
+    runs.find((r) => r.status === "completed" && (r.stats?.read_only === true || r.stats?.terminal_status === "read_only")) ||
+    null;
   const inventory = await loadLineActiveInventory(supabase, cruiseLineId, lineSlug);
   const spec = COMMISSIONED_WEEKLY_LINES.find((l) => l.slug === lineSlug);
   const enabled = spec ? spec.enabled() === true : false;
@@ -323,8 +361,15 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   if (!enabled) freshness = "Disabled";
   else if (lastAttempt?.stats?.abandoned && lastAttempt?.status === "failed") freshness = "Stale / Abandoned";
   else if (lastAttempt?.status === "running" || lockStatus.held) freshness = "Running";
-  else if (lastReview && (!lastSuccess || new Date(lastReview.finished_at) > new Date(lastSuccess.finished_at))) {
+  else if (lastSourceRepair && (!lastSuccess || new Date(lastSourceRepair.finished_at) > new Date(lastSuccess.finished_at || 0))) {
+    freshness =
+      lastSourceRepair.stats?.terminal_status === "source_unstable" ? "Source Unstable" : "Source Repair Required";
+  } else if (lastReview && (!lastSuccess || new Date(lastReview.finished_at) > new Date(lastSuccess.finished_at))) {
     freshness = "Review Required";
+  } else if (lastCommissioning && (!lastSuccess || new Date(lastCommissioning.finished_at) > new Date(lastSuccess.finished_at || 0))) {
+    freshness = "Not Yet Commissioned";
+  } else if (lastReadOnly && (!lastSuccess || new Date(lastReadOnly.finished_at) > new Date(lastSuccess.finished_at || 0))) {
+    freshness = "Read Only";
   } else if (lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))) {
     freshness = "Failed";
   } else if (lastSuccess?.finished_at) {
@@ -342,7 +387,11 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     dispatch_id: latest.dispatch_id || null
   };
 
-  const overdue = enabled && !["Healthy", "Running", "Review Required"].includes(freshness);
+  const overdue =
+    enabled &&
+    !["Healthy", "Running", "Review Required", "Source Repair Required", "Source Unstable", "Not Yet Commissioned", "Read Only"].includes(
+      freshness
+    );
   const sourceFailure =
     lastFailed &&
     (!lastSuccess || new Date(lastFailed.finished_at || lastFailed.started_at) > new Date(lastSuccess.finished_at || 0)) &&
@@ -356,6 +405,10 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     running: freshness === "Running",
     abandoned: freshness === "Stale / Abandoned",
     reviewRequired: freshness === "Review Required",
+    sourceRepairRequired: freshness === "Source Repair Required",
+    sourceUnstable: freshness === "Source Unstable",
+    notYetCommissioned: freshness === "Not Yet Commissioned",
+    readOnly: freshness === "Read Only",
     sourceFailure,
     writeFailure,
     missedSchedule: freshness === "Stale" && enabled && !lastAttempt,
@@ -412,6 +465,14 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
         ? `${spec?.label || lineSlug} weekly refresh failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged. Review the source error before the next scheduled run.`
         : freshness === "Stale / Abandoned"
           ? `${spec?.label || lineSlug} weekly worker was abandoned after the execution lock expired. The run is no longer RUNNING.`
+          : freshness === "Source Repair Required"
+          ? `${spec?.label || lineSlug} source repair is required — the weekly source check completed with zero writes.`
+          : freshness === "Source Unstable"
+          ? `${spec?.label || lineSlug} source was unstable or timed out — zero writes; locks released.`
+          : freshness === "Not Yet Commissioned"
+          ? `${spec?.label || lineSlug} is not yet commissioned for production writes. Read-only reconciliation completed.`
+          : freshness === "Read Only"
+          ? `${spec?.label || lineSlug} completed a read-only source check — zero writes.`
           : freshness === "Review Required"
           ? `${spec?.label || lineSlug} requires review — no production writes were performed.`
           : duplicateScheduled

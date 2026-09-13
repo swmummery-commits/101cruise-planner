@@ -67,19 +67,101 @@ function mergeFlattenedWriteStats(summary = {}) {
   };
 }
 
+const DELIBERATE_NON_WRITING_TERMINALS = Object.freeze([
+  "review_required",
+  "source_repair_required",
+  "source_unstable",
+  "read_only",
+  "not_yet_commissioned",
+  "disabled"
+]);
+
+const FAILED_TERMINALS = Object.freeze(["failed_before_writes", "partial_write_failure"]);
+
+const CLASSIFIED_REASON_TERMINALS = Object.freeze({
+  REVIEW_REQUIRED: "review_required",
+  "REVIEW REQUIRED — NO WRITES": "review_required",
+  SOURCE_REPAIR_REQUIRED: "source_repair_required",
+  SOURCE_UNSTABLE: "source_unstable",
+  SOURCE_TIMEOUT: "source_unstable",
+  READ_ONLY: "read_only",
+  NOT_YET_COMMISSIONED: "not_yet_commissioned",
+  DISABLED: "disabled",
+  carnival_discovery_write_not_yet_commissioned: "not_yet_commissioned",
+  carnival_discovery_write_forbidden: "not_yet_commissioned",
+  azamara_source_collapse: "source_repair_required",
+  azamara_zero_source: "source_repair_required",
+  disney_source_timeout: "source_unstable",
+  royal_caribbean_source_repair_required: "source_repair_required",
+  silversea_review_required: "review_required",
+  silversea_read_only: "read_only"
+});
+
+function normaliseTerminalToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+function isDeliberateNonWritingTerminal(terminalStatus) {
+  return DELIBERATE_NON_WRITING_TERMINALS.includes(normaliseTerminalToken(terminalStatus));
+}
+
+function resolveDeclaredTerminalStatus(result = {}) {
+  const declared =
+    result.terminal_status ||
+    result.summary?.terminal_status ||
+    null;
+  const normalised = normaliseTerminalToken(declared);
+  if (DELIBERATE_NON_WRITING_TERMINALS.includes(normalised)) return normalised;
+  if (result.source_repair_required === true) return "source_repair_required";
+  if (result.source_unstable === true) return "source_unstable";
+  if (result.review_required === true) return "review_required";
+  if (result.not_yet_commissioned === true) return "not_yet_commissioned";
+  if (result.read_only === true) return "read_only";
+  if (result.disabled === true) return "disabled";
+  const reasonKey = String(result.reason || "").trim();
+  if (CLASSIFIED_REASON_TERMINALS[reasonKey]) return CLASSIFIED_REASON_TERMINALS[reasonKey];
+  const reasonNorm = normaliseTerminalToken(reasonKey);
+  if (DELIBERATE_NON_WRITING_TERMINALS.includes(reasonNorm)) return reasonNorm;
+  if (CLASSIFIED_REASON_TERMINALS[reasonNorm]) return CLASSIFIED_REASON_TERMINALS[reasonNorm];
+  return null;
+}
+
 function resolveWeeklyTerminalStatus({
   ok,
   blocked = false,
   review_required = false,
   already_running = false,
   reason = null,
-  summary = {}
+  summary = {},
+  terminal_status = null,
+  source_repair_required = false,
+  source_unstable = false,
+  not_yet_commissioned = false,
+  read_only = false,
+  disabled = false
 } = {}) {
   const flat = flattenWeeklyWriteStats(summary);
+  const declared = resolveDeclaredTerminalStatus({
+    terminal_status: terminal_status || summary.terminal_status,
+    summary,
+    reason,
+    review_required,
+    source_repair_required,
+    source_unstable,
+    not_yet_commissioned,
+    read_only,
+    disabled
+  });
   if (already_running || reason === "maintenance_lock_held") return "completed";
-  if (review_required) return "review_required";
-  if (!ok && flat.committed_material_writes === 0) return "failed_before_writes";
+  if (declared && isDeliberateNonWritingTerminal(declared) && flat.committed_material_writes === 0) {
+    return declared;
+  }
+  if (review_required && flat.committed_material_writes === 0) return "review_required";
   if (!ok && flat.committed_material_writes > 0) return "partial_write_failure";
+  if (!ok && flat.committed_material_writes === 0 && !declared) return "failed_before_writes";
   if (
     ok &&
     (summary.staged_match_required_inserts > 0 || summary.line_slug === "norwegian-cruise-line") &&
@@ -88,14 +170,24 @@ function resolveWeeklyTerminalStatus({
   ) {
     return "completed_with_staged_rows";
   }
-  if (ok) return "completed";
-  if (blocked && flat.committed_material_writes === 0) return "failed_before_writes";
-  return "failed_before_writes";
+  if (ok) return declared && isDeliberateNonWritingTerminal(declared) ? declared : "completed";
+  if (blocked && flat.committed_material_writes === 0 && !declared) return "failed_before_writes";
+  return declared && isDeliberateNonWritingTerminal(declared) ? declared : "failed_before_writes";
 }
 
 function resolveLedgerRunStatus(terminalStatus) {
-  if (terminalStatus === "completed" || terminalStatus === "review_required") return "completed";
-  if (terminalStatus === "completed_with_staged_rows") return "completed";
+  if (terminalStatus === "completed" || terminalStatus === "completed_with_staged_rows") return "completed";
+  if (isDeliberateNonWritingTerminal(terminalStatus)) return "completed";
+  return "failed";
+}
+
+function weeklyDispatchStatus(result = {}) {
+  if (result.duplicate_background_invocation) return "duplicate_background_invocation";
+  if (result.blocked && result.already_running) return "already_running";
+  const terminal = result.summary?.terminal_status || result.terminal_status || resolveDeclaredTerminalStatus(result);
+  if (terminal && isDeliberateNonWritingTerminal(terminal)) return terminal;
+  if (result.review_required) return "review_required";
+  if (result.success) return "completed";
   return "failed";
 }
 
@@ -103,5 +195,10 @@ module.exports = {
   flattenWeeklyWriteStats,
   mergeFlattenedWriteStats,
   resolveWeeklyTerminalStatus,
-  resolveLedgerRunStatus
+  resolveLedgerRunStatus,
+  resolveDeclaredTerminalStatus,
+  isDeliberateNonWritingTerminal,
+  weeklyDispatchStatus,
+  DELIBERATE_NON_WRITING_TERMINALS,
+  FAILED_TERMINALS
 };

@@ -189,9 +189,25 @@
     return String(flag.state || "—");
   }
 
+  function maintenanceStatusTone(status) {
+    const value = String(status || "").toUpperCase();
+    if (["SOURCE_REPAIR_REQUIRED", "SOURCE_UNSTABLE", "SOURCE_FAILURE", "WRITE_FAILURE", "STALE_ABANDONED"].includes(value)) {
+      return { label: "red", background: "#fee2e2", color: "#991b1b" };
+    }
+    if (["REVIEW_REQUIRED", "READ_ONLY", "MISSED_SCHEDULE", "RUNNING", "BLOCKED_DUPLICATE"].includes(value)) {
+      return { label: "amber", background: "#fef3c7", color: "#92400e" };
+    }
+    if (["NOT_YET_COMMISSIONED", "DISABLED"].includes(value)) {
+      return { label: "grey", background: "#e5e7eb", color: "#374151" };
+    }
+    if (value === "HEALTHY") return { label: "green", background: "#d1fae5", color: "#065f46" };
+    return { label: "neutral", background: "#f3f4f6", color: "#111827" };
+  }
+
   function renderMaintenancePanel(line) {
     if (!line) return "";
     const title = line.label || line.cruise_line_slug || "Weekly";
+    const statusTone = maintenanceStatusTone(line.operational_status);
     const workerNote =
       line.worker_state === "already_running"
         ? `<p class="admin-helper">Another maintenance invocation holds the database lock — no action taken.</p>`
@@ -205,7 +221,7 @@
         <ul class="admin-kv-list">
           <li><strong>Automation:</strong> ${esc(line.automation_status || "—")}${line.automation_flag ? ` (${esc(formatFlagState(line.automation_flag))})` : ""}</li>
           <li><strong>Freshness:</strong> ${esc(line.freshness_status || "—")}</li>
-          <li><strong>Operational status:</strong> ${esc(line.operational_status || "—")}</li>
+          <li><strong>Operational status:</strong> <span class="admin-maintenance-status admin-maintenance-status-${statusTone.label}" style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;background:${statusTone.background};color:${statusTone.color}">${esc(line.operational_status || "—")}</span></li>
           <li><strong>Perth schedule:</strong> ${esc(line.perth_schedule || "—")}</li>
           <li><strong>UTC schedule:</strong> ${esc(line.utc_schedule || "—")}</li>
           <li><strong>Last attempt:</strong> ${formatDate(line.last_attempted_refresh)}</li>

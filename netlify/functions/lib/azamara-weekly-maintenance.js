@@ -2,7 +2,7 @@
  * Azamara — weekly maintenance runner.
  */
 
-const { simulateAzamaraDiscovery } = require("./azamara-discovery-adapter");
+const { simulateAzamaraDiscovery, detectAzamaraSourceCollapse } = require("./azamara-discovery-adapter");
 const { resolveAzamaraDiscoveryMode, assertAzamaraWritesAllowed } = require("./azamara-discovery-mode");
 const { AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE, perthCalendarDate } = require("./cruise-discovery-maintenance");
 const { buildAzamaraWeeklyManifest, validateAzamaraWeeklyManifest, AZAMARA_MAX_WEEKLY_WRITES } = require("./azamara-weekly-manifest");
@@ -166,6 +166,91 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
     previousRun: context.previousRun || context.previous_run || null,
     maxNewInserts: maxWrites
   });
+
+  const collapse = detectAzamaraSourceCollapse({
+    simulation,
+    productionOfficial: manifest.production_official || indexes.officialBySailingId?.size || 0
+  });
+  const sourceTimeout = simulation.fetch_result?.source_timeout === true;
+  if (sourceTimeout && !collapse.collapsed) {
+    const writeSafety = assessAzamaraWeeklyWriteSafety({
+      sourceAbsencePolicy: manifest.source_absence_policy,
+      performWrites: false,
+      proposedIdentityReviewUpdates: (manifest.identity_review || []).length
+    });
+    manifest.source_absence_hides = [];
+    const summary = buildAzamaraWeeklySummary({
+      runId,
+      today,
+      startedAt,
+      performWrites: false,
+      manifest,
+      applyResult: null,
+      globalLockReport: null,
+      writeSafety
+    });
+    summary.terminal_status = "source_unstable";
+    summary.source_unstable = true;
+    summary.inventory_changed = false;
+    summary.source_diagnostics = simulation.fetch_result || null;
+    return {
+      ok: false,
+      success: true,
+      blocked: false,
+      source_unstable: true,
+      terminal_status: "source_unstable",
+      reason: "SOURCE_TIMEOUT",
+      dry_run: true,
+      run_id: runId,
+      manifest,
+      summary,
+      simulation
+    };
+  }
+  if (collapse.collapsed) {
+    manifest.source_absence_hides = [];
+    if (manifest.source_absence_policy) {
+      manifest.source_absence_policy.source_absent_actionable_records = [];
+      manifest.source_absence_policy.source_absence_deactivation_allowed = false;
+      manifest.source_absence_policy.weekly_writes_permitted_with_observed_absence = false;
+    }
+    const writeSafety = assessAzamaraWeeklyWriteSafety({
+      sourceAbsencePolicy: manifest.source_absence_policy,
+      performWrites: false,
+      proposedIdentityReviewUpdates: (manifest.identity_review || []).length
+    });
+    const summary = buildAzamaraWeeklySummary({
+      runId,
+      today,
+      startedAt,
+      performWrites: false,
+      manifest,
+      applyResult: null,
+      globalLockReport: null,
+      writeSafety
+    });
+    summary.terminal_status = "source_repair_required";
+    summary.source_repair_required = true;
+    summary.inventory_changed = false;
+    summary.writes_performed = { inserted: 0, updated: 0, failed: 0, source_absence_hidden: 0 };
+    summary.source_collapse = collapse;
+    summary.source_diagnostics = simulation.fetch_result || null;
+    return {
+      ok: false,
+      success: true,
+      blocked: false,
+      review_required: false,
+      source_repair_required: true,
+      terminal_status: "source_repair_required",
+      reason: "SOURCE_REPAIR_REQUIRED",
+      dry_run: true,
+      run_id: runId,
+      manifest,
+      summary,
+      simulation,
+      collapse
+    };
+  }
 
   const manifestValidation = validateAzamaraWeeklyManifest(manifest);
   if (!manifestValidation.passed) {

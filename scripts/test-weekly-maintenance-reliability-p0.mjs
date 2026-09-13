@@ -1995,6 +1995,257 @@ test("Royal fail-closed and daily expiry cutoff unchanged", () => {
   }
 });
 
+test("Seabourn review is a deliberate review_required terminal", () => {
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const status = accounting.resolveWeeklyTerminalStatus({
+    ok: false,
+    review_required: true,
+    reason: "REVIEW REQUIRED — NO WRITES",
+    summary: { inserts: 0, updates: 0, review_sailing_ids: ["E7M21E|8763B"] }
+  });
+  if (status !== "review_required") throw new Error(status);
+  if (accounting.resolveLedgerRunStatus(status) !== "completed") throw new Error("review must be ledger completed");
+  const http = require(path.join(root, "netlify/functions/lib/maintenance-operational-status"));
+  if (http.weeklyBackgroundHttpStatus({ success: true, review_required: true, terminal_status: "review_required" }) !== 200) {
+    throw new Error("Seabourn review must be operational success");
+  }
+});
+
+test("NCL incomplete supplier fields stay review_required with zero writes", () => {
+  const classifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const reason = classifier.classifyNorwegianAmbiguityReason({ official_sailing_id: "EPIC6X|2027-11-12" }, []);
+  if (reason.ambiguity_reason !== "SOURCE_FIELD_INCOMPLETE") throw new Error(reason.ambiguity_reason);
+  if (!reason.missing_required_fields.includes("ship")) throw new Error("ship must be listed");
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const status = accounting.resolveWeeklyTerminalStatus({
+    ok: true,
+    review_required: true,
+    summary: { inserts: 0, updates: 0, review_sailing_ids: ["EPIC6X|2027-11-12"] }
+  });
+  if (status !== "review_required") throw new Error(status);
+});
+
+test("Carnival disabled write flag still forbids writes but weekly recon does not throw", () => {
+  const prev = process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED;
+  process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED = "false";
+  try {
+    const gate = carnivalMode.resolveCarnivalDiscoveryMode("weekly_maintenance");
+    if (gate.writes_allowed) throw new Error("writes must stay disabled");
+    let threw = false;
+    try {
+      carnivalMode.assertCarnivalWritesAllowed(gate);
+    } catch (error) {
+      threw = /CARNIVAL_DISCOVERY_WRITE_ENABLED/.test(error.message);
+    }
+    if (!threw) throw new Error("assert must still fail clearly");
+    const src = fs.readFileSync(path.join(root, "netlify/functions/lib/carnival-weekly-maintenance.js"), "utf8");
+    if (!/not_yet_commissioned/.test(src)) throw new Error("Carnival weekly must classify not_yet_commissioned");
+    if (!/requestedWrites/.test(src)) throw new Error("Carnival weekly must skip write assert when flag is off");
+  } finally {
+    if (prev == null) delete process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED;
+    else process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED = prev;
+  }
+});
+
+test("Royal explained expired IDs do not count as unexplained current gaps", () => {
+  const enumeration = require(path.join(root, "netlify/functions/lib/royal-caribbean-source-enumeration"));
+  const explained = enumeration.evaluateWeeklyAuthoritativeEnumerationHealth({
+    simulationOk: true,
+    unionSailingIds: new Set(["CURRENT_A"]),
+    productionSailingIds: new Set(["CURRENT_A", "EXPIRED_B"]),
+    currentExpectedProductionSailingIds: new Set(["CURRENT_A"]),
+    explainedAbsentSailingIds: ["EXPIRED_B"],
+    duplicateSailingIds: 0,
+    detailLookupResults: []
+  });
+  if (explained.royal_caribbean_source_enumeration_ok !== true) {
+    throw new Error(`expired IDs must not fail health: ${explained.failures.join(",")}`);
+  }
+  if (explained.unexplained_production_absent_count !== 0) throw new Error("expired must be explained");
+});
+
+test("Royal true unexplained current IDs keep source health false", () => {
+  const enumeration = require(path.join(root, "netlify/functions/lib/royal-caribbean-source-enumeration"));
+  const unexplained = enumeration.evaluateWeeklyAuthoritativeEnumerationHealth({
+    simulationOk: true,
+    unionSailingIds: new Set(["CURRENT_A"]),
+    productionSailingIds: new Set(["CURRENT_A", "EX07M807_2026-10-17"]),
+    currentExpectedProductionSailingIds: new Set(["CURRENT_A", "EX07M807_2026-10-17"]),
+    explainedAbsentSailingIds: [],
+    duplicateSailingIds: 0,
+    detailLookupResults: [{ official_sailing_id: "EX07M807_2026-10-17", detail_ok: false, retrievable: false }]
+  });
+  if (unexplained.royal_caribbean_source_enumeration_ok === true) {
+    throw new Error("unexplained current IDs must keep enumeration fail-closed");
+  }
+  if (!unexplained.unexplained_current_production_ids.includes("EX07M807_2026-10-17")) {
+    throw new Error("must persist unexplained current id");
+  }
+});
+
+test("Azamara zero source is source_repair_required and cannot hide inventory", () => {
+  const adapter = require(path.join(root, "netlify/functions/lib/azamara-discovery-adapter"));
+  const collapse = adapter.detectAzamaraSourceCollapse({
+    simulation: {
+      fetch_result: { ok: true, sitemap_locs: 0, sitemap_packages: 0, eligible_urls: 0 },
+      source_eligible_official_ids: []
+    },
+    productionOfficial: 453
+  });
+  if (!collapse.collapsed) throw new Error("zero eligible vs 453 production must collapse");
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const status = accounting.resolveWeeklyTerminalStatus({
+    ok: false,
+    source_repair_required: true,
+    reason: "SOURCE_REPAIR_REQUIRED",
+    summary: { inserts: 0, updates: 0, source_absence_hidden: 0 }
+  });
+  if (status !== "source_repair_required") throw new Error(status);
+  const azamara = fs.readFileSync(path.join(root, "netlify/functions/lib/azamara-weekly-maintenance.js"), "utf8");
+  if (!/source_absence_hides = \[\]/.test(azamara)) throw new Error("collapse must zero source-absence hides");
+});
+
+test("Silversea reviews are review_required/read_only with zero writes", () => {
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const status = accounting.resolveWeeklyTerminalStatus({
+    ok: true,
+    review_required: true,
+    read_only: true,
+    summary: { inserts: 0, updates: 0, proposed_updates: 63 }
+  });
+  if (status !== "review_required") throw new Error(status);
+  if (accounting.resolveLedgerRunStatus(status) !== "completed") throw new Error("silversea review must complete");
+});
+
+test("Disney deadline classifies source_unstable", () => {
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const status = accounting.resolveWeeklyTerminalStatus({
+    ok: false,
+    source_unstable: true,
+    reason: "SOURCE_TIMEOUT",
+    summary: { inserts: 0, updates: 0 }
+  });
+  if (status !== "source_unstable") throw new Error(status);
+  const disney = fs.readFileSync(path.join(root, "netlify/functions/lib/disney-weekly-maintenance.js"), "utf8");
+  if (!/SOURCE_TIMEOUT/.test(disney) || !/source_unstable/.test(disney)) {
+    throw new Error("Disney weekly must abort deadline as source_unstable");
+  }
+});
+
+await testAsync("deliberate blocked states persist finished_at and operational success", async () => {
+  const finalized = [];
+  const base = memoryLockStore();
+  const sb = async (path, options = {}) => {
+    const method = (options.method || "GET").toUpperCase();
+    if (path === "cruise_discovery_runs" && method === "POST") {
+      return [{ id: "run-deliberate", status: "running", stats: {} }];
+    }
+    if (path.startsWith("cruise_discovery_runs?") && method === "PATCH") {
+      finalized.push(JSON.parse(options.body));
+      return [];
+    }
+    return base(path, options);
+  };
+  const cases = [
+    { terminal_status: "review_required", review_required: true, reason: "REVIEW_REQUIRED" },
+    { terminal_status: "source_repair_required", source_repair_required: true, reason: "SOURCE_REPAIR_REQUIRED" },
+    { terminal_status: "source_unstable", source_unstable: true, reason: "SOURCE_TIMEOUT" },
+    { terminal_status: "not_yet_commissioned", not_yet_commissioned: true, reason: "NOT_YET_COMMISSIONED" },
+    { terminal_status: "read_only", read_only: true, reason: "READ_ONLY" }
+  ];
+  for (const sample of cases) {
+    finalized.length = 0;
+    const result = await cron.executeWeeklyMaintenance({
+      lineSlug: "explora-journeys",
+      cruiseLineId: "explora",
+      runType: "explora_weekly_maintenance",
+      assertEnabled: () => {},
+      runMaintenance: async () => ({
+        ok: false,
+        success: true,
+        ...sample,
+        summary: { inserts: 0, updates: 0, inventory_changed: false }
+      }),
+      dryRun: true,
+      supabaseClient: sb
+    });
+    if (result.success !== true) throw new Error(`${sample.terminal_status} must succeed operationally`);
+    if (finalized[0]?.status !== "completed") throw new Error(`${sample.terminal_status} ledger ${finalized[0]?.status}`);
+    if (!finalized[0]?.finished_at) throw new Error(`${sample.terminal_status} missing finished_at`);
+    if (finalized[0]?.error_message) throw new Error(`${sample.terminal_status} must not look like weekly_maintenance_failed`);
+  }
+});
+
+await testAsync("true thrown exception still fails", async () => {
+  const finalized = [];
+  const base = memoryLockStore();
+  const sb = async (path, options = {}) => {
+    const method = (options.method || "GET").toUpperCase();
+    if (path === "cruise_discovery_runs" && method === "POST") {
+      return [{ id: "run-boom", status: "running", stats: {} }];
+    }
+    if (path.startsWith("cruise_discovery_runs?") && method === "PATCH") {
+      finalized.push(JSON.parse(options.body));
+      return [];
+    }
+    return base(path, options);
+  };
+  let threw = false;
+  try {
+    await cron.executeWeeklyMaintenance({
+      lineSlug: "explora-journeys",
+      cruiseLineId: "explora",
+      runType: "explora_weekly_maintenance",
+      assertEnabled: () => {},
+      runMaintenance: async () => {
+        throw new Error("database exploded");
+      },
+      dryRun: true,
+      supabaseClient: sb
+    });
+  } catch (error) {
+    threw = /database exploded/.test(error.message);
+  }
+  if (!threw) throw new Error("unexpected exception must rethrow");
+  if (finalized[0]?.status !== "failed") throw new Error("true exception must fail the ledger");
+  if (!finalized[0]?.finished_at) throw new Error("failed run must still persist finished_at");
+});
+
+await testAsync("partial writes still fail loudly", async () => {
+  const finalized = [];
+  const base = memoryLockStore();
+  const sb = async (path, options = {}) => {
+    const method = (options.method || "GET").toUpperCase();
+    if (path === "cruise_discovery_runs" && method === "POST") {
+      return [{ id: "run-partial", status: "running", stats: {} }];
+    }
+    if (path.startsWith("cruise_discovery_runs?") && method === "PATCH") {
+      finalized.push(JSON.parse(options.body));
+      return [];
+    }
+    return base(path, options);
+  };
+  const result = await cron.executeWeeklyMaintenance({
+    lineSlug: "explora-journeys",
+    cruiseLineId: "explora",
+    runType: "explora_weekly_maintenance",
+    assertEnabled: () => {},
+    runMaintenance: async () => ({
+      ok: false,
+      success: false,
+      reason: "apply_failed",
+      summary: { inserts: 4, updates: 0, failed_writes: 2, inventory_changed: true }
+    }),
+    dryRun: false,
+    supabaseClient: sb
+  });
+  if (result.success !== false) throw new Error("partial writes must not look healthy");
+  if (finalized[0]?.status !== "failed") throw new Error(finalized[0]?.status);
+  if (finalized[0]?.stats?.terminal_status !== "partial_write_failure") {
+    throw new Error(finalized[0]?.stats?.terminal_status);
+  }
+});
+
 if (failures.length) {
   console.error(`\ntest-weekly-maintenance-reliability-p0: ${passed} passed, ${failures.length} failed`);
   process.exit(1);

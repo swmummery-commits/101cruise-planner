@@ -138,12 +138,29 @@ async function runSilverseaWeeklyForExecutor(context = {}) {
   const inventory = report.production_inventory || {};
   const gates = report.orchestration?.gates || {};
   const sourceHealthy = gates.source_healthy === true || source.health === "PASS";
+  const proposedUpdates = actions.UPDATE_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.update ?? 0;
+  const proposedInserts = actions.INSERT_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.insert ?? 0;
+  const reviewCount = Number(report.plan?.counts?.review ?? proposedUpdates);
+  const writesEnabled = context.performWrites === true && context.dryRun === false;
+  const reviewRequired = reviewCount > 0 || proposedUpdates > 0;
+  const readOnly = writesEnabled !== true;
+  const terminalStatus = blocked
+    ? null
+    : reviewRequired
+      ? "review_required"
+      : readOnly
+        ? "read_only"
+        : ok
+          ? "completed"
+          : null;
   return {
-    ok,
-    success: ok,
+    ok: ok || reviewRequired || readOnly,
+    success: ok || reviewRequired || readOnly,
     blocked,
-    review_required: false,
-    reason: report.block_reason || report.status || null,
+    review_required: reviewRequired,
+    read_only: readOnly,
+    terminal_status: terminalStatus,
+    reason: reviewRequired ? "REVIEW_REQUIRED" : readOnly ? "READ_ONLY" : report.block_reason || report.status || null,
     summary: {
       run_type: SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE,
       run_id: context.runId,
@@ -156,8 +173,12 @@ async function runSilverseaWeeklyForExecutor(context = {}) {
       active_production_total:
         inventory.active ??
         (Number(inventory.classic_active || 0) + Number(inventory.expedition_active || 0) || null),
-      proposed_inserts: actions.INSERT_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.insert ?? 0,
-      proposed_updates: actions.UPDATE_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.update ?? 0,
+      proposed_inserts: proposedInserts,
+      proposed_updates: proposedUpdates,
+      review_sailing_ids: report.plan?.review_sailing_ids || report.review_sailing_ids || [],
+      terminal_status: terminalStatus,
+      review_required: reviewRequired,
+      read_only: readOnly,
       source_absent_active: actions.SOURCE_ABSENT ?? 0,
       inserts: report.writes?.inserts ?? 0,
       updates: report.writes?.updates ?? 0,

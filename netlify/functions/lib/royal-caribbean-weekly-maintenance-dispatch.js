@@ -10,6 +10,7 @@ const {
 const { runFromMaintenanceRunner } = require("./cruise-discovery-maintenance-runner");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
 const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+const { weeklyDispatchStatus } = require("./weekly-maintenance-write-accounting");
 
 const { parseJsonBody, redactSecrets, assertCronAuth } = require("./royal-caribbean-weekly-auth");
 const {
@@ -350,12 +351,7 @@ async function runRoyalCaribbeanWeeklyBackgroundMaintenance({
     dispatch_id: dispatchId,
     run_id: runId || result.run_id || summary.run_id || null,
     phase: "background_maintenance",
-    status:
-      result.blocked && result.already_running
-        ? "already_running"
-        : result.success
-          ? "completed"
-          : "failed"
+    status: weeklyDispatchStatus(result)
   };
 }
 

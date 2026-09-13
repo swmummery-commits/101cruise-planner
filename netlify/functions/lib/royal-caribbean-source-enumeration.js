@@ -375,6 +375,8 @@ function evaluateWeeklyAuthoritativeEnumerationHealth({
   simulationOk = false,
   unionSailingIds = new Set(),
   productionSailingIds = new Set(),
+  currentExpectedProductionSailingIds = null,
+  explainedAbsentSailingIds = [],
   duplicateSailingIds = 0,
   shipCoverage = null,
   detailLookupResults = []
@@ -385,12 +387,20 @@ function evaluateWeeklyAuthoritativeEnumerationHealth({
   if (shipCoverage?.missing_ship_codes?.length) {
     failures.push(`fleet_ships_without_union_sailings_${shipCoverage.missing_ship_codes.length}`);
   }
-  const absentFromUnion = [...productionSailingIds].filter((id) => !unionSailingIds.has(id));
+  const explained = new Set(
+    [...(explainedAbsentSailingIds || [])].map((id) => String(id || "").trim()).filter(Boolean)
+  );
+  const expectedIds = currentExpectedProductionSailingIds
+    ? [...currentExpectedProductionSailingIds]
+    : [...productionSailingIds].filter((id) => !explained.has(id));
+  const absentFromUnion = expectedIds.filter((id) => !unionSailingIds.has(id));
+  const allProductionAbsent = [...productionSailingIds].filter((id) => !unionSailingIds.has(id));
   const enumerationGaps = detailLookupResults.filter((row) => row.retrievable);
   const confirmedSourceRemoved = detailLookupResults.filter(
     (row) => row.detail_ok === true && row.sailing_present_in_detail === false
   );
   const unexplainedAbsent = absentFromUnion.filter((id) => {
+    if (explained.has(id)) return false;
     if (enumerationGaps.some((row) => row.official_sailing_id === id)) return false;
     if (confirmedSourceRemoved.some((row) => row.official_sailing_id === id)) return false;
     return true;
@@ -401,12 +411,16 @@ function evaluateWeeklyAuthoritativeEnumerationHealth({
     royal_caribbean_source_enumeration_ok:
       failures.filter((f) => f !== "enumeration_gap_recovered_via_detail_lookup").length === 0,
     failures,
-    production_absent_from_union_count: absentFromUnion.length,
-    production_absent_from_union_ids: absentFromUnion.slice(0, 20),
-    production_absent_from_union_ids_all: absentFromUnion,
+    production_absent_from_union_count: allProductionAbsent.length,
+    production_absent_from_union_ids: allProductionAbsent.slice(0, 20),
+    production_absent_from_union_ids_all: allProductionAbsent,
+    current_expected_absent_from_union_count: absentFromUnion.length,
+    current_expected_absent_from_union_ids: absentFromUnion.slice(0, 20),
+    explained_absent_from_union_count: allProductionAbsent.filter((id) => explained.has(id)).length,
     detail_lookup_recoverable_count: enumerationGaps.length,
     confirmed_source_removed_count: confirmedSourceRemoved.length,
     unexplained_production_absent_count: unexplainedAbsent.length,
+    unexplained_current_production_ids: unexplainedAbsent,
     authoritative_union: true
   };
 }

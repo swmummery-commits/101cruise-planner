@@ -89,6 +89,9 @@ async function buildNorwegianWeeklyManifest({
       reason: row.reason,
       ambiguity_reason: ambiguity?.ambiguity_reason || null,
       ambiguity_detail: ambiguity?.detail || null,
+      missing_source_fields: ambiguity?.missing_source_fields || [],
+      missing_required_fields: ambiguity?.missing_required_fields || [],
+      incompleteness_origin: ambiguity?.incompleteness_origin || null,
       matching_production_ids: (row.matching_production || []).map((item) => item.id).filter(Boolean)
     };
   });

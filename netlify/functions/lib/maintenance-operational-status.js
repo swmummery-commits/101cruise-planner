@@ -8,6 +8,10 @@
 const OPERATIONAL_STATUSES = Object.freeze([
   "HEALTHY",
   "REVIEW_REQUIRED",
+  "SOURCE_REPAIR_REQUIRED",
+  "SOURCE_UNSTABLE",
+  "READ_ONLY",
+  "NOT_YET_COMMISSIONED",
   "SOURCE_FAILURE",
   "WRITE_FAILURE",
   "MISSED_SCHEDULE",
@@ -16,6 +20,22 @@ const OPERATIONAL_STATUSES = Object.freeze([
   "STALE_ABANDONED",
   "BLOCKED_DUPLICATE"
 ]);
+
+const OPERATIONAL_STATUS_SEVERITY = Object.freeze({
+  SOURCE_REPAIR_REQUIRED: "red",
+  SOURCE_UNSTABLE: "red",
+  SOURCE_FAILURE: "red",
+  WRITE_FAILURE: "red",
+  STALE_ABANDONED: "red",
+  REVIEW_REQUIRED: "amber",
+  READ_ONLY: "amber",
+  NOT_YET_COMMISSIONED: "grey",
+  DISABLED: "grey",
+  MISSED_SCHEDULE: "amber",
+  BLOCKED_DUPLICATE: "amber",
+  RUNNING: "amber",
+  HEALTHY: "green"
+});
 
 const DAILY_EXPIRY_SLOT_CRON_UTC = { hour: 17, minute: 30 };
 const SLOT_LOOKBACK_MS = 30 * 60 * 1000;
@@ -83,15 +103,23 @@ function classifyOperationalStatus({
   sourceFailure = false,
   writeFailure = false,
   missedSchedule = false,
-  blockedDuplicate = false
+  blockedDuplicate = false,
+  sourceRepairRequired = false,
+  sourceUnstable = false,
+  notYetCommissioned = false,
+  readOnly = false
 } = {}) {
   if (!enabled) return "DISABLED";
   if (running) return "RUNNING";
   if (abandoned) return "STALE_ABANDONED";
   if (blockedDuplicate) return "BLOCKED_DUPLICATE";
-  if (reviewRequired) return "REVIEW_REQUIRED";
+  if (sourceRepairRequired) return "SOURCE_REPAIR_REQUIRED";
+  if (sourceUnstable) return "SOURCE_UNSTABLE";
   if (sourceFailure) return "SOURCE_FAILURE";
   if (writeFailure) return "WRITE_FAILURE";
+  if (reviewRequired) return "REVIEW_REQUIRED";
+  if (notYetCommissioned) return "NOT_YET_COMMISSIONED";
+  if (readOnly) return "READ_ONLY";
   if (missedSchedule) return "MISSED_SCHEDULE";
   return "HEALTHY";
 }
@@ -100,9 +128,28 @@ function weeklyBackgroundHttpStatus(result = {}) {
   if (
     result.success === true ||
     result.review_required === true ||
+    result.source_repair_required === true ||
+    result.source_unstable === true ||
+    result.not_yet_commissioned === true ||
+    result.read_only === true ||
+    result.disabled === true ||
     result.already_dispatched === true ||
     result.duplicate_background_invocation === true ||
     result.blocked === true
+  ) {
+    return 200;
+  }
+  const terminal = String(result.terminal_status || result.summary?.terminal_status || "").toLowerCase();
+  if (
+    [
+      "review_required",
+      "source_repair_required",
+      "source_unstable",
+      "read_only",
+      "not_yet_commissioned",
+      "disabled",
+      "completed"
+    ].includes(terminal)
   ) {
     return 200;
   }
@@ -119,6 +166,7 @@ function isReviewRequiredZeroWrite(result = {}) {
 
 module.exports = {
   OPERATIONAL_STATUSES,
+  OPERATIONAL_STATUS_SEVERITY,
   perthDateToDailyExpiryUtc,
   detectMissedDailyExpirySlots,
   classifyOperationalStatus,

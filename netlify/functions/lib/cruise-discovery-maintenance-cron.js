@@ -19,7 +19,8 @@ const { assertWeeklyRunnerResult } = require("./weekly-maintenance-result-contra
 const {
   mergeFlattenedWriteStats,
   resolveWeeklyTerminalStatus,
-  resolveLedgerRunStatus
+  resolveLedgerRunStatus,
+  isDeliberateNonWritingTerminal
 } = require("./weekly-maintenance-write-accounting");
 const {
   collectInvocationProvenance,
@@ -141,20 +142,42 @@ async function executeWeeklyMaintenance({
 
     const summary = mergeFlattenedWriteStats(result.summary || {});
     summary.duration_ms = Date.now() - started;
-    summary.failure_reason = result.reason || null;
     summary.worker_state =
       result.worker_state ||
       (result.already_running ? "already_running" : result.blocked ? "blocked" : "idle");
     summary.dry_run = dryRun === true;
+    summary.review_required = result.review_required === true || summary.review_required === true;
+    summary.source_repair_required =
+      result.source_repair_required === true || summary.source_repair_required === true;
+    summary.source_unstable = result.source_unstable === true || summary.source_unstable === true;
+    summary.not_yet_commissioned =
+      result.not_yet_commissioned === true || summary.not_yet_commissioned === true;
+    summary.read_only = result.read_only === true || summary.read_only === true;
+    if (Array.isArray(result.summary?.review_sailing_ids) || Array.isArray(summary.review_sailing_ids)) {
+      summary.review_sailing_ids = result.summary?.review_sailing_ids || summary.review_sailing_ids || [];
+    }
     const terminalStatus = resolveWeeklyTerminalStatus({
       ok: result.ok,
       blocked: result.blocked === true,
-      review_required: result.review_required === true,
+      review_required: summary.review_required,
       already_running: result.already_running === true,
       reason: result.reason,
-      summary
+      summary,
+      terminal_status: result.terminal_status || summary.terminal_status,
+      source_repair_required: summary.source_repair_required,
+      source_unstable: summary.source_unstable,
+      not_yet_commissioned: summary.not_yet_commissioned,
+      read_only: summary.read_only,
+      disabled: result.disabled === true
     });
     summary.terminal_status = terminalStatus;
+    const deliberate = isDeliberateNonWritingTerminal(terminalStatus);
+    summary.failure_reason = deliberate ? null : result.reason || null;
+    if (deliberate) {
+      summary.inventory_changed = false;
+      summary.inserts = summary.inserts || 0;
+      summary.updates = summary.updates || 0;
+    }
 
     const baseExtra = {
       run_type: runType,
@@ -199,31 +222,45 @@ async function executeWeeklyMaintenance({
       };
     }
 
+    if (deliberate && terminalStatus !== "completed") {
+      await finalizeMaintenanceRun(sb, dbRun?.id, {
+        status: "completed",
+        stats: {
+          ...stats,
+          inventory_changed: false,
+          review_required: terminalStatus === "review_required",
+          source_repair_required: terminalStatus === "source_repair_required",
+          source_unstable: terminalStatus === "source_unstable",
+          not_yet_commissioned: terminalStatus === "not_yet_commissioned",
+          read_only: terminalStatus === "read_only",
+          disabled: terminalStatus === "disabled",
+          terminal_status: terminalStatus,
+          review_sailing_ids: summary.review_sailing_ids || [],
+          failure_reason: null,
+          worker_state: "idle"
+        },
+        errorMessage: null
+      });
+      return {
+        success: true,
+        review_required: terminalStatus === "review_required",
+        source_repair_required: terminalStatus === "source_repair_required",
+        source_unstable: terminalStatus === "source_unstable",
+        not_yet_commissioned: terminalStatus === "not_yet_commissioned",
+        read_only: terminalStatus === "read_only",
+        disabled: terminalStatus === "disabled",
+        terminal_status: terminalStatus,
+        run_id: runId,
+        run_record_id: dbRun?.id,
+        reason: result.reason,
+        blocked: false,
+        summary,
+        simulation: result.simulation || null,
+        manifest: result.manifest || null
+      };
+    }
+
     if (!result.ok) {
-      if (result.review_required === true) {
-        await finalizeMaintenanceRun(sb, dbRun?.id, {
-          status: "completed",
-          stats: {
-            ...stats,
-            inventory_changed: stats.inventory_changed === true,
-            review_required: true,
-            terminal_status: "review_required",
-            failure_reason: result.reason || null
-          },
-          errorMessage: null
-        });
-        return {
-          success: true,
-          review_required: true,
-          run_id: runId,
-          run_record_id: dbRun?.id,
-          reason: result.reason,
-          blocked: false,
-          summary,
-          simulation: result.simulation || null,
-          manifest: result.manifest || null
-        };
-      }
       await finalizeMaintenanceRun(sb, dbRun?.id, {
         status: resolveLedgerRunStatus(terminalStatus),
         stats: {

@@ -458,13 +458,26 @@ function fieldPresent(value) {
 
 function sourceVoyageFields(row = {}) {
   return {
-    ship_id: row.ship_id || row.canonical_ship_id || row.candidate?.ship_id || null,
-    departure_date: String(row.departure_date || row.candidate?.departure_date || "").slice(0, 10) || null,
-    return_date: String(row.return_date || row.candidate?.return_date || "").slice(0, 10) || null,
+    ship: row.ship_id || row.canonical_ship_id || row.candidate?.ship_id || row.ship_name || null,
+    departure: String(row.departure_date || row.candidate?.departure_date || "").slice(0, 10) || null,
+    return: String(row.return_date || row.candidate?.return_date || "").slice(0, 10) || null,
     nights: row.nights ?? row.candidate?.nights ?? null,
     departure_port: row.departure_port || row.canonical_departure_port || row.candidate?.departure_port || null,
-    destination_id: row.destination_id || row.destination || row.candidate?.destination_id || null
+    destination: row.destination_id || row.destination || row.candidate?.destination_id || null,
+    itinerary: row.itinerary || row.candidate?.itinerary || null,
+    official_identity: row.official_sailing_id || row.candidate?.official_sailing_id || null
   };
+}
+
+function missingNorwegianSourceFields(row = {}) {
+  const src = sourceVoyageFields(row);
+  const required = ["ship", "departure", "return", "nights", "departure_port"];
+  const optional = ["destination", "itinerary", "official_identity"];
+  const missing = [];
+  for (const field of [...required, ...optional]) {
+    if (!fieldPresent(src[field])) missing.push(field);
+  }
+  return { fields: src, missing_required: required.filter((field) => !fieldPresent(src[field])), missing };
 }
 
 function scoreNearestNorwegianProduction(source = {}, productionRows = []) {
@@ -473,14 +486,14 @@ function scoreNearestNorwegianProduction(source = {}, productionRows = []) {
   let bestScore = -1;
   for (const row of productionRows || []) {
     let score = 0;
-    if (src.ship_id && row.ship_id === src.ship_id) score += 8;
-    if (src.departure_date && String(row.departure_date || "").slice(0, 10) === src.departure_date) score += 6;
-    if (src.return_date && String(row.return_date || "").slice(0, 10) === src.return_date) score += 3;
+    if (src.ship && row.ship_id === src.ship) score += 8;
+    if (src.departure && String(row.departure_date || "").slice(0, 10) === src.departure) score += 6;
+    if (src.return && String(row.return_date || "").slice(0, 10) === src.return) score += 3;
     if (src.nights != null && Number(row.nights) === Number(src.nights)) score += 2;
     if (src.departure_port && normaliseComparable(row.departure_port) === normaliseComparable(src.departure_port)) {
       score += 2;
     }
-    if (src.destination_id && (row.destination_id || row.destination) === src.destination_id) score += 1;
+    if (src.destination && (row.destination_id || row.destination) === src.destination) score += 1;
     if (score > bestScore) {
       bestScore = score;
       best = [row];
@@ -493,13 +506,21 @@ function scoreNearestNorwegianProduction(source = {}, productionRows = []) {
 
 function classifyNorwegianAmbiguityReason(candidate = {}, productionRows = []) {
   const src = sourceVoyageFields(candidate);
-  const sourceIncomplete = ["ship_id", "departure_date", "return_date", "nights", "departure_port"].some(
-    (field) => !fieldPresent(src[field])
-  );
+  const missing = missingNorwegianSourceFields(candidate);
+  const sourceIncomplete = missing.missing_required.length > 0;
   if (sourceIncomplete) {
+    const hasOfficialIdentity = fieldPresent(src.official_identity);
+    const origin = !hasOfficialIdentity
+      ? "official_ncl_source_or_parser"
+      : missing.missing_required.includes("ship")
+        ? "ship_resolver_or_reference_data"
+        : "parser_or_normalisation";
     return {
       ambiguity_reason: "SOURCE_FIELD_INCOMPLETE",
-      detail: "source voyage fingerprint missing ship, dates, nights, or departure port"
+      detail: `source voyage fingerprint missing ${missing.missing_required.join(", ")}`,
+      missing_source_fields: missing.missing,
+      missing_required_fields: missing.missing_required,
+      incompleteness_origin: origin
     };
   }
 
@@ -518,11 +539,11 @@ function classifyNorwegianAmbiguityReason(candidate = {}, productionRows = []) {
     };
   }
 
-  const sameShip = nearest.filter((row) => row.ship_id === src.ship_id);
+  const sameShip = nearest.filter((row) => row.ship_id === src.ship);
   const compare = sameShip[0] || nearest[0];
   const prodDate = String(compare.departure_date || "").slice(0, 10);
   const prodReturn = String(compare.return_date || "").slice(0, 10);
-  if (prodDate !== src.departure_date || prodReturn !== src.return_date || Number(compare.nights) !== Number(src.nights)) {
+  if (prodDate !== src.departure || prodReturn !== src.return || Number(compare.nights) !== Number(src.nights)) {
     return {
       ambiguity_reason: "DATE_OR_DURATION_DIFFERENCE",
       detail: "nearest production neighbour differs in departure, return, or nights"
@@ -545,7 +566,7 @@ function classifyNorwegianAmbiguityReason(candidate = {}, productionRows = []) {
     }
   }
 
-  const srcDest = normaliseComparable(src.destination_id);
+  const srcDest = normaliseComparable(src.destination);
   const prodDest = normaliseComparable(compare.destination_id || compare.destination);
   if (srcDest && prodDest && srcDest !== prodDest) {
     return {
@@ -567,6 +588,7 @@ module.exports = {
   classifyNorwegianP3bCandidate,
   classifyNorwegianP3bEligibleSet,
   classifyNorwegianAmbiguityReason,
+  missingNorwegianSourceFields,
   norwegianP3bWriteAllowed,
   norwegianMultipleProductionMatchBlocksWrite
 };

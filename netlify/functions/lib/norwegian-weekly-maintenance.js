@@ -22,6 +22,20 @@ const { mergeFlattenedWriteStats } = require("./weekly-maintenance-write-account
 const NCL_LINE_SLUG = "norwegian-cruise-line";
 const NCL_MAX_WEEKLY_WRITES = 200;
 
+function incompleteNorwegianFieldBreakdown(reviewItems = []) {
+  const counts = {};
+  const origins = {};
+  for (const item of reviewItems) {
+    for (const field of item.missing_required_fields || item.missing_source_fields || []) {
+      counts[field] = (counts[field] || 0) + 1;
+    }
+    if (item.incompleteness_origin) {
+      origins[item.incompleteness_origin] = (origins[item.incompleteness_origin] || 0) + 1;
+    }
+  }
+  return { missing_required_field_counts: counts, incompleteness_origin_counts: origins };
+}
+
 async function runNorwegianWeeklyMaintenance(context = {}) {
   const sb = context.supabase;
   if (!sb) throw new Error("Norwegian weekly maintenance requires an explicit supabase client");
@@ -97,6 +111,7 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
       p3b_classification_counts: manifest.p3b_classification_counts || null,
       review_items: reviewItems,
       review_sailing_ids: manifest.review_sailing_ids || [],
+      incomplete_source_field_breakdown: incompleteNorwegianFieldBreakdown(reviewItems),
       review_required: true,
       terminal_status: "review_required",
       hard_deletes: 0,
@@ -188,6 +203,7 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     p3b_classification_counts: manifest.p3b_classification_counts || null,
     review_items: reviewItems,
     review_sailing_ids: manifest.review_sailing_ids || [],
+    incomplete_source_field_breakdown: incompleteNorwegianFieldBreakdown(reviewItems),
     review_required: reviewRequired,
     proposed_promotions: (manifest.promotions || []).length,
     proposed_cutoff_hides: (manifest.cutoff_hides || []).length,

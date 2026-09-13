@@ -174,7 +174,22 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   const unionSailingIds = new Set(
     (simulation.products || []).map((p) => p.official_sailing_id).filter(Boolean)
   );
-  const missingFromUnion = [...productionSailingIds].filter((id) => !unionSailingIds.has(id));
+  const currentExpectedProductionSailingIds = new Set();
+  const explainedAbsentSailingIds = [];
+  for (const row of productionIndex.rows || []) {
+    const id = row.official_sailing_id;
+    if (!id) continue;
+    const expiredOrCutoff =
+      String(row.status || "").toLowerCase() === "expired" ||
+      shouldRemoveFromPublicInventory({
+        departureDate: row.departure_date,
+        status: row.status,
+        perthToday: today
+      });
+    if (expiredOrCutoff) explainedAbsentSailingIds.push(id);
+    else currentExpectedProductionSailingIds.add(id);
+  }
+  const missingFromUnion = [...currentExpectedProductionSailingIds].filter((id) => !unionSailingIds.has(id));
   const detailLookupResults = missingFromUnion.length
     ? await auditProductionIdsViaDetailLookup({
         missingSailingIds: missingFromUnion,
@@ -185,6 +200,8 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
     simulationOk: simulation.ok === true,
     unionSailingIds,
     productionSailingIds,
+    currentExpectedProductionSailingIds,
+    explainedAbsentSailingIds,
     duplicateSailingIds: simulation.ingestion_audit?.duplicate_sailing_ids || 0,
     shipCoverage,
     detailLookupResults
@@ -439,17 +456,35 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   }
 
   const passed = performWrites ? applyResult?.ok === true && dryRunPassed : dryRunPassed;
+  const unexplainedCurrent = enumerationHealth.unexplained_current_production_ids || [];
+  const sourceRepairRequired = unexplainedCurrent.length > 0 || weeklyHealth.weekly_maintenance_healthy !== true;
+  const terminalStatus = sourceRepairRequired
+    ? "source_repair_required"
+    : !performWrites
+      ? "read_only"
+      : passed
+        ? "completed"
+        : null;
+  summary.terminal_status = terminalStatus;
+  summary.source_repair_required = sourceRepairRequired;
+  summary.unexplained_current_production_ids = unexplainedCurrent;
+  summary.review_sailing_ids = unexplainedCurrent;
 
   return {
-    ok: passed,
+    ok: passed && !sourceRepairRequired,
+    success: !sourceRepairRequired && (passed || !performWrites),
     dry_run: !performWrites,
-    blocked: !passed,
-    reason: passed
-      ? null
-      : performWrites
-        ? applyResult?.stats?.write_details?.find((row) => row.error)?.error ||
-          [...health.failures, ...weeklyHealth.failures].join("; ")
-        : [...health.failures, ...weeklyHealth.failures].join("; "),
+    blocked: !passed && !sourceRepairRequired,
+    source_repair_required: sourceRepairRequired,
+    terminal_status: terminalStatus,
+    reason: sourceRepairRequired
+      ? "SOURCE_REPAIR_REQUIRED"
+      : passed
+        ? null
+        : performWrites
+          ? applyResult?.stats?.write_details?.find((row) => row.error)?.error ||
+            [...health.failures, ...weeklyHealth.failures].join("; ")
+          : [...health.failures, ...weeklyHealth.failures].join("; "),
     summary,
     manifest,
     weekly_manifest: weeklyManifest,

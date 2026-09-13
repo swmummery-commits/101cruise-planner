@@ -5,6 +5,7 @@
 
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
 const { collectInvocationProvenance } = require("./weekly-maintenance-schedule-control");
+const { weeklyDispatchStatus } = require("./weekly-maintenance-write-accounting");
 
 function cronSecret(env = process.env) {
   return String(env.DISCOVERY_CRON_SECRET || "").trim();
@@ -239,16 +240,7 @@ function createThinWeeklyDispatch({
       ...result,
       dispatch_id: dispatchId,
       phase: "background_maintenance",
-      status:
-        result.duplicate_background_invocation
-          ? "duplicate_background_invocation"
-          : result.blocked && result.already_running
-            ? "already_running"
-            : result.review_required
-              ? "review_required"
-              : result.success
-                ? "completed"
-                : "failed"
+      status: weeklyDispatchStatus(result)
     };
   }
 

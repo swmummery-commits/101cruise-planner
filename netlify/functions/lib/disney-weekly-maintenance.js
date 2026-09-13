@@ -178,15 +178,45 @@ async function runDisneyWeeklyMaintenance(context = {}) {
       return { ok: false, blocked: true, reason: modeGate.reason, line_slug: lineSlug };
     }
 
-    const simulation = await simulateDisneyDiscovery({
-      cruiseLine: line,
-      ships,
-      destinations,
-      today,
-      useCache: false,
-      supabaseQuery: sb,
-      runEnrichment: false
-    });
+    let simulation;
+    try {
+      simulation = await simulateDisneyDiscovery({
+        cruiseLine: line,
+        ships,
+        destinations,
+        today,
+        useCache: false,
+        supabaseQuery: sb,
+        runEnrichment: false,
+        deadlineMs: context.deadlineMs ?? context.deadline_ms ?? require("./disney-discovery-source").DISNEY_SOURCE_DEADLINE_MS
+      });
+    } catch (error) {
+      if (error?.code === "SOURCE_TIMEOUT" || error?.terminal_status === "source_unstable") {
+        return {
+          ok: false,
+          success: true,
+          blocked: false,
+          source_unstable: true,
+          terminal_status: "source_unstable",
+          reason: "SOURCE_TIMEOUT",
+          line_slug: lineSlug,
+          summary: {
+            line_slug: lineSlug,
+            run_id: runId,
+            run_type: runType,
+            terminal_status: "source_unstable",
+            source_unstable: true,
+            inserts: 0,
+            updates: 0,
+            inventory_changed: false,
+            writes_performed: 0,
+            deadline_stage: error.stage || null,
+            failure_reason: null
+          }
+        };
+      }
+      throw error;
+    }
 
     const sourceQualityGate = evaluateDisneyWeeklySourceQualityGate(simulation);
     if (!sourceQualityGate.passed) {
@@ -360,11 +390,17 @@ async function runDisneyWeeklyMaintenance(context = {}) {
     };
 
     if (!weeklyWriteSafety.ok && performWrites) {
+      const reviewOnly = (proposedReview.length > 0 || proposedInserts.length > maxWrites) && (summary.inserts || 0) === 0;
+      summary.terminal_status = reviewOnly ? "review_required" : null;
+      summary.review_required = reviewOnly;
       return {
         ok: false,
+        success: reviewOnly,
         blocked: false,
-        failed: true,
-        reason: weeklyWriteSafety.failures.join("; "),
+        failed: !reviewOnly,
+        review_required: reviewOnly,
+        terminal_status: reviewOnly ? "review_required" : null,
+        reason: reviewOnly ? "REVIEW_REQUIRED" : weeklyWriteSafety.failures.join("; "),
         summary,
         manifest,
         simulation
@@ -373,7 +409,20 @@ async function runDisneyWeeklyMaintenance(context = {}) {
 
     if (explicitDryRun || !performWrites) {
       summary.material_actions_applied = 0;
-      return { ok: true, dry_run: true, summary, manifest, simulation };
+      const reviewRequired = proposedReview.length > 0 || proposedInserts.length > maxWrites;
+      summary.review_required = reviewRequired;
+      summary.terminal_status = reviewRequired ? "review_required" : "read_only";
+      summary.review_sailing_ids = (proposedReview || []).map((row) => row.official_sailing_id).filter(Boolean);
+      return {
+        ok: true,
+        dry_run: true,
+        review_required: reviewRequired,
+        terminal_status: summary.terminal_status,
+        reason: reviewRequired ? "REVIEW_REQUIRED" : "READ_ONLY",
+        summary,
+        manifest,
+        simulation
+      };
     }
 
     const combinedMaterial = materialActions.material_actions_total;

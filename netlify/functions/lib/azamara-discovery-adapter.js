@@ -37,16 +37,119 @@ const {
   externalKey
 } = discovery;
 
-function defaultFetchText(url, maxBytes = 600000) {
+function defaultFetchText(url, maxBytes = 600000, accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") {
   return fetch(url, {
     redirect: "follow",
     headers: {
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      Accept: accept,
       "User-Agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     },
     signal: AbortSignal.timeout(45000)
-  }).then(async (res) => ({ status: res.status, text: (await res.text()).slice(0, maxBytes) }));
+  }).then(async (res) => ({
+    status: res.status,
+    text: (await res.text()).slice(0, maxBytes),
+    content_type: res.headers?.get?.("content-type") || null,
+    final_url: typeof res.url === "string" ? res.url : url
+  }));
+}
+
+function decodeSitemapLoc(value) {
+  return String(value || "")
+    .trim()
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
+
+function extractAzamaraPackagesFromSitemapXml(xml, baseUrl = SITEMAP_URL) {
+  const text = String(xml || "");
+  const locs = extractSitemapLocs(text, baseUrl);
+  const parsedByCode = new Map();
+  const consider = new Set(locs);
+  const locRe = /<loc>([^<]+)<\/loc>/gi;
+  let match;
+  while ((match = locRe.exec(text)) !== null) {
+    consider.add(decodeSitemapLoc(match[1]));
+  }
+  const packageRe = new RegExp(PACKAGE_RE.source, "gi");
+  let rawMatch;
+  while ((rawMatch = packageRe.exec(text)) !== null) {
+    consider.add(`https://www.azamara.com/cruises/${rawMatch[1]}`);
+  }
+  for (const url of consider) {
+    const parsed = parsePackageFromUrl(url);
+    if (!parsed) continue;
+    if (!parsedByCode.has(parsed.fullCode) || parsed.url.length < parsedByCode.get(parsed.fullCode).url.length) {
+      parsedByCode.set(parsed.fullCode, parsed);
+    }
+  }
+  return {
+    locs: locs.length,
+    raw_loc_tags: (text.match(/<loc>/gi) || []).length,
+    packages: [...parsedByCode.values()],
+    sitemapindex: /<sitemapindex/i.test(text),
+    urlset: /<urlset/i.test(text),
+    bytes: Buffer.byteLength(text)
+  };
+}
+
+function detectAzamaraSourceCollapse({
+  simulation = {},
+  productionOfficial = 0,
+  previousEligible = 439
+} = {}) {
+  const fetchResult = simulation.fetch_result || {};
+  const sourceEligible = (simulation.source_eligible_official_ids || []).length;
+  const eligibleUrls = Number(fetchResult.eligible_urls || 0);
+  const sitemapPackages = Number(fetchResult.sitemap_packages || 0);
+  const sitemapLocs = Number(fetchResult.sitemap_locs || 0);
+  const fetchOk = fetchResult.ok === true;
+  const production = Number(productionOfficial || 0);
+  const collapsed =
+    (production >= 50 && sourceEligible === 0) ||
+    (previousEligible >= 50 && sourceEligible > 0 && sourceEligible < previousEligible * 0.25);
+  if (!collapsed) {
+    return { collapsed: false, category: null, source_eligible: sourceEligible, production_official: production };
+  }
+  let category = "OTHER";
+  if (!fetchOk) category = "HTTP_FAILURE";
+  else if (sitemapLocs === 0 && sitemapPackages === 0) category = "EMPTY_SUPPLIER_RESPONSE";
+  else if (sitemapPackages === 0) category = "HTML_STRUCTURE_CHANGE";
+  else if (eligibleUrls === 0) category = "PARSER_REGRESSION";
+  else if (sourceEligible === 0) category = "PARSER_REGRESSION";
+  else category = "CATASTROPHIC_COLLAPSE";
+  return {
+    collapsed: true,
+    category,
+    source_eligible: sourceEligible,
+    production_official: production,
+    sitemap_locs: sitemapLocs,
+    sitemap_packages: sitemapPackages,
+    eligible_urls: eligibleUrls,
+    fetch_ok: fetchOk,
+    http_status: fetchResult.status || fetchResult.http_status || null,
+    final_url: fetchResult.final_url || null,
+    content_type: fetchResult.content_type || null,
+    bytes: fetchResult.bytes || null
+  };
+}
+
+async function mapLimit(items, limit, worker) {
+  const list = [...items];
+  const concurrency = Math.max(1, Number(limit) || 1);
+  const results = new Array(list.length);
+  let next = 0;
+  async function run() {
+    while (next < list.length) {
+      const index = next;
+      next += 1;
+      results[index] = await worker(list[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, list.length) }, () => run()));
+  return results;
 }
 
 function parsePackageFromUrl(url) {
@@ -191,12 +294,41 @@ async function simulateAzamaraDiscovery({
     matcher_picker_mismatch: 0
   };
 
-  let sitemapRes;
-  try {
-    sitemapRes = await fetchText(SITEMAP_URL, 5000000);
-  } catch (error) {
+  const sitemapCandidates = [
+    { url: SITEMAP_URL, accept: "application/xml,text/xml,*/*;q=0.8" },
+    { url: "https://www.azamara.com/sitemap", accept: "application/xml,text/xml,*/*;q=0.8" },
+    { url: SITEMAP_URL, accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" }
+  ];
+  let sitemapRes = null;
+  let sitemapExtract = { locs: 0, raw_loc_tags: 0, packages: [], sitemapindex: false, urlset: false, bytes: 0 };
+  let sitemapError = null;
+  for (const candidate of sitemapCandidates) {
+    try {
+      const fetched =
+        fetchText.length >= 3
+          ? await fetchText(candidate.url, 5000000, candidate.accept)
+          : await fetchText(candidate.url, 5000000);
+      if (fetched.status !== 200) {
+        sitemapError = { status: fetched.status, url: candidate.url };
+        continue;
+      }
+      const extracted = extractAzamaraPackagesFromSitemapXml(fetched.text, candidate.url);
+      sitemapRes = { ...fetched, requested_url: candidate.url };
+      sitemapExtract = extracted;
+      if (extracted.packages.length > 0) break;
+    } catch (error) {
+      sitemapError = { error: error.message, url: candidate.url };
+    }
+  }
+
+  if (!sitemapRes) {
     return {
-      fetch_result: { ok: false, error: error.message, sitemap_url: SITEMAP_URL },
+      fetch_result: {
+        ok: false,
+        error: sitemapError?.error || "azamara_sitemap_unavailable",
+        status: sitemapError?.status || null,
+        sitemap_url: SITEMAP_URL
+      },
       products: [],
       outcome_counts,
       quality_gate_metrics: { duplicate_official_sailing_ids: 0, duplicate_official_identities: 0 },
@@ -204,20 +336,9 @@ async function simulateAzamaraDiscovery({
     };
   }
 
-  if (sitemapRes.status !== 200) {
-    return {
-      fetch_result: { ok: false, status: sitemapRes.status, sitemap_url: SITEMAP_URL },
-      products: [],
-      outcome_counts,
-      quality_gate_metrics: { duplicate_official_sailing_ids: 0, duplicate_official_identities: 0 },
-      source_eligible_official_ids: []
-    };
-  }
-
-  const locs = extractSitemapLocs(sitemapRes.text, SITEMAP_URL);
+  const locs = extractSitemapLocs(sitemapRes.text, sitemapRes.requested_url || SITEMAP_URL);
   const parsedByCode = new Map();
-  for (const url of locs) {
-    const p = parsePackageFromUrl(url);
+  for (const p of sitemapExtract.packages) {
     if (!p || p.departure < minDep) {
       if (p && p.departure < minDep) outcome_counts.within_cutoff += 1;
       continue;
@@ -239,8 +360,14 @@ async function simulateAzamaraDiscovery({
   let urls_processed = 0;
   let http_failures = 0;
   let stale_dead = 0;
+  const htmlDeadlineAt = Date.now() + 720000;
+  let sourceTimeout = false;
 
   for (const item of parsed) {
+    if (Date.now() >= htmlDeadlineAt) {
+      sourceTimeout = true;
+      break;
+    }
     urls_processed += 1;
     if (progressCallback && urls_processed % 25 === 0) progressCallback({ urls_processed, total: parsed.length });
 
@@ -546,14 +673,23 @@ async function simulateAzamaraDiscovery({
   return {
     fetch_result: {
       ok: true,
-      sitemap_url: SITEMAP_URL,
+      sitemap_url: sitemapRes.requested_url || SITEMAP_URL,
+      final_url: sitemapRes.final_url || null,
+      content_type: sitemapRes.content_type || null,
+      bytes: sitemapExtract.bytes || (sitemapRes.text ? Buffer.byteLength(String(sitemapRes.text)) : 0),
+      http_status: sitemapRes.status,
       sitemap_locs: locs.length,
+      raw_loc_tags: sitemapExtract.raw_loc_tags,
+      sitemap_packages: sitemapExtract.packages.length,
+      sitemapindex: sitemapExtract.sitemapindex === true,
+      urlset: sitemapExtract.urlset === true,
       eligible_urls: parsed.length,
       urls_target: parsed.length,
       urls_processed,
       http_failures,
       stale_dead,
-      pagination: { exhausted: true, zero_progress_pages: 0 }
+      source_timeout: sourceTimeout,
+      pagination: { exhausted: !sourceTimeout, zero_progress_pages: 0 }
     },
     products,
     outcome_counts,
@@ -577,5 +713,8 @@ module.exports = {
   classifyDestinationQuality,
   candidateChanged,
   buildAzamaraCandidatePayload,
-  parsePackageFromUrl
+  parsePackageFromUrl,
+  extractAzamaraPackagesFromSitemapXml,
+  detectAzamaraSourceCollapse,
+  mapLimit
 };
