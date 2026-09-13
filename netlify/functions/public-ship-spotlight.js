@@ -1,7 +1,7 @@
 /**
  * Public read-only endpoint for a published Ship Spotlight page.
- * Returns only curated public ship data, approved spotlight copy/media and a
- * small list of current validated sailings. No admin-only or internal fields.
+ * Returns curated public ship data for the shared My Cruise → My Ship
+ * presentation, plus approved gallery imagery and current ship sailings.
  */
 
 const { getConfig, serviceHeaders } = require("./admin-auth");
@@ -44,6 +44,30 @@ function uniqueStrings(values) {
   return [...new Set((values || []).map((v) => String(v || "").trim()).filter(Boolean))];
 }
 
+function mergedGallery({ spotlight, ship, media }) {
+  const byUrl = new Map();
+  const add = (url, meta = {}) => {
+    const clean = String(url || "").trim();
+    if (!clean || byUrl.has(clean)) return;
+    byUrl.set(clean, {
+      url: clean,
+      alt: String(meta.alt || ship.name || "Cruise ship").trim(),
+      title: String(meta.title || "").trim()
+    });
+  };
+
+  add(spotlight.hero_image_url, { alt: ship.name, title: `${ship.name} hero` });
+  (spotlight.supporting_image_urls || []).forEach((url) => add(url, { alt: ship.name }));
+  add(ship.hero_image_url, { alt: ship.name, title: `${ship.name} hero` });
+  (Array.isArray(ship.image_gallery) ? ship.image_gallery : []).forEach((url) => add(url, { alt: ship.name }));
+  (media || []).forEach((row) => add(row.public_url, {
+    alt: row.alt_text || row.title || ship.name,
+    title: row.title || ""
+  }));
+
+  return [...byUrl.values()].slice(0, 24);
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return json(204, {});
   if (event.httpMethod !== "GET") return json(405, { success: false, error: "Method not allowed" });
@@ -59,30 +83,23 @@ exports.handler = async (event) => {
     if (!spotlight) return json(404, { success: false, error: "This ship page is not published." });
 
     const shipRows = await rest(
-      `ci_cruise_ships?id=eq.${encodeURIComponent(spotlight.ship_id)}&active=eq.true&select=id,cruise_line_id,name,slug,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,deck_plan_url,official_ship_url&limit=1`
+      `ci_cruise_ships?id=eq.${encodeURIComponent(spotlight.ship_id)}&active=eq.true&select=id,cruise_line_id,name,slug,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,deck_plan_url,official_ship_url&limit=1`
     );
     const ship = Array.isArray(shipRows) ? shipRows[0] : null;
     if (!ship) return json(404, { success: false, error: "Ship information is unavailable." });
 
     const [lineRows, mediaRows, researchRows, sailingRows] = await Promise.all([
       rest(`ci_cruise_lines?id=eq.${encodeURIComponent(ship.cruise_line_id)}&select=id,name,slug,logo_url,description&limit=1`),
-      rest(`media_library?ship_id=eq.${encodeURIComponent(ship.id)}&is_active=eq.true&media_type=eq.ship&select=id,title,alt_text,public_url,is_default&order=is_default.desc,created_at.desc&limit=24`),
+      rest(`media_library?ship_id=eq.${encodeURIComponent(ship.id)}&is_active=eq.true&media_type=eq.ship&select=id,title,alt_text,public_url,is_default,created_at&order=is_default.desc,created_at.desc&limit=36`),
       rest(`research_content?entity_type=eq.ship&entity_id=eq.${encodeURIComponent(ship.id)}&content_status=in.(published,reviewed)&select=summary_text,content_json,pauls_tip,seo_title,meta_description&order=content_version.desc&limit=1`),
-      rest(`discovered_cruises?ship_id=eq.${encodeURIComponent(ship.id)}&status=eq.active&departure_date=gte.${new Date().toISOString().slice(0,10)}&select=id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,destination_id&order=departure_date.asc&limit=12`)
+      rest(`discovered_cruises?ship_id=eq.${encodeURIComponent(ship.id)}&status=eq.active&departure_date=gte.${new Date().toISOString().slice(0,10)}&select=id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,destination_id&order=departure_date.asc&limit=18`)
     ]);
 
     const line = Array.isArray(lineRows) ? lineRows[0] || null : null;
     const research = Array.isArray(researchRows) ? researchRows[0] || null : null;
     const media = Array.isArray(mediaRows) ? mediaRows : [];
     const sailings = Array.isArray(sailingRows) ? sailingRows : [];
-
-    const gallery = uniqueStrings([
-      spotlight.hero_image_url,
-      ...(spotlight.supporting_image_urls || []),
-      ship.hero_image_url,
-      ...(Array.isArray(ship.image_gallery) ? ship.image_gallery : []),
-      ...media.map((row) => row.public_url)
-    ]).slice(0, 18);
+    const gallery = mergedGallery({ spotlight, ship, media });
 
     const destinationIds = uniqueStrings(sailings.map((row) => row.destination_id));
     let destinations = [];
@@ -99,10 +116,11 @@ exports.handler = async (event) => {
         heading: spotlight.newsletter_heading || ship.name,
         intro: spotlight.editorial_intro || research?.summary_text || "",
         highlights: Array.isArray(spotlight.highlights) ? spotlight.highlights : [],
-        hero_image_url: spotlight.hero_image_url || ship.hero_image_url || gallery[0] || "",
+        hero_image_url: spotlight.hero_image_url || ship.hero_image_url || gallery[0]?.url || "",
         public_slug: spotlight.public_slug
       },
       ship: {
+        id: ship.id,
         name: ship.name,
         slug: ship.slug,
         ship_class: ship.ship_class,
@@ -112,6 +130,8 @@ exports.handler = async (event) => {
         crew_count: ship.crew_count,
         deck_count: ship.deck_count,
         stateroom_count: ship.stateroom_count,
+        stateroom_breakdown: ship.stateroom_breakdown || null,
+        cabin_type_summary: ship.cabin_type_summary || null,
         gross_tonnage: ship.gross_tonnage,
         length_metres: ship.length_metres,
         beam_metres: ship.beam_metres,
@@ -120,7 +140,12 @@ exports.handler = async (event) => {
         deck_plan_url: ship.deck_plan_url || null,
         official_ship_url: ship.official_ship_url || null
       },
-      line: line ? { name: line.name, slug: line.slug, logo_url: line.logo_url, description: line.description } : null,
+      line: line ? {
+        name: line.name,
+        slug: line.slug,
+        logo_url: line.logo_url,
+        description: line.description
+      } : null,
       editorial: {
         summary: research?.summary_text || "",
         content: research?.content_json || {},
@@ -128,9 +153,7 @@ exports.handler = async (event) => {
         seo_title: research?.seo_title || "",
         meta_description: research?.meta_description || ""
       },
-      gallery: media.length
-        ? media.map((row) => ({ url: row.public_url, alt: row.alt_text || row.title || ship.name, title: row.title || "" })).filter((row) => row.url)
-        : gallery.map((url) => ({ url, alt: ship.name, title: "" })),
+      gallery,
       sailings: sailings.map((row) => ({
         id: row.id,
         departure_date: row.departure_date,
@@ -146,6 +169,9 @@ exports.handler = async (event) => {
     });
   } catch (error) {
     console.error("public-ship-spotlight", error);
-    return json(500, { success: false, error: "Ship Spotlight could not be loaded." });
+    return json(error.statusCode && error.statusCode < 500 ? error.statusCode : 500, {
+      success: false,
+      error: error.statusCode === 404 ? "This Ship Spotlight is unavailable." : "Ship Spotlight could not be loaded."
+    });
   }
 };
