@@ -5,12 +5,13 @@
  * Body: {
  *   spotlight_id,
  *   asset_index?, asset_total?,
- *   assets: [{ source_url, asset_type: 'hero'|'other', label }]
+ *   assets: [{ source_url, inline_svg?, asset_type, label }]
  * }
  *
  * One image per invocation, using the same optimiser and Mailchimp File Manager
- * folder as newsletter imagery. Mappings are stored independently against the
- * Ship Spotlight so the cruise-specials newsletter export remains untouched.
+ * folder as newsletter imagery. `inline_svg` is used for generated static assets
+ * such as the room-types donut; it is rasterised by sharp before Mailchimp upload.
+ * Mappings remain independent from Cruise Specials newsletter assets.
  */
 
 const { requireAdmin, getConfig, serviceHeaders } = require("./admin-auth");
@@ -28,6 +29,7 @@ const {
 } = require("./lib/newsletter-email-assets");
 
 const MAX_ASSETS_PER_INVOCATION = 1;
+const MAX_INLINE_SVG_BYTES = 256 * 1024;
 
 function jsonResponse(statusCode, body) {
   return {
@@ -140,13 +142,45 @@ async function saveMapping(row) {
   return Array.isArray(rows) ? rows[0] : rows;
 }
 
-function buildFilename({ spotlight, assetType, checksum, extension }) {
-  const type = normalizeAssetType(assetType) === "hero" ? "hero" : "image";
-  const label = slugify(spotlight.public_slug || spotlight.newsletter_heading || "ship");
-  return `ship-spotlight-${label}-${type}-${String(checksum).slice(0, 8)}.${extension}`;
+function buildFilename({ spotlight, assetType, label, checksum, extension }) {
+  const normalized = normalizeAssetType(assetType);
+  const type = normalized === "hero" ? "hero" : normalized === "route_map" ? "graphic" : "image";
+  const shipLabel = slugify(spotlight.public_slug || spotlight.newsletter_heading || "ship");
+  const assetLabel = slugify(label || type).slice(0, 28);
+  return `ship-spotlight-${shipLabel}-${assetLabel}-${type}-${String(checksum).slice(0, 8)}.${extension}`;
 }
 
-async function processAsset({ spotlight, asset }) {
+function inlineSvgBytes(asset) {
+  const inlineSvg = String(asset?.inline_svg || asset?.inlineSvg || "").trim();
+  if (!inlineSvg) return null;
+  if (!/^<svg\b/i.test(inlineSvg)) {
+    throw spotlightError("Generated Ship Spotlight artwork must be valid SVG markup.", {
+      code: "invalid_inline_svg",
+      statusCode: 400
+    });
+  }
+  const buffer = Buffer.from(inlineSvg, "utf8");
+  if (!buffer.length || buffer.length > MAX_INLINE_SVG_BYTES) {
+    throw spotlightError("Generated Ship Spotlight artwork is too large to process safely.", {
+      code: "inline_svg_too_large",
+      statusCode: 400
+    });
+  }
+  return buffer;
+}
+
+async function sourceBytesForAsset(asset) {
+  const inline = inlineSvgBytes(asset);
+  if (inline) {
+    const marker = String(asset?.source_url || asset?.url || "").trim()
+      || "https://101cruise.com.au/generated/ship-spotlight-graphic.svg";
+    return {
+      sourceUrl: marker,
+      buffer: inline,
+      sourcePath: `inline:${String(asset?.label || asset?.asset_type || "graphic").slice(0, 100)}`
+    };
+  }
+
   const sourceUrl = String(asset?.source_url || asset?.url || "").trim();
   if (!sourceUrl || !/^https:\/\//i.test(sourceUrl)) {
     throw spotlightError("Every Ship Spotlight image must have an absolute https address.", {
@@ -154,8 +188,12 @@ async function processAsset({ spotlight, asset }) {
       statusCode: 400
     });
   }
+  const downloaded = await downloadSourceBytes(sourceUrl);
+  return { sourceUrl, buffer: downloaded.buffer, sourcePath: downloaded.sourcePath };
+}
 
-  const { buffer, sourcePath } = await downloadSourceBytes(sourceUrl);
+async function processAsset({ spotlight, asset }) {
+  const { sourceUrl, buffer, sourcePath } = await sourceBytesForAsset(asset);
   const checksum = checksumBuffer(buffer);
   const existing = await loadMappingByChecksum(spotlight.id, checksum);
   if (existing && await mappingStillValid(existing)) {
@@ -185,6 +223,7 @@ async function processAsset({ spotlight, asset }) {
   const generatedFilename = buildFilename({
     spotlight,
     assetType,
+    label: asset?.label,
     checksum,
     extension: optimised.extension
   });
@@ -280,3 +319,5 @@ exports.handler = async (event) => {
 };
 
 exports.MAX_ASSETS_PER_INVOCATION = MAX_ASSETS_PER_INVOCATION;
+exports.MAX_INLINE_SVG_BYTES = MAX_INLINE_SVG_BYTES;
+exports.inlineSvgBytes = inlineSvgBytes;
