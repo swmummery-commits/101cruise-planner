@@ -12,6 +12,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : this, function () {
   "use strict";
 
+  const featureHandlersByRoot = new WeakMap();
+  const boundFeatureRoots = new WeakSet();
+
   function trim(value) {
     return String(value == null ? "" : value).trim();
   }
@@ -170,7 +173,6 @@
 
   function rebuildFeatureList(root, rows, options) {
     if (!root) return;
-    root.dataset.featureBound = "";
     const opts = options || {};
     const list = rows.length ? rows : [{ name: "", description: "", icon_key: iconsApi()?.FALLBACK_KEY || "sparkles", showDescription: false, needsDescription: false }];
     root.innerHTML = list.map(function (row, index) {
@@ -182,11 +184,16 @@
 
   function bindFeatureList(root, handlers) {
     if (!root) return;
-    if (root.dataset.featureBound === "1") return;
+    featureHandlersByRoot.set(root, handlers || {});
+    if (boundFeatureRoots.has(root)) {
+      root.dataset.featureBound = "1";
+      return;
+    }
+    boundFeatureRoots.add(root);
     root.dataset.featureBound = "1";
-    const h = handlers || {};
 
     root.addEventListener("click", function (event) {
+      const h = featureHandlersByRoot.get(root) || {};
       const trigger = event.target.closest(".ci-ship-feature-icon-trigger");
       if (trigger) {
         event.preventDefault();
@@ -218,6 +225,8 @@
 
       const actionBtn = event.target.closest("[data-action]");
       if (!actionBtn) return;
+      event.preventDefault();
+      event.stopPropagation();
       const card = actionBtn.closest(".ci-ship-feature-card");
       const index = Number(card?.getAttribute("data-index"));
       if (!Number.isFinite(index)) return;
