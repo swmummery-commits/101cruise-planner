@@ -1,14 +1,16 @@
 /**
- * Admin Stateroom Types reference — list / create / update / delete.
+ * Admin Stateroom Types reference — canonical list / create / update / delete.
  *
  * POST /.netlify/functions/stateroom-types
  * Body:
  *   { action: "list" }
- *   { action: "create", stateroom_type: { name, is_active } }
- *   { action: "update", id, stateroom_type: { name, is_active } }
+ *   { action: "create", stateroom_type: { name } }
+ *   { action: "update", id, stateroom_type: { name } }
  *   { action: "reorder", ordered_ids: ["uuid", ...] }
  *   { action: "delete", id }
  *   { action: "check_usage", id }
+ *   { action: "list_line_allocations" }
+ *   { action: "save_line_allocations", cruise_line_id, stateroom_type_ids }
  */
 
 const { requireAdmin } = require("./admin-auth");
@@ -33,9 +35,7 @@ function jsonResponse(statusCode, body) {
 function config() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase credentials are missing.");
-  }
+  if (!url || !key) throw new Error("Supabase credentials are missing.");
   return { url: url.replace(/\/$/, ""), key };
 }
 
@@ -48,9 +48,7 @@ async function supabase(restPath, options = {}) {
     Prefer: options.prefer || "return=representation",
     ...(options.headers || {})
   };
-  if (options.body !== undefined && options.body !== null) {
-    headers["Content-Type"] = "application/json";
-  }
+  if (options.body !== undefined && options.body !== null) headers["Content-Type"] = "application/json";
   const response = await fetch(`${url}/rest/v1/${restPath}`, {
     method: options.method || "GET",
     headers,
@@ -58,16 +56,9 @@ async function supabase(restPath, options = {}) {
   });
   const text = await response.text();
   let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!response.ok) {
-    const detail =
-      (data && (data.message || data.error || data.hint || data.details)) ||
-      text ||
-      `Supabase HTTP ${response.status}`;
+    const detail = (data && (data.message || data.error || data.hint || data.details)) || text || `Supabase HTTP ${response.status}`;
     const err = new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
     err.statusCode = response.status;
     throw err;
@@ -83,7 +74,7 @@ function badRequest(message) {
 }
 
 function trimName(value) {
-  return String(value ?? "").trim();
+  return String(value ?? "").trim().replace(/\s+/g, " ");
 }
 
 function normalizeName(value) {
@@ -99,26 +90,19 @@ function sanitizeNameFields(raw) {
   const body = raw && typeof raw === "object" ? raw : {};
   const name = trimName(body.name);
   if (!name) badRequest("Stateroom type name is required.");
-  return {
-    name,
-    normalized_name: normalizeName(name),
-    is_active: body.is_active !== false
-  };
+  return { name, normalized_name: normalizeName(name), is_active: true };
 }
 
 async function nextDisplayOrderValue() {
   const rows = await listStateroomTypes();
   if (!rows.length) return 10;
-  const max = rows.reduce(
-    (acc, row) => Math.max(acc, parseDisplayOrder(row?.display_order, 0)),
-    0
-  );
+  const max = rows.reduce((acc, row) => Math.max(acc, parseDisplayOrder(row?.display_order, 0)), 0);
   return max + 10;
 }
 
 async function listStateroomTypes() {
   const rows = await supabase(
-    `stateroom_types?select=${encodeURIComponent(SELECT)}&order=display_order.asc,name.asc&limit=500`
+    `stateroom_types?select=${encodeURIComponent(SELECT)}&order=name.asc&limit=500`
   );
   return Array.isArray(rows) ? rows : [];
 }
@@ -145,22 +129,22 @@ async function findDuplicate(normalizedName, excludeId) {
 }
 
 async function isStateroomTypeInUse(stateroomType) {
-  const name = trimName(stateroomType?.name);
-  if (!name) return false;
-  const rows = await supabase(
-    `featured_cruise_pricing?select=id&room_label=ilike.${encodeURIComponent(name)}&limit=1`
-  );
-  return Array.isArray(rows) && rows.length > 0;
+  const typeId = String(stateroomType?.id || "").trim();
+  if (!typeId) return false;
+  const encoded = encodeURIComponent(typeId);
+  const [pricing, lines, ships] = await Promise.all([
+    supabase(`featured_cruise_pricing?select=id&stateroom_type_id=eq.${encoded}&limit=1`),
+    supabase(`cruise_line_stateroom_types?select=cruise_line_id&stateroom_type_id=eq.${encoded}&limit=1`),
+    supabase(`ship_stateroom_types?select=ship_id&stateroom_type_id=eq.${encoded}&limit=1`)
+  ]);
+  return [pricing, lines, ships].some((rows) => Array.isArray(rows) && rows.length > 0);
 }
 
 async function createStateroomType(raw) {
   const fields = sanitizeNameFields(raw);
   const duplicate = await findDuplicate(fields.normalized_name);
   if (duplicate) badRequest("A stateroom type with this name already exists.");
-  const payload = {
-    ...fields,
-    display_order: await nextDisplayOrderValue()
-  };
+  const payload = { ...fields, display_order: await nextDisplayOrderValue() };
   try {
     const rows = await supabase("stateroom_types", {
       method: "POST",
@@ -191,10 +175,7 @@ async function updateStateroomType(id, raw) {
   const fields = sanitizeNameFields({ ...existing, ...(raw && typeof raw === "object" ? raw : {}) });
   const duplicate = await findDuplicate(fields.normalized_name, typeId);
   if (duplicate) badRequest("A stateroom type with this name already exists.");
-  const payload = {
-    ...fields,
-    display_order: existing.display_order
-  };
+  const payload = { ...fields, display_order: existing.display_order };
   try {
     const rows = await supabase(`stateroom_types?id=eq.${encodeURIComponent(typeId)}`, {
       method: "PATCH",
@@ -222,11 +203,8 @@ async function deleteStateroomType(id) {
     err.calm = true;
     throw err;
   }
-  const inUse = await isStateroomTypeInUse(existing);
-  if (inUse) {
-    badRequest(
-      "This stateroom type is already used in cruise pricing and cannot be deleted. You can make it inactive instead."
-    );
+  if (await isStateroomTypeInUse(existing)) {
+    badRequest("This stateroom type is already in use by cruise lines, ships or pricing and cannot be deleted.");
   }
   await supabase(`stateroom_types?id=eq.${encodeURIComponent(typeId)}`, {
     method: "DELETE",
@@ -245,24 +223,19 @@ async function reorderStateroomTypes(orderedIds) {
     if (seen.has(id)) badRequest("Reorder list contains duplicate ids.");
     seen.add(id);
   }
-
   const existing = await listStateroomTypes();
   const existingIds = new Set(existing.map((row) => row.id));
-  if (ids.length !== existing.length) {
-    badRequest("Reorder must include every stateroom type.");
-  }
+  if (ids.length !== existing.length) badRequest("Reorder must include every stateroom type.");
   for (const id of ids) {
     if (!existingIds.has(id)) badRequest("Reorder includes an unknown stateroom type.");
   }
-
-  const updates = ids.map((id, index) =>
+  await Promise.all(ids.map((id, index) =>
     supabase(`stateroom_types?id=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
       prefer: "return=minimal",
       body: { display_order: (index + 1) * 10 }
     })
-  );
-  await Promise.all(updates);
+  ));
   return listStateroomTypes();
 }
 
@@ -296,11 +269,11 @@ async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
 
   if (ids.length) {
     const typeRows = await supabase(
-      `stateroom_types?select=id&is_active=eq.true&id=in.(${ids.map(encodeURIComponent).join(",")})`
+      `stateroom_types?select=id&id=in.(${ids.map(encodeURIComponent).join(",")})`
     );
     const validIds = new Set((Array.isArray(typeRows) ? typeRows : []).map((row) => String(row.id)));
     for (const id of ids) {
-      if (!validIds.has(id)) badRequest("One or more selected stateroom types are invalid or inactive.");
+      if (!validIds.has(id)) badRequest("One or more selected stateroom types are invalid.");
     }
   }
 
@@ -321,12 +294,8 @@ async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
 }
 
 exports.handler = async function handler(event) {
-  if (event.httpMethod === "OPTIONS") {
-    return jsonResponse(204, {});
-  }
-  if (event.httpMethod !== "POST") {
-    return jsonResponse(405, { success: false, error: "Method not allowed" });
-  }
+  if (event.httpMethod === "OPTIONS") return jsonResponse(204, {});
+  if (event.httpMethod !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
 
   try {
     await requireAdmin(event);
@@ -337,44 +306,36 @@ exports.handler = async function handler(event) {
       const stateroom_types = await listStateroomTypes();
       return jsonResponse(200, { success: true, stateroom_types, count: stateroom_types.length });
     }
-
     if (action === "create") {
       const stateroom_type = await createStateroomType(body.stateroom_type);
       return jsonResponse(200, { success: true, stateroom_type, created: true });
     }
-
     if (action === "update") {
       const stateroom_type = await updateStateroomType(body.id, body.stateroom_type);
       return jsonResponse(200, { success: true, stateroom_type });
     }
-
     if (action === "delete") {
       const stateroom_type = await deleteStateroomType(body.id);
       return jsonResponse(200, { success: true, stateroom_type, deleted: true });
     }
-
     if (action === "check_usage") {
       const existing = await findById(body.id);
       if (!existing) badRequest("Stateroom type not found.");
       const in_use = await isStateroomTypeInUse(existing);
       return jsonResponse(200, { success: true, in_use });
     }
-
     if (action === "reorder") {
       const stateroom_types = await reorderStateroomTypes(body.ordered_ids);
       return jsonResponse(200, { success: true, stateroom_types, reordered: true });
     }
-
     if (action === "list_line_allocations") {
       const allocations = await listLineAllocations();
       return jsonResponse(200, { success: true, allocations });
     }
-
     if (action === "save_line_allocations") {
       const allocations = await saveLineAllocations(body.cruise_line_id, body.stateroom_type_ids);
       return jsonResponse(200, { success: true, allocations });
     }
-
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {
     const statusCode = error.statusCode || (/calm/.test(String(error.calm)) ? 400 : 500);
