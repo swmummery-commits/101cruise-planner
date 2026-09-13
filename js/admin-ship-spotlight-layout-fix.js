@@ -22,9 +22,29 @@
     anchorRow.parentNode.insertBefore(roomRow, anchorRow.nextSibling);
   }
 
+  function ensureFeatureHeading(col, title) {
+    if (!col || !String(col.textContent || "").trim()) return;
+    const directDivs = Array.from(col.children || []).filter((node) => node.tagName === "DIV");
+    const existing = directDivs.find((node) => /exclusive areas|specialty features/i.test(String(node.textContent || "")));
+    if (existing) {
+      existing.textContent = title;
+      existing.classList.add("cr101-ss-feature-title");
+      return;
+    }
+    const heading = document.createElement("div");
+    heading.className = "cr101-ss-feature-title";
+    heading.textContent = title;
+    heading.setAttribute("style", "font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#245C4E;margin-bottom:7px;");
+    col.insertBefore(heading, col.firstChild);
+  }
+
   function simplifyFeatureColumns(root) {
     const cols = featureColumns(root);
     if (!cols.length) return;
+
+    // Preserve/restore the section names before blank placeholder columns are removed.
+    if (cols[0] && String(cols[0].textContent || "").trim()) ensureFeatureHeading(cols[0], "Exclusive Areas");
+    if (cols[1] && String(cols[1].textContent || "").trim()) ensureFeatureHeading(cols[1], "Specialty Features");
 
     // Newsletter shows names only. Descriptions belong on the dynamic ship page.
     cols.forEach((col) => {
