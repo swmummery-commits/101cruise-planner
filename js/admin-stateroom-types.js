@@ -55,7 +55,7 @@
       const [types, allocationMap, lineResult] = await Promise.all([
         service.listAllStateroomTypes(),
         service.loadCruiseLineStateroomAllocations(),
-        supabase.from("ci_cruise_lines").select("id,name").order("name", { ascending: true })
+        supabase.from("ci_cruise_lines").select("id,name,sold_by_101cruise").eq("sold_by_101cruise", true).order("name", { ascending: true })
       ]);
       if (lineResult.error) throw new Error(lineResult.error.message || "Could not load cruise lines.");
       stateroomTypes = types || [];
@@ -148,8 +148,6 @@
       allocations = await service.saveCruiseLineStateroomTypes(lineId, [...current]);
       setMessage("Cruise-line allocation saved.", "success");
 
-      // This refresh is helpful to other screens but is not part of the save itself.
-      // Never turn a successful save into an error just because the secondary refresh failed.
       try {
         if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
       } catch (refreshError) {
@@ -158,9 +156,6 @@
     } catch (error) {
       setMessage(error?.message || "Could not save cruise-line allocation.", "error");
 
-      // The checkbox is optimistic. If the save fails, always restore authoritative state.
-      // If a fresh allocation load also fails (for example because the session has expired),
-      // fall back to the exact pre-click snapshot so the UI never claims an unsaved change.
       let restored = false;
       try {
         allocations = await service.loadCruiseLineStateroomAllocations();
