@@ -1,7 +1,7 @@
 /**
- * Public read-only endpoint for a published Ship Spotlight page.
- * Returns curated public ship data for the shared My Cruise → My Ship
- * presentation, plus approved gallery imagery and current ship sailings.
+ * Public read-only endpoint for Ship Spotlight pages.
+ * Published pages resolve by public slug. Admin preview mode can resolve directly
+ * by ship_id so the dynamic page can be reviewed before publishing.
  */
 
 const { getConfig, serviceHeaders } = require("./admin-auth");
@@ -40,6 +40,11 @@ function cleanSlug(value) {
   return String(value || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 100);
 }
 
+function cleanUuid(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(text) ? text : "";
+}
+
 function uniqueStrings(values) {
   return [...new Set((values || []).map((v) => String(v || "").trim()).filter(Boolean))];
 }
@@ -56,8 +61,8 @@ function mergedGallery({ spotlight, ship, media }) {
     });
   };
 
-  add(spotlight.hero_image_url, { alt: ship.name, title: `${ship.name} hero` });
-  (spotlight.supporting_image_urls || []).forEach((url) => add(url, { alt: ship.name }));
+  add(spotlight?.hero_image_url, { alt: ship.name, title: `${ship.name} hero` });
+  (spotlight?.supporting_image_urls || []).forEach((url) => add(url, { alt: ship.name }));
   add(ship.hero_image_url, { alt: ship.name, title: `${ship.name} hero` });
   (Array.isArray(ship.image_gallery) ? ship.image_gallery : []).forEach((url) => add(url, { alt: ship.name }));
   (media || []).forEach((row) => add(row.public_url, {
@@ -68,25 +73,63 @@ function mergedGallery({ spotlight, ship, media }) {
   return [...byUrl.values()].slice(0, 24);
 }
 
+function defaultSpotlightForShip(ship, slug) {
+  return {
+    id: null,
+    ship_id: ship.id,
+    eyebrow: "SHIP SPOTLIGHT",
+    newsletter_heading: ship.name,
+    editorial_intro: "",
+    highlights: [],
+    stat_keys: [],
+    hero_image_url: ship.hero_image_url || "",
+    supporting_image_urls: [],
+    public_slug: ship.slug || slug || ""
+  };
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return json(204, {});
   if (event.httpMethod !== "GET") return json(405, { success: false, error: "Method not allowed" });
 
   try {
-    const slug = cleanSlug(event.queryStringParameters?.slug);
-    if (!slug) return json(400, { success: false, error: "Ship slug is required." });
+    const params = event.queryStringParameters || {};
+    const slug = cleanSlug(params.slug);
+    const preview = String(params.preview || "") === "1";
+    const previewShipId = cleanUuid(params.ship_id || params.shipId);
 
-    const spotlightRows = await rest(
-      `ship_spotlights?public_slug=eq.${encodeURIComponent(slug)}&publication_status=eq.published&active=eq.true&select=id,ship_id,eyebrow,newsletter_heading,editorial_intro,highlights,stat_keys,hero_image_url,supporting_image_urls,public_slug&limit=1`
-    );
-    const spotlight = Array.isArray(spotlightRows) ? spotlightRows[0] : null;
-    if (!spotlight) return json(404, { success: false, error: "This ship page is not published." });
+    if (!slug && !(preview && previewShipId)) {
+      return json(400, { success: false, error: "Ship slug is required." });
+    }
 
-    const shipRows = await rest(
-      `ci_cruise_ships?id=eq.${encodeURIComponent(spotlight.ship_id)}&active=eq.true&select=id,cruise_line_id,name,slug,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,deck_plan_url,official_ship_url&limit=1`
-    );
-    const ship = Array.isArray(shipRows) ? shipRows[0] : null;
-    if (!ship) return json(404, { success: false, error: "Ship information is unavailable." });
+    let spotlight = null;
+    let ship = null;
+
+    if (preview && previewShipId) {
+      const shipRows = await rest(
+        `ci_cruise_ships?id=eq.${encodeURIComponent(previewShipId)}&active=eq.true&select=id,cruise_line_id,name,slug,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,deck_plan_url,official_ship_url&limit=1`
+      );
+      ship = Array.isArray(shipRows) ? shipRows[0] : null;
+      if (!ship) return json(404, { success: false, error: "Ship information is unavailable." });
+
+      const spotlightRows = await rest(
+        `ship_spotlights?ship_id=eq.${encodeURIComponent(ship.id)}&active=eq.true&select=id,ship_id,eyebrow,newsletter_heading,editorial_intro,highlights,stat_keys,hero_image_url,supporting_image_urls,public_slug&order=updated_at.desc&limit=1`
+      );
+      spotlight = Array.isArray(spotlightRows) ? spotlightRows[0] || null : null;
+      if (!spotlight) spotlight = defaultSpotlightForShip(ship, slug);
+    } else {
+      const spotlightRows = await rest(
+        `ship_spotlights?public_slug=eq.${encodeURIComponent(slug)}&publication_status=eq.published&active=eq.true&select=id,ship_id,eyebrow,newsletter_heading,editorial_intro,highlights,stat_keys,hero_image_url,supporting_image_urls,public_slug&limit=1`
+      );
+      spotlight = Array.isArray(spotlightRows) ? spotlightRows[0] : null;
+      if (!spotlight) return json(404, { success: false, error: "This ship page is not published." });
+
+      const shipRows = await rest(
+        `ci_cruise_ships?id=eq.${encodeURIComponent(spotlight.ship_id)}&active=eq.true&select=id,cruise_line_id,name,slug,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,deck_plan_url,official_ship_url&limit=1`
+      );
+      ship = Array.isArray(shipRows) ? shipRows[0] : null;
+      if (!ship) return json(404, { success: false, error: "Ship information is unavailable." });
+    }
 
     const [lineRows, mediaRows, researchRows, sailingRows] = await Promise.all([
       rest(`ci_cruise_lines?id=eq.${encodeURIComponent(ship.cruise_line_id)}&select=id,name,slug,logo_url,description&limit=1`),
@@ -100,6 +143,8 @@ exports.handler = async (event) => {
     const media = Array.isArray(mediaRows) ? mediaRows : [];
     const sailings = Array.isArray(sailingRows) ? sailingRows : [];
     const gallery = mergedGallery({ spotlight, ship, media });
+    const researchOverview = String(research?.content_json?.overview || "").trim();
+    const researchSummary = String(research?.summary_text || "").trim();
 
     const destinationIds = uniqueStrings(sailings.map((row) => row.destination_id));
     let destinations = [];
@@ -111,13 +156,14 @@ exports.handler = async (event) => {
 
     return json(200, {
       success: true,
+      preview,
       spotlight: {
-        eyebrow: spotlight.eyebrow,
+        eyebrow: spotlight.eyebrow || "SHIP SPOTLIGHT",
         heading: spotlight.newsletter_heading || ship.name,
-        intro: spotlight.editorial_intro || research?.summary_text || "",
+        intro: spotlight.editorial_intro || researchOverview || researchSummary,
         highlights: Array.isArray(spotlight.highlights) ? spotlight.highlights : [],
         hero_image_url: spotlight.hero_image_url || ship.hero_image_url || gallery[0]?.url || "",
-        public_slug: spotlight.public_slug
+        public_slug: spotlight.public_slug || ship.slug || slug
       },
       ship: {
         id: ship.id,
@@ -147,7 +193,7 @@ exports.handler = async (event) => {
         description: line.description
       } : null,
       editorial: {
-        summary: research?.summary_text || "",
+        summary: researchOverview || researchSummary,
         content: research?.content_json || {},
         pauls_tip: research?.pauls_tip || "",
         seo_title: research?.seo_title || "",
