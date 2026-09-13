@@ -23,12 +23,6 @@
       .replaceAll("'", "&#039;");
   }
 
-  /**
-   * Accept either a single room size (26) or a range (25-85).
-   * Single sizes remain numbers for backwards compatibility. Ranges are stored
-   * in the existing sqm property as a normalized "min-max" string so existing
-   * JSON records and consumers do not need a schema migration.
-   */
   function parseStateroomSqm(raw) {
     if (raw === null || raw === undefined) return "";
     const text = String(raw).trim().replace(/[–—]/g, "-");
@@ -53,7 +47,6 @@
   function roomSizeInputValue(row) {
     const parsed = parseStateroomSqm(row?.sqm);
     if (parsed !== "") return String(parsed);
-
     const min = Number(row?.sqm_min);
     const max = Number(row?.sqm_max);
     if (Number.isFinite(min) && min > 0 && Number.isFinite(max) && max >= min) {
@@ -69,7 +62,6 @@
       const raw = String(input.value || "").trim();
       if (!raw) continue;
       if (parseStateroomSqm(raw) !== "") continue;
-
       input.setCustomValidity("Enter a room size such as 26 or a range such as 25-85. The second number must be the same as or larger than the first.");
       input.reportValidity();
       input.focus();
@@ -131,11 +123,8 @@
     document.querySelector(".ci-stateroom-inline-add")?.remove();
     if (restore && inlineAddSelect && document.body.contains(inlineAddSelect)) {
       const restoreValue = inlineAddPreviousValue || inlineAddSelect.dataset.currentValue || "";
-      if (Array.from(inlineAddSelect.options).some((opt) => opt.value === restoreValue)) {
-        inlineAddSelect.value = restoreValue;
-      } else {
-        inlineAddSelect.value = "";
-      }
+      if (Array.from(inlineAddSelect.options).some((opt) => opt.value === restoreValue)) inlineAddSelect.value = restoreValue;
+      else inlineAddSelect.value = "";
     }
     inlineAddSelect = null;
     inlineAddPreviousValue = "";
@@ -152,7 +141,6 @@
   function openInlineAddEditor(select) {
     if (!select || addBusy) return;
     removeInlineAddEditor({ restore: true });
-
     inlineAddSelect = select;
     inlineAddPreviousValue = String(select.dataset.previousValue || select.dataset.currentValue || "").trim();
     const restoreValue = inlineAddPreviousValue;
@@ -218,7 +206,6 @@
       const current = allLineShips.find((ship) => String(ship.id) === openShipId);
       if (current) targets.push(current);
     }
-
     if (!targets.length && openShipId) {
       targets = [{ id: openShipId, name: "", ship_class: className, stateroom_breakdown: [] }];
     }
@@ -304,8 +291,11 @@
       try { stateroomTypesActive = refreshedTypes; } catch (_) {}
 
       const propagation = await attachTypeToCurrentShipAndClass(target, lineId);
-
       const targetSelect = inlineAddSelect;
+
+      // Allow refreshStateroomSelects to rebuild this dropdown with the newly
+      // created canonical option before assigning it as the selected value.
+      addBusy = false;
       refreshStateroomSelects();
       if (targetSelect && document.body.contains(targetSelect)) {
         targetSelect.value = target.name;
@@ -323,7 +313,6 @@
         "success"
       );
 
-      addBusy = false;
       setTimeout(() => {
         if (inlineAddSelect === targetSelect) removeInlineAddEditor({ restore: false });
       }, 1100);
