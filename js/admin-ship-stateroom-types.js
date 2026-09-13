@@ -22,6 +22,66 @@
       .replaceAll("'", "&#039;");
   }
 
+  /**
+   * Accept either a single room size (26) or a range (25-85).
+   * Single sizes remain numbers for backwards compatibility. Ranges are stored
+   * in the existing sqm property as a normalized "min-max" string so existing
+   * JSON records and consumers do not need a schema migration.
+   */
+  function parseStateroomSqm(raw) {
+    if (raw === null || raw === undefined) return "";
+    const text = String(raw).trim().replace(/[–—]/g, "-");
+    if (!text) return "";
+
+    const singleMatch = text.match(/^(\d+(?:\.\d+)?)$/);
+    if (singleMatch) {
+      const value = Number(singleMatch[1]);
+      return Number.isFinite(value) && value > 0 ? value : "";
+    }
+
+    const rangeMatch = text.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+    if (!rangeMatch) return "";
+
+    const min = Number(rangeMatch[1]);
+    const max = Number(rangeMatch[2]);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0 || max < min) return "";
+    if (min === max) return min;
+    return `${min}-${max}`;
+  }
+
+  function roomSizeInputValue(row) {
+    const parsed = parseStateroomSqm(row?.sqm);
+    if (parsed !== "") return String(parsed);
+
+    // Forward-compatible fallback if structured min/max values are ever supplied.
+    const min = Number(row?.sqm_min);
+    const max = Number(row?.sqm_max);
+    if (Number.isFinite(min) && min > 0 && Number.isFinite(max) && max >= min) {
+      return min === max ? String(min) : `${min}-${max}`;
+    }
+    return "";
+  }
+
+  function validateRoomSizeInputs() {
+    const inputs = Array.from(document.querySelectorAll("input.ci-stateroom-sqm"));
+    for (const input of inputs) {
+      input.setCustomValidity("");
+      const raw = String(input.value || "").trim();
+      if (!raw) continue;
+      if (parseStateroomSqm(raw) !== "") continue;
+
+      input.setCustomValidity("Enter a room size such as 26 or a range such as 25-85. The second number must be the same as or larger than the first.");
+      input.reportValidity();
+      input.focus();
+      return false;
+    }
+    return true;
+  }
+
+  // admin.js uses this global parser when loading and saving stateroom_breakdown.
+  // Replacing it here makes ranges round-trip through the existing persistence path.
+  global.parseCiStateroomSqm = parseStateroomSqm;
+
   function service() { return global.StateroomTypesService || null; }
   function currentLineId() { return String(document.getElementById("ciShipLineId")?.value || renderedLineId || "").trim(); }
   function allTypes() {
@@ -81,7 +141,7 @@
   if (typeof renderCiStateroomRow === "function") {
     renderCiStateroomRow = function renderCiStateroomRowCanonical(row, index) {
       const countVal = row?.count === "" || row?.count == null ? "" : String(row.count);
-      const sqmVal = row?.sqm === "" || row?.sqm == null ? "" : String(row.sqm);
+      const sqmVal = roomSizeInputValue(row);
       const current = String(row?.label || "");
       return `
         <div class="ci-stateroom-row" data-index="${index}">
@@ -89,7 +149,7 @@
             ${renderOptions(current)}
           </select>
           <input type="number" min="0" step="1" class="ci-stateroom-count" value="${escapeHtml(countVal)}" placeholder="Count" oninput="updateCiStateroomTotals()">
-          <input type="number" min="0" step="0.1" class="ci-stateroom-sqm" value="${escapeHtml(sqmVal)}" placeholder="m²" oninput="updateCiStateroomTotals()">
+          <input type="text" inputmode="decimal" class="ci-stateroom-sqm" value="${escapeHtml(sqmVal)}" placeholder="e.g. 26 or 25-85" title="Room size in m². Enter one size (26) or a range (25-85)." oninput="this.setCustomValidity('');updateCiStateroomTotals()">
           <button type="button" class="admin-button secondary small" onclick="removeCiStateroomRow(${index})">Remove</button>
         </div>`;
     };
@@ -221,6 +281,7 @@
   if (typeof persistCiShip === "function") {
     const originalPersistCiShip = persistCiShip;
     persistCiShip = async function persistCiShipWithCanonicalTypes(options) {
+      if (!validateRoomSizeInputs()) return false;
       const snapshot = captureShipTypeSelection();
       const result = await originalPersistCiShip(options);
       if (result === false) return false;
