@@ -11,8 +11,9 @@
   }
 
   function patchMountedLinks() {
-    document.querySelectorAll(`#shipSpotlightOverlay a[href^="${OLD_BASE}"]`).forEach((link) => {
-      link.href = replaceLinks(link.href);
+    document.querySelectorAll("#shipSpotlightOverlay a").forEach((link) => {
+      const raw = link.getAttribute("href") || "";
+      if (raw.startsWith(OLD_BASE)) link.setAttribute("href", replaceLinks(raw));
     });
     document.querySelectorAll("#shipSpotlightOverlay .admin-helper").forEach((node) => {
       const text = String(node.textContent || "");
@@ -41,9 +42,25 @@
     assets.__shipSpotlightPublicLinkFixInstalled = true;
   }
 
+  function installClickGuard() {
+    if (global.__shipSpotlightPublicClickGuardInstalled) return;
+    document.addEventListener("click", function (event) {
+      const link = event.target?.closest?.("#shipSpotlightOverlay a");
+      if (!link) return;
+      const raw = link.getAttribute("href") || "";
+      if (!raw.startsWith(OLD_BASE)) return;
+      event.preventDefault();
+      const corrected = replaceLinks(raw);
+      link.setAttribute("href", corrected);
+      global.open(corrected, link.getAttribute("target") || "_blank", "noopener");
+    }, true);
+    global.__shipSpotlightPublicClickGuardInstalled = true;
+  }
+
   function install() {
     installSpotlightWrapper();
     installCopyWrapper();
+    installClickGuard();
     patchMountedLinks();
   }
 
