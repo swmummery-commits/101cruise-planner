@@ -1,0 +1,12 @@
+/* Preserve author-entered line breaks in Exclusive Areas and Specialty Features. */
+.ship-feature-description {
+  white-space: pre-line;
+}
+
+/* Public Ship Spotlight upgrades descriptions to paragraph elements. */
+.ship-feature-description > p {
+  margin: 0 0 0.7em;
+}
+.ship-feature-description > p:last-child {
+  margin-bottom: 0;
+}
