@@ -3,6 +3,12 @@
  */
 const CiFac = require("../../../js/ci-ship-facilities.js");
 const ItemCopy = require("../../../js/ci-ship-facilities-item-copy.js");
+const FeatureSync = require("../../../js/ci-ship-feature-sync.js");
+
+// Keep browser and server copy semantics identical. Selected canonical features
+// are authoritative: category, title, description and icon changes are updates.
+FeatureSync.patchFacilitiesApi(CiFac);
+FeatureSync.patchItemCopyApi(ItemCopy, CiFac);
 
 function buildFacilitiesPatch(body) {
   const copyExclusive = Boolean(body.copy_exclusive_areas);
