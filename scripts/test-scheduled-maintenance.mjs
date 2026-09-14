@@ -44,8 +44,8 @@ test("2. Celebrity weekly cron uses Sunday 19:00 UTC", () => {
   if (maintenance.MAINTENANCE_SCHEDULES.celebrity_weekly.cron_utc !== "0 19 * * 0") throw new Error("Celebrity cron mismatch");
 });
 
-test("3. Daily expiry cron uses 17:30 UTC", () => {
-  if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 17 * * *") throw new Error("expiry cron mismatch");
+test("3. Daily expiry cron uses 22:30 UTC", () => {
+  if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 22 * * *") throw new Error("expiry cron mismatch");
 });
 
 test("4. Dedicated maintenance flags default false", () => {
@@ -141,8 +141,8 @@ test("16. resolveEnvFlag reports unset as unset_default_false", () => {
 
 const ops = require(path.join(root, "netlify/functions/lib/maintenance-operational-status"));
 
-test("17. Daily expiry 2026-09-03 Perth slot is 2026-09-02T17:30Z", () => {
-  if (ops.perthDateToDailyExpiryUtc("2026-09-03") !== "2026-09-02T17:30:00.000Z") {
+test("17. Daily expiry 2026-09-03 Perth slot is 2026-09-02T22:30Z", () => {
+  if (ops.perthDateToDailyExpiryUtc("2026-09-03") !== "2026-09-02T22:30:00.000Z") {
     throw new Error(ops.perthDateToDailyExpiryUtc("2026-09-03"));
   }
 });
@@ -202,6 +202,48 @@ test("20. Operational status distinguishes review, miss, and healthy", () => {
   if (ops.classifyOperationalStatus({ abandoned: true }) !== "STALE_ABANDONED") {
     throw new Error("abandoned");
   }
+});
+
+test("21. 06:30 Perth keeps the same Perth calendar date and lease key", () => {
+  const schedule = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-control"));
+  const at0630 = new Date("2026-09-15T06:30:00+08:00");
+  const at0130 = new Date("2026-09-15T01:30:00+08:00");
+  if (maintenance.perthCalendarDate(at0630) !== "2026-09-15") throw new Error("06:30 Perth date drifted");
+  if (maintenance.perthCalendarDate(at0130) !== "2026-09-15") throw new Error("01:30 Perth date drifted");
+  const key0630 = schedule.scheduledDailyExpiryDispatchKey(at0630);
+  const key0130 = schedule.scheduledDailyExpiryDispatchKey(at0130);
+  if (key0630 !== "daily-expiry:2026-09-15:scheduled") throw new Error(key0630);
+  if (key0630 !== key0130) throw new Error("same Perth date must share one lease key");
+});
+
+test("22. Schedule move cannot double-run or skip a Perth date", () => {
+  const schedule = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-control"));
+  const sept14 = schedule.scheduledDailyExpiryDispatchKey(new Date("2026-09-14T01:30:00+08:00"));
+  const sept15 = schedule.scheduledDailyExpiryDispatchKey(new Date("2026-09-15T06:30:00+08:00"));
+  const sept16 = schedule.scheduledDailyExpiryDispatchKey(new Date("2026-09-16T06:30:00+08:00"));
+  if (sept14 !== "daily-expiry:2026-09-14:scheduled") throw new Error(sept14);
+  if (sept15 !== "daily-expiry:2026-09-15:scheduled") throw new Error(sept15);
+  if (sept16 !== "daily-expiry:2026-09-16:scheduled") throw new Error(sept16);
+  if (sept14 === sept15) throw new Error("move must not re-open an already-completed Perth date");
+  if (sept15 === sept16) throw new Error("next Perth date must have its own lease");
+  if (ops.perthDateToDailyExpiryUtc("2026-09-15") !== "2026-09-14T22:30:00.000Z") {
+    throw new Error(ops.perthDateToDailyExpiryUtc("2026-09-15"));
+  }
+});
+
+test("23. Historical 01:30 expiry runs still count after the 06:30 move", () => {
+  const detected = ops.detectMissedDailyExpirySlots(
+    [
+      { id: "a", started_at: "2026-09-12T17:30:12Z", stats: { run_type: "daily_expiry_maintenance", as_of: "2026-09-13" } }
+    ],
+    {
+      now: new Date("2026-09-14T08:00:00Z"),
+      lookbackDays: 2,
+      perthDateFn: () => "2026-09-14"
+    }
+  );
+  const slot = detected.slots.find((s) => s.perth_date === "2026-09-13");
+  if (!slot || slot.status !== "PRESENT") throw new Error(`expected 2026-09-13 present, got ${JSON.stringify(detected)}`);
 });
 
 console.log(`\ntest-scheduled-maintenance: ${passed} passed`);

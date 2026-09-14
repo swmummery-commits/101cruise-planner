@@ -188,8 +188,9 @@
   timeout = 26
 
 [functions."cruise-daily-expiry-cron"]
-  # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
-  schedule = "30 17 * * *"
+  # Daily sailed-cruise expiration — 22:30 UTC (06:30 Australia/Perth).
+  # Kept after the last weekly overnight slot so it no longer overlaps 01:00 supplier jobs.
+  schedule = "30 22 * * *"
   timeout = 300
 
 [functions."reconcile-booking-documents"]

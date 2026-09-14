@@ -15,6 +15,8 @@ const OPERATIONAL_STATUSES = Object.freeze([
   "SOURCE_FAILURE",
   "WRITE_FAILURE",
   "MISSED_SCHEDULE",
+  "SCHEDULER_MISSING",
+  "CONTROLLED_CATCHUP_REQUIRED",
   "NOT_DUE",
   "DUE_RUNNING",
   "DISABLED",
@@ -34,6 +36,8 @@ const OPERATIONAL_STATUS_SEVERITY = Object.freeze({
   NOT_YET_COMMISSIONED: "grey",
   DISABLED: "grey",
   MISSED_SCHEDULE: "amber",
+  SCHEDULER_MISSING: "amber",
+  CONTROLLED_CATCHUP_REQUIRED: "amber",
   DUE_RUNNING: "amber",
   NOT_DUE: "grey",
   BLOCKED_DUPLICATE: "amber",
@@ -41,7 +45,8 @@ const OPERATIONAL_STATUS_SEVERITY = Object.freeze({
   HEALTHY: "green"
 });
 
-const DAILY_EXPIRY_SLOT_CRON_UTC = { hour: 17, minute: 30 };
+const DAILY_EXPIRY_SLOT_CRON_UTC = { hour: 22, minute: 30 };
+const LEGACY_DAILY_EXPIRY_SLOT_CRON_UTC = { hour: 17, minute: 30 };
 const SLOT_LOOKBACK_MS = 30 * 60 * 1000;
 const SLOT_LOOKAHEAD_MS = 90 * 60 * 1000;
 
@@ -51,11 +56,17 @@ function addCalendarDays(isoDate, days) {
   return utc.toISOString().slice(0, 10);
 }
 
-function perthDateToDailyExpiryUtc(perthDate) {
+function formatDailyExpiryUtc(perthDate, cron) {
   const previous = addCalendarDays(perthDate, -1);
-  return `${previous}T${String(DAILY_EXPIRY_SLOT_CRON_UTC.hour).padStart(2, "0")}:${String(
-    DAILY_EXPIRY_SLOT_CRON_UTC.minute
-  ).padStart(2, "0")}:00.000Z`;
+  return `${previous}T${String(cron.hour).padStart(2, "0")}:${String(cron.minute).padStart(2, "0")}:00.000Z`;
+}
+
+function perthDateToDailyExpiryUtc(perthDate) {
+  return formatDailyExpiryUtc(perthDate, DAILY_EXPIRY_SLOT_CRON_UTC);
+}
+
+function perthDateToLegacyDailyExpiryUtc(perthDate) {
+  return formatDailyExpiryUtc(perthDate, LEGACY_DAILY_EXPIRY_SLOT_CRON_UTC);
 }
 
 function runMatchesExpirySlot(run, slotUtcIso) {
@@ -63,6 +74,13 @@ function runMatchesExpirySlot(run, slotUtcIso) {
   if (!Number.isFinite(started)) return false;
   const slot = Date.parse(slotUtcIso);
   return started >= slot - SLOT_LOOKBACK_MS && started <= slot + SLOT_LOOKAHEAD_MS;
+}
+
+function runMatchesPerthExpiryDate(run, perthDate) {
+  if (runMatchesExpirySlot(run, perthDateToDailyExpiryUtc(perthDate))) return true;
+  if (runMatchesExpirySlot(run, perthDateToLegacyDailyExpiryUtc(perthDate))) return true;
+  const asOf = run?.stats?.as_of || run?.stats?.perth_today || run?.stats?.perth_date;
+  return asOf === perthDate;
 }
 
 function isGenuineExpiryLedgerRun(run) {
@@ -82,8 +100,10 @@ function detectMissedDailyExpirySlots(runs = [], { now = new Date(), lookbackDay
   for (let i = lookbackDays; i >= 1; i -= 1) {
     const perthDate = addCalendarDays(todayPerth, -i);
     const utcStart = perthDateToDailyExpiryUtc(perthDate);
-    if (Date.parse(utcStart) > now.getTime()) continue;
-    const match = (runs || []).find((run) => runMatchesExpirySlot(run, utcStart) && isGenuineExpiryLedgerRun(run));
+    if (Date.parse(utcStart) > now.getTime() && Date.parse(perthDateToLegacyDailyExpiryUtc(perthDate)) > now.getTime()) {
+      continue;
+    }
+    const match = (runs || []).find((run) => runMatchesPerthExpiryDate(run, perthDate) && isGenuineExpiryLedgerRun(run));
     slots.push({
       perth_date: perthDate,
       utc_start: utcStart,
@@ -113,7 +133,9 @@ function classifyOperationalStatus({
   sourceRepairRequired = false,
   sourceUnstable = false,
   notYetCommissioned = false,
-  readOnly = false
+  readOnly = false,
+  controlledCatchupRequired = false,
+  schedulerMissing = false
 } = {}) {
   if (!enabled) return "DISABLED";
   if (notDue) return "NOT_DUE";
@@ -127,7 +149,9 @@ function classifyOperationalStatus({
   if (writeFailure) return "WRITE_FAILURE";
   if (reviewRequired) return "REVIEW_REQUIRED";
   if (notYetCommissioned) return "NOT_YET_COMMISSIONED";
+  if (controlledCatchupRequired) return "CONTROLLED_CATCHUP_REQUIRED";
   if (readOnly) return "READ_ONLY";
+  if (schedulerMissing) return "SCHEDULER_MISSING";
   if (missedSchedule) return "MISSED_SCHEDULE";
   return "HEALTHY";
 }
@@ -139,6 +163,7 @@ function weeklyBackgroundHttpStatus(result = {}) {
     result.source_repair_required === true ||
     result.source_unstable === true ||
     result.not_yet_commissioned === true ||
+    result.controlled_catchup_required === true ||
     result.read_only === true ||
     result.disabled === true ||
     result.already_dispatched === true ||
@@ -155,6 +180,7 @@ function weeklyBackgroundHttpStatus(result = {}) {
       "source_unstable",
       "read_only",
       "not_yet_commissioned",
+      "controlled_catchup_required",
       "disabled",
       "completed"
     ].includes(terminal)
@@ -176,6 +202,8 @@ module.exports = {
   OPERATIONAL_STATUSES,
   OPERATIONAL_STATUS_SEVERITY,
   perthDateToDailyExpiryUtc,
+  perthDateToLegacyDailyExpiryUtc,
+  runMatchesPerthExpiryDate,
   detectMissedDailyExpirySlots,
   classifyOperationalStatus,
   weeklyBackgroundHttpStatus,

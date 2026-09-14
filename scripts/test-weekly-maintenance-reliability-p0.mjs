@@ -2464,8 +2464,8 @@ test("P3F staggered timetable matches netlify/GitHub and monitoring map", () => 
   if (/^\s*schedule\s*=/m.test(princessNetlify)) {
     throw new Error("Princess Netlify cron must stay unscheduled");
   }
-  if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 17 * * *") {
-    throw new Error("daily expiry must stay 01:30 Perth");
+  if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 22 * * *") {
+    throw new Error("daily expiry must stay 06:30 Perth");
   }
 });
 

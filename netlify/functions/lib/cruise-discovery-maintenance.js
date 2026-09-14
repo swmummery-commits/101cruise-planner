@@ -138,9 +138,9 @@ const MAINTENANCE_SCHEDULES = {
     scheduled_writes_require_flag: true
   },
   daily_expiry: {
-    cron_utc: "30 17 * * *",
-    perth_display: "Daily 01:30 Australia/Perth",
-    utc_display: "Daily 17:30 UTC (previous calendar day relative to Perth morning)",
+    cron_utc: "30 22 * * *",
+    perth_display: "Daily 06:30 Australia/Perth",
+    utc_display: "Daily 22:30 UTC (previous calendar day relative to Perth 06:30)",
     function: "cruise-daily-expiry-cron"
   }
 };

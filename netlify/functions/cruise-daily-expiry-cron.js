@@ -1,6 +1,6 @@
 /**
  * Daily sailed-cruise expiration (Netlify Scheduled Function).
- * Schedule: 17:30 UTC daily = 01:30 Australia/Perth
+ * Schedule: 22:30 UTC daily = 06:30 Australia/Perth
  */
 
 const { isCruiseDailyExpiryEnabled } = require("./lib/cruise-discovery-maintenance");
