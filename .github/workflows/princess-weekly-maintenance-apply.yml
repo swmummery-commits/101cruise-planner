@@ -17,8 +17,8 @@ on:
         options:
           - "30"
   schedule:
-    # Monday 04:00 Australia/Perth = Sunday 20:00 UTC
-    - cron: "0 20 * * 0"
+    # Monday 05:00 Australia/Perth = Sunday 21:00 UTC
+    - cron: "0 21 * * 0"
 
 concurrency:
   group: princess-weekly-maintenance
