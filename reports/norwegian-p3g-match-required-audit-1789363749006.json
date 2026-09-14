@@ -1,0 +1,302 @@
+{
+  "generated_at": "2026-09-14T05:29:09.006Z",
+  "iso_week": "2026-W38",
+  "trigger_type": "preflight",
+  "scheduled_lease_created": false,
+  "eligible": 1880,
+  "review_count": 0,
+  "old_34_incomplete_reviews": 0,
+  "match_required_count": 37,
+  "audit": {
+    "classified": [
+      {
+        "id": "6741f558-544e-4432-abee-dd3ec27b4923",
+        "official_sailing_id": "PEARL10PHLSJUTOVSTTPHL|2027-01-03",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "6741f558-544e-4432-abee-dd3ec27b4923"
+      },
+      {
+        "id": "2bc41220-d46d-49f2-98d2-d4dcb214fbb9",
+        "official_sailing_id": "SPIRIT11SYDQDNBWTMELORRTMUTAUAKL|2027-01-25",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "2bc41220-d46d-49f2-98d2-d4dcb214fbb9"
+      },
+      {
+        "id": "4b47e2da-39c6-4f86-80c1-37dd0158da53",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-02-05",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "4b47e2da-39c6-4f86-80c1-37dd0158da53"
+      },
+      {
+        "id": "296cec2b-a257-4db1-a749-27886f8f5fbf",
+        "official_sailing_id": "SPIRIT11SYDQDNBWTMELORRTMUBYOAKL|2027-02-16",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "296cec2b-a257-4db1-a749-27886f8f5fbf"
+      },
+      {
+        "id": "d9643f80-0f4a-48ff-a0f7-e1481234b45e",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-02-27",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "d9643f80-0f4a-48ff-a0f7-e1481234b45e"
+      },
+      {
+        "id": "c9a210d2-8d53-4a6f-a194-3c422e701a85",
+        "official_sailing_id": "PEARL11PHLWRFTOVSTTSJUAMBPHL|2027-03-28",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "c9a210d2-8d53-4a6f-a194-3c422e701a85"
+      },
+      {
+        "id": "fa760f63-a411-4e93-813f-67f9e3c49b7c",
+        "official_sailing_id": "PRIMA7SJUTOVSTTSLUORJSJU|2027-03-28",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "fa760f63-a411-4e93-813f-67f9e3c49b7c"
+      },
+      {
+        "id": "434db37c-0579-4560-96ae-099671eced10",
+        "official_sailing_id": "SPIRIT11SYDQDNESSMELORRTMUTAUAKL|2027-04-01",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "434db37c-0579-4560-96ae-099671eced10"
+      },
+      {
+        "id": "8ad9cdcd-bbdd-45b9-b948-b0fb7e03e4d5",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-04-12",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "8ad9cdcd-bbdd-45b9-b948-b0fb7e03e4d5"
+      },
+      {
+        "id": "dec07c51-4179-46cd-adbd-1f649adb417a",
+        "official_sailing_id": "DAWN7BCNPMIALCMOTGIBCADPRMLIS|2027-05-23",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "dec07c51-4179-46cd-adbd-1f649adb417a"
+      },
+      {
+        "id": "ea0e587f-6317-4cbf-95c2-a45e6a839784",
+        "official_sailing_id": "ESCAPE4PCVNPINASPCV|2027-05-31",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "ea0e587f-6317-4cbf-95c2-a45e6a839784"
+      },
+      {
+        "id": "aa95f250-fa2f-4627-bea7-ec56cd511b84",
+        "official_sailing_id": "ESCAPE5PCVNPIPOPPCV|2027-06-09",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "aa95f250-fa2f-4627-bea7-ec56cd511b84"
+      },
+      {
+        "id": "5e9a8f1d-86c3-4eeb-8c43-6690c7345b96",
+        "official_sailing_id": "VIVA9ISTKUSPIRJMKJTRKAKMLACTASALCIV|2027-06-23",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "5e9a8f1d-86c3-4eeb-8c43-6690c7345b96"
+      },
+      {
+        "id": "ca8279e7-85aa-4894-ad03-79405ef9d801",
+        "official_sailing_id": "STAR10SOUIPOCOBDUNBFSSTWKWLSOQSOU|2027-06-24",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "ca8279e7-85aa-4894-ad03-79405ef9d801"
+      },
+      {
+        "id": "bc31bd67-582f-4f87-8b97-966d9f2122f0",
+        "official_sailing_id": "DAWN7LISPRMMOTCADGIBIBZPMIBCN|2027-07-25",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "bc31bd67-582f-4f87-8b97-966d9f2122f0"
+      },
+      {
+        "id": "a0ddf501-560d-4799-b7af-b3a18104c0e4",
+        "official_sailing_id": "STAR10SOUNWHKWLDUNBFSLVPRINIPOSOU|2027-09-16",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "a0ddf501-560d-4799-b7af-b3a18104c0e4"
+      },
+      {
+        "id": "d16e74e7-162e-48e7-88b2-dafb9371dd7c",
+        "official_sailing_id": "SPIRIT8PPTRARBRBMOZRAIPPT|2027-09-22",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "d16e74e7-162e-48e7-88b2-dafb9371dd7c"
+      },
+      {
+        "id": "8918419e-af06-4de8-a435-573cc0ee5d9d",
+        "official_sailing_id": "DAWN7LISTNGMOTCARALCIBZBCN|2027-10-03",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "8918419e-af06-4de8-a435-573cc0ee5d9d"
+      },
+      {
+        "id": "e3374f1e-e3ff-4a65-9dcb-d05e24e30a65",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2027-10-30",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "e3374f1e-e3ff-4a65-9dcb-d05e24e30a65"
+      },
+      {
+        "id": "8eb5050c-8eaf-408b-a0ec-13e01c584d81",
+        "official_sailing_id": "DAWN14BCNCADCASSJUJAX|2027-11-05",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "8eb5050c-8eaf-408b-a0ec-13e01c584d81"
+      },
+      {
+        "id": "cd4efc43-5161-4ae5-85b7-e5aae5f6edc0",
+        "official_sailing_id": "STAR10BCNMOTCADCASAGAACESCTLPALIS|2027-11-22",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "cd4efc43-5161-4ae5-85b7-e5aae5f6edc0"
+      },
+      {
+        "id": "58b5dac3-85b5-47e9-b6cc-118357822d3a",
+        "official_sailing_id": "GEM11MIANPICTGPCGCLNLIOOCJGECMIA|2027-11-30",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "58b5dac3-85b5-47e9-b6cc-118357822d3a"
+      },
+      {
+        "id": "ab8867f1-b5aa-45ac-811e-f8c625913463",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2027-12-04",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "ab8867f1-b5aa-45ac-811e-f8c625913463"
+      },
+      {
+        "id": "8f934f87-a16c-4040-9a11-d804969c1cca",
+        "official_sailing_id": "GEM12MIANPICBRORJWILCTGPCGCLNGECMIA|2027-12-21",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "8f934f87-a16c-4040-9a11-d804969c1cca"
+      },
+      {
+        "id": "ff478823-1275-499d-998b-b568cbe03bff",
+        "official_sailing_id": "GEM10MIACTGPCGCLNLIOFMHNPIMIA|2028-01-02",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "ff478823-1275-499d-998b-b568cbe03bff"
+      },
+      {
+        "id": "6475156c-871f-45df-adc1-39273ab2288b",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2028-01-22",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "6475156c-871f-45df-adc1-39273ab2288b"
+      },
+      {
+        "id": "db0ab843-e891-4e01-9119-66f312181942",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2028-02-05",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "db0ab843-e891-4e01-9119-66f312181942"
+      },
+      {
+        "id": "72cc11bf-b3a7-4ebb-9532-d49dd4fe406f",
+        "official_sailing_id": "JOY9MIANPICBRORJWILOCJMIA|2028-03-08",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "72cc11bf-b3a7-4ebb-9532-d49dd4fe406f"
+      },
+      {
+        "id": "0c2086f7-1853-432d-9d9d-8d9957edbd7b",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2028-03-10",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "0c2086f7-1853-432d-9d9d-8d9957edbd7b"
+      },
+      {
+        "id": "0a46c88d-6f35-4170-9e38-cda47ae97b00",
+        "official_sailing_id": "SPIRIT11SYDMELORRTMUWLGTAUAKL|2028-03-21",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "0a46c88d-6f35-4170-9e38-cda47ae97b00"
+      },
+      {
+        "id": "6191c208-1d4c-45fb-a2be-871922b89ca7",
+        "official_sailing_id": "STAR10BCNCADMOTCASACESCTLPALIS|2028-04-11",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "6191c208-1d4c-45fb-a2be-871922b89ca7"
+      },
+      {
+        "id": "543915c5-5bcc-487e-8a9c-bf15ce6dca45",
+        "official_sailing_id": "GETAWAY12MSYOCJWILORJCBRNPINYC|2028-04-16",
+        "classification": "SOURCE_STILL_INCOMPLETE",
+        "reason": "ship,departure,return,nights,departure_port",
+        "existing_uuid": "543915c5-5bcc-487e-8a9c-bf15ce6dca45"
+      },
+      {
+        "id": "e7684eca-fea1-475b-899d-b00b5477f3fa",
+        "official_sailing_id": null,
+        "classification": "LEGACY",
+        "reason": "legacy_or_missing_official",
+        "existing_uuid": "e7684eca-fea1-475b-899d-b00b5477f3fa"
+      },
+      {
+        "id": "ecc7aba8-7150-4969-93e9-5d87776a8daa",
+        "official_sailing_id": null,
+        "classification": "LEGACY",
+        "reason": "legacy_or_missing_official",
+        "existing_uuid": "ecc7aba8-7150-4969-93e9-5d87776a8daa"
+      },
+      {
+        "id": "cec48cd4-4091-447e-8463-34a21b1cb409",
+        "official_sailing_id": null,
+        "classification": "LEGACY",
+        "reason": "legacy_or_missing_official",
+        "existing_uuid": "cec48cd4-4091-447e-8463-34a21b1cb409"
+      },
+      {
+        "id": "1a633b6b-ef48-48fe-ac94-7e48eaf49fa4",
+        "official_sailing_id": null,
+        "classification": "LEGACY",
+        "reason": "legacy_or_missing_official",
+        "existing_uuid": "1a633b6b-ef48-48fe-ac94-7e48eaf49fa4"
+      },
+      {
+        "id": "5dc2b6f1-e413-4b36-b9c8-b000ab6aec61",
+        "official_sailing_id": null,
+        "classification": "LEGACY",
+        "reason": "legacy_or_missing_official",
+        "existing_uuid": "5dc2b6f1-e413-4b36-b9c8-b000ab6aec61"
+      }
+    ],
+    "counts": {
+      "SOURCE_NOW_COMPLETE": 0,
+      "SOURCE_STILL_INCOMPLETE": 32,
+      "DUPLICATE_ACTIVE": 0,
+      "LEGACY": 5,
+      "SOURCE_ABSENT": 0,
+      "AMBIGUOUS": 0
+    },
+    "total": 37
+  },
+  "writes": 0,
+  "source_counts": {
+    "raw_sailings": null,
+    "ocean_total": null,
+    "eligible_ocean": 1946,
+    "cruisetour_package": null,
+    "within_cutoff": null
+  },
+  "p3b_classification_counts": {
+    "RECOGNISED": 1880,
+    "UNIQUE_ID_REMAP": 24,
+    "TRUE_NEW": 10,
+    "ALREADY_MATCH_REQUIRED": 32,
+    "MULTIPLE_PRODUCTION_MATCHES": 0,
+    "SOURCE_DUPLICATE": 0,
+    "AMBIGUOUS": 0
+  },
+  "recognised_eligible": 1880,
+  "outstanding_eligible": 34,
+  "source_eligible_count": 2585
+}

@@ -1,0 +1,227 @@
+{
+  "phase": "P3G",
+  "title": "Staggered-schedule production proof + Royal/NCL follow-through",
+  "generated_at": "2026-09-14T05:30:30.000Z",
+  "perth_date": "2026-09-14",
+  "perth_clock": "Monday afternoon — Tuesday 01:00 / 03:00 and Wednesday 01:00 / 03:00 have not occurred",
+  "iso_week": "2026-W38",
+  "repository": "swmummery-commits/101cruise-planner",
+  "starting_sha": "2f8aca2240fe59d969f018cfea74d1efe2fa91e2",
+  "daily_expiry_schedule_sha": "4c48a03",
+  "royal_ncl_path_sha": "0633d58",
+  "orphan_lease_reuse_sha": "b983f19",
+  "production_deployed_sha": "pending_netlify_publish_of_b983f19",
+  "canonical_netlify_site": "admirable-tiramisu-d4da8a",
+  "prior_live_deploy": {
+    "id": "6aa7789df301b80008ff906d",
+    "commit": "2f8aca2240fe59d969f018cfea74d1efe2fa91e2",
+    "published_at": "2026-09-14T04:32:04Z",
+    "note": "P3F was live at session start. P3G commits pushed to main; Netlify publish of b983f19 not yet attested in this report."
+  },
+  "timetable_changed": false,
+  "daily_expiry": {
+    "perth_execution_time": "06:30 Australia/Perth",
+    "cron_utc": "30 22 * * *",
+    "previous": { "perth": "01:30", "cron_utc": "30 17 * * *" },
+    "perth_date_lease_semantics_unchanged": true,
+    "lease_key_format": "daily-expiry:{PERTH_DATE}:scheduled",
+    "public_cutoff_days_unchanged": 21,
+    "eligibility_and_db_behaviour_unchanged": true,
+    "one_run_per_perth_date": true,
+    "duplicate_or_skipped_date_risk": "none — 2026-09-14 already completed at 01:30 and holds daily-expiry:2026-09-14:scheduled; next fire is 2026-09-15 06:30 Perth (2026-09-14T22:30Z). Same Perth date still shares one lease key.",
+    "do_not_rerun_2026-09-14": true,
+    "historical_0130_runs_still_count": true
+  },
+  "weekly_line_timetable_unchanged": {
+    "HAL": "MON 01:00 netlify 0 17 * * 0",
+    "Celebrity": "MON 03:00 netlify 0 19 * * 0",
+    "Princess": "MON 05:00 github 0 21 * * 0",
+    "Explora": "TUE 01:00 netlify 0 17 * * 1",
+    "Seabourn": "TUE 03:00 netlify 0 19 * * 1",
+    "Royal": "WED 01:00 netlify 0 17 * * 2",
+    "Norwegian": "WED 03:00 netlify 0 19 * * 2",
+    "Carnival": "THU 01:00 netlify 0 17 * * 3",
+    "Disney": "THU 03:00 netlify 0 19 * * 3",
+    "Azamara": "FRI 01:00 netlify 0 17 * * 4",
+    "Silversea": "FRI 03:00 netlify 0 19 * * 4"
+  },
+  "tuesday": {
+    "explora_scheduled_run_id": null,
+    "explora_eligible_writes_status": "SLOT_NOT_YET_OCCURRED",
+    "explora_scheduled_worker_count": 0,
+    "seabourn_scheduled_run_id": null,
+    "seabourn_reviews_writes_status": "SLOT_NOT_YET_OCCURRED",
+    "seabourn_scheduled_worker_count": 0,
+    "missed_schedule_anomaly": false,
+    "w38_scheduled_lease_held_from_monday_miss": {
+      "explora-journeys:2026-W38:scheduled": "explora-journeys-dispatch-2026-09-13T21-00-39-314Z",
+      "seabourn-cruise-line:2026-W38:scheduled": "seabourn-cruise-line-dispatch-2026-09-13T22-00-38-042Z"
+    },
+    "orphan_lease_policy": "Launcher reuses the existing W38 :scheduled lease when no scheduled execution exists. No second claim. If a scheduled execution already exists, already_dispatched no-ops.",
+    "do_not_trigger_early": true,
+    "p3f_preflight_baseline": {
+      "explora_eligible": 284,
+      "explora_quality": "PASS",
+      "explora_writes": 0,
+      "seabourn_eligible": 672,
+      "seabourn_known_reviews": [
+        "E7M21E|8763B",
+        "E7M14J|8766A",
+        "E7M21F|8766B",
+        "E7M07I|8767",
+        "E7M14K|8767A",
+        "E7M21G|8767B",
+        "O8A14C|7811",
+        "O8A26A|7811A"
+      ],
+      "seabourn_insert_review": "W9W46A|6910D",
+      "seabourn_expected_terminal": "review_required"
+    }
+  },
+  "royal": {
+    "wednesday_run_id": null,
+    "wednesday_slot_occurred": false,
+    "union_source_health_p3f": {
+      "union_run_1": 3212,
+      "union_run_2": 3212,
+      "unexplained_current_ids": 0,
+      "source_removed": [
+        "EX07M807_2026-10-17",
+        "BR07M821_2026-10-12",
+        "EX07M840_2026-10-10"
+      ]
+    },
+    "p3g_preflight": {
+      "dispatch_id": "royal-caribbean-international:p3g-preflight-2026-W38-1789363644119",
+      "run_id": "royal-caribbean-international-weekly-2026-09-14T05-27-24-382Z",
+      "run_record_id": "696cc11f-3f08-4567-b8ec-58d0a2d375e6",
+      "trigger_type": "preflight",
+      "union": 3211,
+      "source_snapshot_id": "0ab6b045ea158777",
+      "source_enumeration_ok": true,
+      "weekly_maintenance_healthy": true,
+      "proposed_inserts": 105,
+      "proposed_updates": 0,
+      "unexplained_current": 0,
+      "writes": 0,
+      "terminal_status": "controlled_catchup_required",
+      "scheduled_lease_created_by_preflight": false,
+      "scheduled_lease_owner_unchanged": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z"
+    },
+    "current_safe_backlog": 105,
+    "review_ambiguous_count": 0,
+    "master_plan_size": "not frozen — P3F union 3212 vs P3G preflight 3211 is not two identical current snapshots; freeze after Wednesday scheduled source run",
+    "batch_cap": 30,
+    "controlled_batches": 0,
+    "writes": 0,
+    "remaining_backlog": 105,
+    "final_classification": "READY_FOR_CONTROLLED_CATCHUP",
+    "write_authority": "NOT_GRANTED — Wednesday scheduled health not yet observed; current snapshots 3212 vs 3211 are not reproducible; do not apply 105 automatically.",
+    "terminal_if_backlog_above_weekly_cap": "controlled_catchup_required",
+    "weekly_insert_ceiling_unchanged": 100
+  },
+  "norwegian": {
+    "wednesday_run_id": null,
+    "wednesday_slot_occurred": false,
+    "p3g_preflight_report": "reports/norwegian-p3g-match-required-audit-1789363749006.json",
+    "scheduled_lease_created_by_preflight": false,
+    "eligible_recognised": 1880,
+    "source_counts_eligible_ocean": 1946,
+    "old_34_incomplete_reviews_remaining": 0,
+    "review_count": 0,
+    "match_required_current_count": 37,
+    "p3b_already_match_required": 32,
+    "match_required_audit_counts": {
+      "SOURCE_NOW_COMPLETE": 0,
+      "SOURCE_STILL_INCOMPLETE": 32,
+      "DUPLICATE_ACTIVE": 0,
+      "LEGACY": 5,
+      "SOURCE_ABSENT": 0,
+      "AMBIGUOUS": 0
+    },
+    "audit_note": "32 match_required rows are recognised by official_sailing_id (ALREADY_MATCH_REQUIRED) so they will not be re-inserted. Field-level SOURCE_STILL_INCOMPLETE on raw simulation products does not authorise replacement UUIDs. 5 rows have no official ID (LEGACY). No enrichment writes in P3G.",
+    "true_new": 10,
+    "unique_id_remap": 24,
+    "outstanding_eligible": 34,
+    "enriched_promoted": 0,
+    "new_inserts": 0,
+    "remaining_reviews": 0,
+    "writes": 0,
+    "final_classification": "PARSER_REPAIRED_MATCH_REQUIRED_RECOGNISED_AWAIT_WEDNESDAY",
+    "canonical_path_uses_ship_and_return_fixes": true,
+    "enrichment_preserves_existing_uuid": true
+  },
+  "thursday_friday": {
+    "carnival": "source historically healthy; large backlog; not_yet_commissioned; writes remain disabled; Thursday 01:00 should complete read-only reconciliation; scheduled lease not consumed",
+    "disney": "no new source-performance fix since P3C/P3D; last Disney commits are commissioning/hardening only; Thursday 03:00 bounded deadline remains 12 minutes in production; preflight helper uses 8-minute deadline; expected COMPLETED / REVIEW_REQUIRED / SOURCE_UNSTABLE; never indefinite RUNNING; do not force catch-up",
+    "azamara": "Friday 01:00; prior zero-source/redirect; require non-zero inventory before treating as healthy; SOURCE_REPAIR_REQUIRED and 0 mass absence if zero; scheduled lease not consumed",
+    "silversea": "Friday 03:00; writes remain disabled; dry_run/read_only; prior 1 insert + 63 review updates must not be bulk-approved; one scheduled worker only"
+  },
+  "system": {
+    "schedule_aware_dashboard": "PASS",
+    "due_not_due_states_correct_as_of_monday_afternoon": true,
+    "monday_13:00_perth": {
+      "HAL": "COMPLETED",
+      "Celebrity": "COMPLETED",
+      "Princess": "COMPLETED (weekly_scheduled_apply recognised)",
+      "Tue_Fri": "NOT_DUE"
+    },
+    "grace_ms": 1200000,
+    "missed_schedule_requires_claimed_lease_and_no_scheduled_execution": true,
+    "no_lease_after_grace": "SCHEDULER_MISSING",
+    "locks": {
+      "weekly_execution_locks_held": false,
+      "w38_scheduled_leases_held": [
+        "holland-america-line",
+        "celebrity-cruises",
+        "explora-journeys",
+        "seabourn-cruise-line",
+        "royal-caribbean-international",
+        "norwegian-cruise-line"
+      ],
+      "daily_expiry_2026-09-14_lease_held": true,
+      "note": "Week-long :scheduled dispatch leases are expected. No :weekly execution locks are held."
+    },
+    "duplicate_scheduled_worker_count": 0
+  },
+  "tests": {
+    "test-weekly-maintenance-p3g": "21 passed",
+    "test-weekly-maintenance-reliability-p0": "99 passed",
+    "test-scheduled-maintenance": "23 passed",
+    "test-royal-caribbean-weekly-maintenance": "20 passed",
+    "test-royal-caribbean-source-enumeration": "12 passed",
+    "test-norwegian-weekly-maintenance": "30 passed",
+    "test-norwegian-discovery": "136 passed",
+    "test-public-booking-cutoff": "17 passed",
+    "test-explora-weekly-maintenance": "29 passed",
+    "test-explora-runtime-modules": "12 passed",
+    "test-seabourn-weekly-maintenance": "44 passed / 4 pre-existing confidence_blocked fixture failures (unchanged Seabourn files)"
+  },
+  "discovered_cruises_writes_in_p3g": [],
+  "rollback_manifests_in_p3g": [],
+  "partial_write_run": false,
+  "current_week_staggered_maintenance_matrix": [
+    { "line": "HAL", "slot": "MON 01:00", "due_state": "COMPLETED", "scheduled_run_id": "holland-america-line-weekly-2026-09-13T18-00-48-304Z", "terminal": "failed_before_writes (eligible 46 Monday; P3F recovered separately)" },
+    { "line": "Celebrity", "slot": "MON 03:00", "due_state": "COMPLETED", "scheduled_run_id": "celebrity-cruises-weekly-2026-09-13T19-00-43-456Z", "terminal": "completed", "writes": 4 },
+    { "line": "Princess", "slot": "MON 05:00", "due_state": "COMPLETED", "scheduled_run_id": "princess-cruises-weekly-2026-09-13T21-59-30-684Z", "terminal": "completed", "eligible": 1980, "writes": 0 },
+    { "line": "Explora", "slot": "TUE 01:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Seabourn", "slot": "TUE 03:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Royal", "slot": "WED 01:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Norwegian", "slot": "WED 03:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Carnival", "slot": "THU 01:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Disney", "slot": "THU 03:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Azamara", "slot": "FRI 01:00", "due_state": "NOT_DUE", "scheduled_run_id": null },
+    { "line": "Silversea", "slot": "FRI 03:00", "due_state": "NOT_DUE", "scheduled_run_id": null }
+  ],
+  "constraints_honoured": {
+    "weekly_line_timetable_unchanged": true,
+    "daily_expiry_moved_only": true,
+    "source_health_gates_not_lowered": true,
+    "write_caps_not_raised": true,
+    "seabourn_reviews_not_forced": true,
+    "carnival_not_enabled": true,
+    "silversea_not_enabled": true,
+    "disney_not_forced": true,
+    "public_cutoff_days": 21
+  }
+}

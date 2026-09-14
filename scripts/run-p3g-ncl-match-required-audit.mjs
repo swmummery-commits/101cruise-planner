@@ -43,13 +43,17 @@ async function main() {
   const matchRequired = await sb(
     `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(line.id)}&status=eq.match_required&select=id,official_sailing_id,status,ship_id,departure_date,return_date,nights,departure_port,destination_id,raw_extract`
   );
-  const sourceEligible = result.summary?.eligible_products || result.products || [];
-  const productionRows = result.summary?.production_rows || matchRequired || [];
+  const sourceEligible =
+    result.simulation?.products ||
+    result.manifest?.eligible_products ||
+    (result.manifest?.inserts || []).map((row) => row.candidate || row) ||
+    [];
+  const productionRows = result.manifest?.production_rows || matchRequired || [];
   const audit = auditNorwegianMatchRequiredRows(matchRequired || [], {
     sourceEligible,
     productionRows
   });
-  const reviewItems = result.summary?.review_items || [];
+  const reviewItems = result.summary?.review_items || result.manifest?.review_items || [];
   const oldIncomplete = reviewItems.filter(
     (item) => item.ambiguity_reason === "SOURCE_FIELD_INCOMPLETE" || item.reason === "incomplete_voyage_equivalence"
   );
@@ -58,13 +62,22 @@ async function main() {
     iso_week: perthIsoWeek(),
     trigger_type: "preflight",
     scheduled_lease_created: before.held !== true && after.held === true,
-    eligible: result.summary?.eligible_total ?? null,
+    eligible:
+      result.summary?.source_counts?.eligible ??
+      result.summary?.eligible_total ??
+      result.summary?.recognised_eligible ??
+      null,
     review_count: reviewItems.length,
     old_34_incomplete_reviews: oldIncomplete.length,
     match_required_count: (matchRequired || []).length,
     audit,
     writes: (result.summary?.inserts || 0) + (result.summary?.updates || 0),
-    terminal_status: result.summary?.terminal_status || result.terminal_status
+    terminal_status: result.summary?.terminal_status || result.terminal_status,
+    source_counts: result.summary?.source_counts || null,
+    p3b_classification_counts: result.summary?.p3b_classification_counts || null,
+    recognised_eligible: result.summary?.recognised_eligible ?? null,
+    outstanding_eligible: result.summary?.outstanding_eligible ?? null,
+    source_eligible_count: sourceEligible.length
   };
   const file = path.join(root, "reports", `norwegian-p3g-match-required-audit-${Date.now()}.json`);
   fs.mkdirSync(path.dirname(file), { recursive: true });
