@@ -1,6 +1,6 @@
 /* Reliable Ship Spotlight preview + save/publish controls.
- * Keep this deliberately simple: preview the generated newsletter HTML directly
- * in an Admin modal. No iframe, no popup, no legacy previewOpen state.
+ * Newsletter HTML is rendered in an isolated iframe so its email CSS cannot
+ * interfere with the Admin shell. Save/publish behaviour remains independent.
  */
 (function (global) {
   "use strict";
@@ -121,6 +121,29 @@
     return html;
   }
 
+  function previewDocument(html) {
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>html,body{margin:0;padding:0;background:#f7f7f7;}body{font-family:Helvetica,Arial,sans-serif;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`;
+  }
+
+  function wirePreviewLinks(iframe) {
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.addEventListener("click", (event) => {
+        const link = event.target?.closest?.("a");
+        if (!link) return;
+        const text = String(link.textContent || "").trim();
+        const previewUrl = global.ShipSpotlightContentPreviewFix?.previewUrl?.();
+        if (/^EXPLORE\b/i.test(text) && previewUrl) {
+          event.preventDefault();
+          global.open(previewUrl, "_blank", "noopener");
+        }
+      });
+    } catch (_error) {
+      // The email preview remains usable even if the browser blocks iframe access.
+    }
+  }
+
   function openPreview() {
     try {
       const html = buildPreviewHtml();
@@ -167,18 +190,42 @@
       header.appendChild(title);
       header.appendChild(close);
 
-      const stage = document.createElement("div");
-      stage.className = "ss-preview-canvas";
-      Object.assign(stage.style, {
+      const frameWrap = document.createElement("div");
+      Object.assign(frameWrap.style, {
         width: "100%",
         background: "#f7f7f7",
         padding: "0",
         overflowX: "hidden"
       });
-      stage.innerHTML = html;
 
+      const iframe = document.createElement("iframe");
+      iframe.title = "Ship Spotlight newsletter preview";
+      iframe.setAttribute("sandbox", "allow-same-origin allow-popups allow-popups-to-escape-sandbox");
+      Object.assign(iframe.style, {
+        display: "block",
+        width: "100%",
+        height: "900px",
+        border: "0",
+        background: "#f7f7f7"
+      });
+      iframe.srcdoc = previewDocument(html);
+      iframe.addEventListener("load", () => {
+        wirePreviewLinks(iframe);
+        try {
+          const height = Math.max(
+            700,
+            iframe.contentDocument?.documentElement?.scrollHeight || 0,
+            iframe.contentDocument?.body?.scrollHeight || 0
+          );
+          iframe.style.height = `${height + 20}px`;
+        } catch (_error) {
+          // Keep the fixed fallback height if measurement is unavailable.
+        }
+      });
+
+      frameWrap.appendChild(iframe);
       modal.appendChild(header);
-      modal.appendChild(stage);
+      modal.appendChild(frameWrap);
       backdrop.appendChild(modal);
       backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) closePreview();
@@ -239,8 +286,6 @@
   }
 
   install();
-  // The Ship Spotlight API is created once, but the panel contents are re-rendered.
-  // Reinstalling on child-list changes only refreshes the visible status node.
   new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: true });
 
   global.ShipSpotlightReliabilityFix = { openPreview, closePreview, saveViaServer, install };
