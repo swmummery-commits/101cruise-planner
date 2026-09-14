@@ -426,7 +426,8 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const lineSchedule = scheduleForSlug(lineSlug);
   const slotMs = lineSchedule ? slotStartMs(lineSchedule) : 0;
   const scheduledThisWeek = (runs || []).some((run) => {
-    if ((run.stats?.trigger_type || run.trigger_type) !== "scheduled") return false;
+    const trigger = run.stats?.trigger_type || run.trigger_type;
+    if (trigger !== "scheduled" && trigger !== "weekly_scheduled_apply") return false;
     const started = Date.parse(run.started_at || run.created_at || 0);
     return Number.isFinite(started) && Number.isFinite(slotMs) && started >= slotMs - 30 * 60 * 1000;
   });

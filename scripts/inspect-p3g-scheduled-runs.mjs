@@ -39,7 +39,8 @@ async function main() {
       : [];
     const slotMs = slotStartMs(schedule, now);
     const scheduledRuns = (runs || []).filter((run) => {
-      if ((run.stats?.trigger_type || "") !== "scheduled") return false;
+      const trigger = run.stats?.trigger_type || "";
+      if (trigger !== "scheduled" && trigger !== "weekly_scheduled_apply") return false;
       const started = Date.parse(run.started_at || 0);
       return Number.isFinite(started) && started >= slotMs - 30 * 60 * 1000;
     });

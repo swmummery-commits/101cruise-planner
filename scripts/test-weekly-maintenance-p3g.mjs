@@ -383,5 +383,52 @@ test("dashboard NOT_DUE wins over MISSED_SCHEDULE", () => {
   }
 });
 
+const orphanSb = async (p) => {
+  if (String(p).startsWith("cruise_discovery_maintenance_locks")) {
+    return [
+      {
+        lock_key: "explora-journeys:2026-W38:scheduled",
+        owner_id: "monday-miss",
+        expires_at: "2026-09-21T00:00:00.000Z"
+      }
+    ];
+  }
+  if (String(p).startsWith("ci_cruise_lines")) return [{ id: "explora-id" }];
+  if (String(p).startsWith("cruise_discovery_runs")) return [];
+  return [];
+};
+
+try {
+  const reused = await schedule.claimScheduledDispatchLease(orphanSb, {
+    periodKey: "explora-journeys:2026-W38:scheduled",
+    ownerId: "tuesday-cron",
+    triggerType: "scheduled",
+    scheduledExecutionExists: false
+  });
+  if (!reused.claimed || reused.already_dispatched || reused.reused_existing_lease !== true) {
+    throw new Error(JSON.stringify(reused));
+  }
+  const blocked = await schedule.claimScheduledDispatchLease(orphanSb, {
+    periodKey: "explora-journeys:2026-W38:scheduled",
+    ownerId: "tuesday-cron-2",
+    triggerType: "scheduled",
+    scheduledExecutionExists: true
+  });
+  if (!blocked.already_dispatched) throw new Error("existing scheduled execution must no-op");
+  if (!schedule.isScheduledExecutionTrigger("weekly_scheduled_apply")) {
+    throw new Error("Princess GitHub APPLY must count as scheduled execution");
+  }
+  if (schedule.isScheduledExecutionTrigger("preflight")) throw new Error("preflight is not scheduled execution");
+  passed += 1;
+  console.log("✓ orphan scheduled lease without execution can be reused without a second claim");
+} catch (error) {
+  failed += 1;
+  failures.push({
+    name: "orphan scheduled lease without execution can be reused without a second claim",
+    error: error.message || String(error)
+  });
+  console.log(`✗ orphan scheduled lease — ${error.message || error}`);
+}
+
 console.log(JSON.stringify({ passed, failed, failures }, null, 2));
 process.exit(failed > 0 ? 1 : 0);

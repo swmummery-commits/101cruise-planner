@@ -15,6 +15,7 @@ const {
   releaseMaintenanceDbLock,
   loadMaintenanceLockStatus
 } = require("./cruise-discovery-maintenance-locks");
+const { scheduleForSlug, slotStartMs } = require("./weekly-maintenance-schedule-map");
 
 const WEEKLY_DISPATCH_LEASE_SECONDS = 8 * 24 * 60 * 60;
 const DAILY_DISPATCH_LEASE_SECONDS = 26 * 60 * 60;
@@ -162,11 +163,41 @@ function detectClaimedLeaseWithoutExecution({
   };
 }
 
+const SCHEDULED_EXECUTION_TRIGGERS = Object.freeze(["scheduled", "weekly_scheduled_apply"]);
+
+function isScheduledExecutionTrigger(trigger) {
+  return SCHEDULED_EXECUTION_TRIGGERS.includes(String(trigger || ""));
+}
+
+async function scheduledWeeklyExecutionExists(supabase, lineSlug, reference = new Date()) {
+  if (!supabase || !lineSlug) return null;
+  const periodKey = scheduledWeeklyDispatchKey(lineSlug, reference);
+  const week = perthIsoWeek(reference);
+  const lines = await supabase(
+    `ci_cruise_lines?slug=eq.${encodeURIComponent(lineSlug)}&select=id&limit=1`
+  ).catch(() => []);
+  const lineId = lines?.[0]?.id;
+  if (!lineId) return null;
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(lineId)}&scope=eq.cruise_line&select=id,stats,started_at&order=created_at.desc&limit=30`
+  ).catch(() => []);
+  const schedule = scheduleForSlug(lineSlug);
+  const slotMs = schedule ? slotStartMs(schedule, reference) : NaN;
+  return (runs || []).some((run) => {
+    const trigger = run.stats?.trigger_type || run.trigger_type;
+    if (!isScheduledExecutionTrigger(trigger)) return false;
+    if (run.stats?.period_key === periodKey || run.stats?.scheduled_period === week) return true;
+    const started = Date.parse(run.started_at || 0);
+    return Number.isFinite(started) && Number.isFinite(slotMs) && started >= slotMs - 30 * 60 * 1000;
+  });
+}
+
 async function claimScheduledDispatchLease(supabase, {
   periodKey,
   ownerId,
   triggerType = "scheduled",
-  leaseSeconds = WEEKLY_DISPATCH_LEASE_SECONDS
+  leaseSeconds = WEEKLY_DISPATCH_LEASE_SECONDS,
+  scheduledExecutionExists = null
 } = {}) {
   if (!isScheduledTrigger(triggerType)) {
     return {
@@ -190,6 +221,16 @@ async function claimScheduledDispatchLease(supabase, {
 
   const existing = await loadMaintenanceLockStatus(supabase, periodKey).catch(() => ({ held: false }));
   if (existing.held) {
+    if (scheduledExecutionExists === false) {
+      return {
+        claimed: true,
+        already_dispatched: false,
+        reused_existing_lease: true,
+        reason: "orphan_scheduled_lease_reused",
+        period_key: periodKey,
+        lock: existing
+      };
+    }
     return {
       claimed: false,
       already_dispatched: true,
@@ -327,11 +368,15 @@ async function withScheduledDispatchLease({
     ? scheduledDailyExpiryDispatchKey(reference)
     : scheduledWeeklyDispatchKey(lineSlug, reference);
   const leaseSeconds = dailyExpiry ? DAILY_DISPATCH_LEASE_SECONDS : WEEKLY_DISPATCH_LEASE_SECONDS;
+  const executionExists = dailyExpiry
+    ? null
+    : await scheduledWeeklyExecutionExists(supabase, lineSlug, reference);
   const claim = await claimScheduledDispatchLease(supabase, {
     periodKey,
     ownerId: dispatchId,
     triggerType,
-    leaseSeconds
+    leaseSeconds,
+    scheduledExecutionExists: executionExists === false ? false : null
   });
 
   if (claim.already_dispatched) {
@@ -657,6 +702,8 @@ module.exports = {
   isScheduledPeriodKey,
   assertLeaseClaimAllowed,
   detectClaimedLeaseWithoutExecution,
+  isScheduledExecutionTrigger,
+  scheduledWeeklyExecutionExists,
   collectInvocationProvenance,
   claimScheduledDispatchLease,
   releaseScheduledDispatchLease,
