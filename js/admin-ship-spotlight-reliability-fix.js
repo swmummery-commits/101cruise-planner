@@ -1,44 +1,44 @@
 /* Reliable Ship Spotlight preview + save/publish controls.
- * This patch deliberately bypasses the legacy inline button handlers.
- * Preview is rendered in an isolated iframe so newsletter HTML/CSS cannot
- * interfere with the Admin shell or depend on the old previewOpen state.
+ * Keep this deliberately simple: preview the generated newsletter HTML directly
+ * in an Admin modal. No iframe, no popup, no legacy previewOpen state.
  */
 (function (global) {
-  'use strict';
+  "use strict";
 
-  const SAVE_ENDPOINT = '/.netlify/functions/admin-ship-spotlight-save';
-  const LIVE_BASE = 'https://admirable-tiramisu-d4da8a.netlify.app/ships/';
-  const PREVIEW_ID = 'ssReliablePreviewBackdrop';
+  const SAVE_ENDPOINT = "/.netlify/functions/admin-ship-spotlight-save";
+  const PREVIEW_ID = "ssNewsletterPreviewModal";
   const STAT_KEYS = [
-    'passenger_capacity','stateroom_count','crew_count','year_built','year_refurbished',
-    'gross_tonnage','length_metres','beam_metres','cruising_speed_knots','deck_count'
+    "passenger_capacity", "stateroom_count", "crew_count", "year_built", "year_refurbished",
+    "gross_tonnage", "length_metres", "beam_metres", "cruising_speed_knots", "deck_count"
   ];
 
-  function root() { return document.getElementById('shipSpotlightOverlay'); }
-  function field(id) { return root()?.querySelector(`#${id}`) || null; }
-  function selectedShipId() { return String(root()?.querySelector('.ss-selector select')?.value || '').trim(); }
-  function value(id) { return String(field(id)?.value || '').trim(); }
+  function root() {
+    return document.getElementById("shipSpotlightOverlay");
+  }
 
-  async function authHeaders(extra) {
-    if (typeof global.adminAuthHeaders === 'function') {
-      return global.adminAuthHeaders({ 'Content-Type': 'application/json', ...(extra || {}) });
-    }
-    const session = await global.supabaseClient?.auth?.getSession?.();
-    const token = session?.data?.session?.access_token || '';
-    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(extra || {}) };
+  function field(id) {
+    return root()?.querySelector(`#${id}`) || null;
+  }
+
+  function selectedShipId() {
+    return String(root()?.querySelector(".ss-selector select")?.value || "").trim();
+  }
+
+  function value(id) {
+    return String(field(id)?.value || "").trim();
   }
 
   function statusNode() {
-    const host = root()?.querySelector('.ss-actions');
-    if (!host) return null;
-    let node = root().querySelector('[data-ship-spotlight-reliability-status]');
+    const actions = root()?.querySelector(".ss-actions");
+    if (!actions) return null;
+    let node = actions.querySelector("[data-ss-action-status]");
     if (!node) {
-      node = document.createElement('div');
-      node.dataset.shipSpotlightReliabilityStatus = '1';
-      node.className = 'admin-small';
-      node.style.marginRight = 'auto';
-      node.style.flexBasis = '100%';
-      host.insertBefore(node, host.firstChild);
+      node = document.createElement("div");
+      node.dataset.ssActionStatus = "1";
+      node.className = "admin-small";
+      node.style.flex = "1 0 100%";
+      node.style.marginBottom = "8px";
+      actions.insertBefore(node, actions.firstChild);
     }
     return node;
   }
@@ -46,241 +46,202 @@
   function setStatus(message, tone) {
     const node = statusNode();
     if (!node) return;
-    node.textContent = message || '';
-    node.style.color = tone === 'error' ? '#9a2525' : tone === 'success' ? '#17633f' : '#545454';
+    node.textContent = message || "";
+    node.style.color = tone === "error" ? "#9a2525" : tone === "success" ? "#17633f" : "#545454";
   }
 
-  function payload() {
-    const checkbox = field('ssPublished');
+  async function authHeaders() {
+    if (typeof global.adminAuthHeaders === "function") {
+      return global.adminAuthHeaders({ "Content-Type": "application/json" });
+    }
+    const sessionResult = await global.supabaseClient?.auth?.getSession?.();
+    const token = sessionResult?.data?.session?.access_token || "";
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  }
+
+  function savePayload() {
     return {
       ship_id: selectedShipId(),
-      eyebrow: value('ssEyebrow') || 'SHIP SPOTLIGHT',
-      newsletter_heading: value('ssHeading'),
-      editorial_intro: value('ssIntro'),
-      hero_image_url: value('ssHero'),
-      public_slug: value('ssSlug'),
-      publication_status: checkbox?.checked ? 'published' : 'draft',
+      eyebrow: value("ssEyebrow") || "SHIP SPOTLIGHT",
+      newsletter_heading: value("ssHeading"),
+      editorial_intro: value("ssIntro"),
+      hero_image_url: value("ssHero"),
+      public_slug: value("ssSlug"),
+      publication_status: field("ssPublished")?.checked ? "published" : "draft",
       stat_keys: STAT_KEYS,
       supporting_image_urls: []
     };
   }
 
-  async function saveViaServer(options) {
-    const api = global.ShipSpotlightAdmin;
-    api?.capture?.();
-    const body = payload();
+  async function saveViaServer() {
+    const body = savePayload();
     if (!body.ship_id) {
-      setStatus('Select a ship first.', 'error');
+      setStatus("Select a ship first.", "error");
       return false;
     }
     if (!body.hero_image_url) {
-      setStatus('Choose a hero image before saving.', 'error');
+      setStatus("Choose a hero image before saving or publishing.", "error");
       return false;
     }
 
-    setStatus(body.publication_status === 'published' ? 'Publishing…' : 'Saving…', '');
+    setStatus(body.publication_status === "published" ? "Publishing…" : "Saving…", "");
     try {
       const response = await fetch(SAVE_ENDPOINT, {
-        method: 'POST',
+        method: "POST",
         headers: await authHeaders(),
         body: JSON.stringify(body)
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-
-      const state = body.publication_status === 'published' ? 'Published' : 'Saved as draft';
-      setStatus(`${state} successfully.`, 'success');
-      const publicSection = Array.from(root()?.querySelectorAll('section') || [])
-        .find((section) => /public ship page/i.test(String(section.querySelector('h3')?.textContent || '')));
-      const helper = publicSection?.querySelector('.admin-helper');
-      if (helper && data.public_url) helper.textContent = `${LIVE_BASE}${encodeURIComponent(body.public_slug)}`;
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || `Save failed (HTTP ${response.status})`);
+      }
+      setStatus(body.publication_status === "published" ? "Published successfully." : "Saved successfully.", "success");
       return data.spotlight || true;
     } catch (error) {
-      console.error('Ship Spotlight save failed', error);
-      setStatus(error.message || 'Could not save Ship Spotlight.', 'error');
+      console.error("Ship Spotlight save failed", error);
+      setStatus(`Save failed: ${error?.message || String(error)}`, "error");
       return false;
     }
   }
 
-  function removePreview() {
+  function closePreview() {
     document.getElementById(PREVIEW_ID)?.remove();
   }
 
-  function previewDocument(html) {
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#f7f7f7;}body{font-family:Helvetica,Arial,sans-serif;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`;
+  function buildPreviewHtml() {
+    const api = global.ShipSpotlightAdmin;
+    api?.capture?.();
+    if (!selectedShipId()) throw new Error("Select a ship first.");
+    if (typeof api?.emailHtml !== "function") throw new Error("Newsletter renderer is unavailable. Refresh Admin and try again.");
+    const html = String(api.emailHtml() || "").trim();
+    if (!html) throw new Error("Choose a hero image before previewing the newsletter block.");
+    return html;
   }
 
-  function openReliablePreview() {
-    const api = global.ShipSpotlightAdmin;
+  function openPreview() {
     try {
-      api?.capture?.();
-      if (!selectedShipId()) {
-        setStatus('Select a ship first.', 'error');
-        return false;
-      }
+      const html = buildPreviewHtml();
+      closePreview();
 
-      const html = typeof api?.emailHtml === 'function' ? String(api.emailHtml() || '') : '';
-      if (!html) {
-        setStatus('Preview cannot be created until a hero image is selected.', 'error');
-        return false;
-      }
-
-      removePreview();
-
-      const backdrop = document.createElement('div');
+      const backdrop = document.createElement("div");
       backdrop.id = PREVIEW_ID;
       Object.assign(backdrop.style, {
-        position: 'fixed',
-        inset: '0',
-        zIndex: '2147483000',
-        background: 'rgba(17,17,17,.62)',
-        overflowY: 'auto',
-        padding: '20px'
+        position: "fixed",
+        inset: "0",
+        zIndex: "2147483000",
+        background: "rgba(17,17,17,.68)",
+        overflowY: "auto",
+        padding: "24px 12px"
       });
 
-      const modal = document.createElement('div');
+      const modal = document.createElement("div");
       Object.assign(modal.style, {
-        width: 'min(700px, 100%)',
-        margin: '0 auto',
-        background: '#fff',
-        borderRadius: '10px',
-        boxShadow: '0 18px 60px rgba(0,0,0,.28)',
-        overflow: 'hidden'
+        width: "min(680px, 100%)",
+        margin: "0 auto",
+        background: "#ffffff",
+        borderRadius: "12px",
+        boxShadow: "0 18px 60px rgba(0,0,0,.30)",
+        overflow: "hidden"
       });
 
-      const head = document.createElement('div');
-      Object.assign(head.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '16px',
-        padding: '14px 16px',
-        borderBottom: '1px solid #e8e8e8',
-        background: '#fff'
+      const header = document.createElement("div");
+      Object.assign(header.style, {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "16px",
+        padding: "14px 16px",
+        background: "#ffffff",
+        borderBottom: "1px solid #e8e8e8"
       });
-      head.innerHTML = '<div><strong style="font-family:Helvetica,Arial,sans-serif;">Newsletter block preview</strong><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#545454;margin-top:3px;">Actual 600px email block. Narrow the window to inspect mobile stacking.</div></div>';
+      const title = document.createElement("div");
+      title.innerHTML = '<strong style="font-family:Helvetica,Arial,sans-serif;">Newsletter block preview</strong><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#545454;margin-top:3px;">Actual 600px newsletter section</div>';
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "admin-button secondary small";
+      close.textContent = "Close";
+      close.addEventListener("click", closePreview);
+      header.appendChild(title);
+      header.appendChild(close);
 
-      const close = document.createElement('button');
-      close.type = 'button';
-      close.className = 'admin-button secondary small';
-      close.textContent = 'Close';
-      close.addEventListener('click', removePreview);
-      head.appendChild(close);
-
-      const frameWrap = document.createElement('div');
-      Object.assign(frameWrap.style, { background: '#f7f7f7', padding: '0', overflow: 'hidden' });
-      const iframe = document.createElement('iframe');
-      iframe.title = 'Ship Spotlight newsletter preview';
-      iframe.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
-      Object.assign(iframe.style, {
-        display: 'block',
-        width: '100%',
-        height: '900px',
-        border: '0',
-        background: '#f7f7f7'
+      const stage = document.createElement("div");
+      stage.className = "ss-preview-canvas";
+      Object.assign(stage.style, {
+        width: "100%",
+        background: "#f7f7f7",
+        padding: "0",
+        overflowX: "hidden"
       });
-      iframe.srcdoc = previewDocument(html);
-      iframe.addEventListener('load', () => {
-        try {
-          const height = Math.max(700, iframe.contentDocument?.documentElement?.scrollHeight || 0, iframe.contentDocument?.body?.scrollHeight || 0);
-          iframe.style.height = `${height + 20}px`;
-        } catch (_error) {
-          // Fixed fallback height remains usable if the browser blocks measurement.
-        }
-      });
+      stage.innerHTML = html;
 
-      frameWrap.appendChild(iframe);
-      modal.appendChild(head);
-      modal.appendChild(frameWrap);
+      modal.appendChild(header);
+      modal.appendChild(stage);
       backdrop.appendChild(modal);
-      backdrop.addEventListener('click', (event) => {
-        if (event.target === backdrop) removePreview();
+      backdrop.addEventListener("click", (event) => {
+        if (event.target === backdrop) closePreview();
       });
       document.body.appendChild(backdrop);
-      setStatus('', '');
+      setStatus("", "");
       return true;
     } catch (error) {
-      console.error('Ship Spotlight preview failed', error);
-      setStatus(`Preview failed: ${error?.message || String(error)}`, 'error');
+      console.error("Ship Spotlight preview failed", error);
+      setStatus(`Preview failed: ${error?.message || String(error)}`, "error");
       return false;
     }
   }
 
-  function addPublishHint() {
-    const checkbox = field('ssPublished');
-    const label = checkbox?.closest('label');
-    if (!label || label.dataset.reliablePublishHint === '1') return;
-    label.dataset.reliablePublishHint = '1';
-    const hint = document.createElement('span');
-    hint.className = 'admin-small';
-    hint.style.display = 'block';
-    hint.style.marginTop = '4px';
-    hint.textContent = 'Changing this setting saves immediately.';
-    label.appendChild(hint);
-  }
-
-  function markButtons() {
-    const actions = root()?.querySelector('.ss-actions');
-    if (!actions) return;
-    Array.from(actions.querySelectorAll('button')).forEach((button) => {
-      const text = String(button.textContent || '').trim();
-      if (/^Preview Newsletter Block$/i.test(text)) button.dataset.shipSpotlightPreviewTrigger = '1';
-      if (/^Save Spotlight$/i.test(text)) button.dataset.shipSpotlightSaveTrigger = '1';
-    });
-  }
-
-  function installApiOverrides() {
+  function installApi() {
     const api = global.ShipSpotlightAdmin;
     if (!api) return false;
-    // Reapply every time. Other presentation patches may replace methods after
-    // initial load; these two controls must remain authoritative.
-    api.openPreview = openReliablePreview;
-    api.closePreview = removePreview;
+    api.openPreview = openPreview;
+    api.closePreview = closePreview;
     api.save = saveViaServer;
-    api.__reliablePreviewSaveInstalled = true;
     return true;
   }
 
-  function install() {
-    if (!installApiOverrides()) return;
-    addPublishHint();
-    markButtons();
-    statusNode();
-  }
+  // One capture-phase handler is authoritative for these controls. It does not
+  // depend on button IDs or on buttons surviving a Ship Spotlight re-render.
+  if (!global.__ssSimpleControlsInstalled) {
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button");
+      const panel = root();
+      if (!button || !panel?.contains(button)) return;
+      const text = String(button.textContent || "").trim();
 
-  // Capture-phase delegation bypasses the legacy inline onclick completely.
-  // This survives every re-render of the Ship Spotlight editor.
-  if (!global.__shipSpotlightReliableClickGuardInstalled) {
-    document.addEventListener('click', (event) => {
-      const button = event.target?.closest?.('button');
-      if (!button || !root()?.contains(button)) return;
-
-      if (button.dataset.shipSpotlightPreviewTrigger === '1' || /^Preview Newsletter Block$/i.test(String(button.textContent || '').trim())) {
+      if (text === "Preview Newsletter Block") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        openReliablePreview();
+        openPreview();
         return;
       }
 
-      if (button.dataset.shipSpotlightSaveTrigger === '1' || /^Save Spotlight$/i.test(String(button.textContent || '').trim())) {
+      if (text === "Save Spotlight") {
         event.preventDefault();
         event.stopImmediatePropagation();
         saveViaServer();
       }
     }, true);
-    global.__shipSpotlightReliableClickGuardInstalled = true;
+
+    document.addEventListener("change", (event) => {
+      if (event.target?.id !== "ssPublished") return;
+      setTimeout(saveViaServer, 0);
+    }, true);
+
+    global.__ssSimpleControlsInstalled = true;
   }
 
-  if (!global.__shipSpotlightReliablePublishGuardInstalled) {
-    document.addEventListener('change', (event) => {
-      if (event.target?.id !== 'ssPublished') return;
-      setTimeout(() => saveViaServer({ quiet: true }), 0);
-    }, true);
-    global.__shipSpotlightReliablePublishGuardInstalled = true;
+  function install() {
+    if (!installApi()) return;
+    statusNode();
   }
 
   install();
+  // The Ship Spotlight API is created once, but the panel contents are re-rendered.
+  // Reinstalling on child-list changes only refreshes the visible status node.
   new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: true });
 
-  global.ShipSpotlightReliabilityFix = { saveViaServer, openReliablePreview, removePreview, install };
+  global.ShipSpotlightReliabilityFix = { openPreview, closePreview, saveViaServer, install };
 })(window);
