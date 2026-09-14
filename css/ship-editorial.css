@@ -1,0 +1,193 @@
+/* Shared Content Studio editorial presentation for Ship Spotlight and My Ship. */
+.ship-editorial-lead {
+  margin: -4px 0 32px;
+  max-width: 880px;
+}
+
+.ship-editorial-overview {
+  padding-top: 4px;
+}
+
+.ship-editorial-eyebrow,
+.ship-editorial-pauls-tip-label {
+  margin: 0 0 8px;
+  color: var(--brand-dark-green, #245c4e);
+  font-size: .72rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.ship-editorial-overview-copy p,
+.ship-editorial-copy p,
+.ship-editorial-pauls-tip-copy p,
+.ship-editorial-faq-answer p {
+  margin: 0 0 10px;
+}
+
+.ship-editorial-overview-copy p:last-child,
+.ship-editorial-copy p:last-child,
+.ship-editorial-pauls-tip-copy p:last-child,
+.ship-editorial-faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.ship-editorial-overview-copy {
+  color: #4f5c61;
+  font-size: 1.02rem;
+  line-height: 1.72;
+}
+
+.ship-editorial-pauls-tip {
+  margin-top: 20px;
+  padding: 20px 22px;
+  border: 1px solid rgba(36, 92, 78, .16);
+  border-left: 4px solid var(--brand-green, #8dd9bf);
+  border-radius: 12px;
+  background: #f7fbf9;
+}
+
+.ship-editorial-pauls-tip-label {
+  margin-bottom: 7px;
+}
+
+.ship-editorial-pauls-tip-copy {
+  color: #253f38;
+  font-size: .98rem;
+  line-height: 1.66;
+}
+
+.ship-editorial-details {
+  margin-top: 46px;
+}
+
+.ship-editorial-details--portal {
+  margin-bottom: 28px;
+}
+
+.ship-editorial-group + .ship-editorial-group,
+.ship-editorial-group + .ship-editorial-faqs,
+.ship-editorial-faqs + .ship-editorial-group {
+  margin-top: 44px;
+}
+
+.ship-editorial-section-head {
+  margin-bottom: 18px;
+}
+
+.ship-editorial-section-head h2 {
+  margin: 0;
+  color: #16324f;
+  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+.ship-editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ship-editorial-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(17, 24, 39, .08);
+  border-radius: 13px;
+  background: #fbfcfc;
+}
+
+.ship-editorial-card--wide {
+  grid-column: 1 / -1;
+}
+
+.ship-editorial-card h3 {
+  margin: 0 0 9px;
+  color: #16324f;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.ship-editorial-copy {
+  color: #5f6b67;
+  font-size: .9rem;
+  line-height: 1.58;
+}
+
+.ship-editorial-list {
+  margin: 0;
+  padding-left: 19px;
+}
+
+.ship-editorial-list li + li {
+  margin-top: 6px;
+}
+
+.ship-editorial-faqs {
+  margin-top: 44px;
+}
+
+.ship-editorial-faq-list {
+  border-top: 1px solid rgba(17, 24, 39, .09);
+}
+
+.ship-editorial-faq {
+  border-bottom: 1px solid rgba(17, 24, 39, .09);
+}
+
+.ship-editorial-faq summary {
+  position: relative;
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 36px 16px 0;
+  color: #16324f;
+  font-weight: 650;
+}
+
+.ship-editorial-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.ship-editorial-faq summary::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 14px;
+  color: var(--brand-dark-green, #245c4e);
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.ship-editorial-faq[open] summary::after {
+  content: "−";
+}
+
+.ship-editorial-faq-answer {
+  max-width: 850px;
+  padding: 0 38px 17px 0;
+  color: #5f6b67;
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+/* Ship Spotlight already renders its campaign overview immediately below the hero. */
+.public-ship-page .public-spotlight-intro + .ship-editorial-pauls-tip {
+  max-width: 840px;
+  margin-top: -10px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 720px) {
+  .ship-editorial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ship-editorial-card--wide {
+    grid-column: auto;
+  }
+
+  .ship-editorial-pauls-tip {
+    padding: 17px 18px;
+  }
+}
