@@ -283,8 +283,8 @@
       node.tagName === "DIV" && /exclusive areas|specialty features/i.test(String(node.textContent || "").trim())
     );
     if (existing) {
-      existing.textContent = title;
-      existing.setAttribute("style", TITLE_STYLE);
+      if (String(existing.textContent || "").trim() !== title) existing.textContent = title;
+      if (existing.getAttribute("style") !== TITLE_STYLE) existing.setAttribute("style", TITLE_STYLE);
       return;
     }
     const heading = document.createElement("div");
