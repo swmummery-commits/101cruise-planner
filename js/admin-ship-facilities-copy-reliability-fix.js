@@ -94,7 +94,7 @@
     if (!autosaveFailed && !failedCard && !responseFailed) return;
 
     const heading = wrap.querySelector("p strong");
-    if (heading) heading.textContent = "Copy failed";
+    if (heading && heading.textContent !== "Copy failed") heading.textContent = "Copy failed";
 
     let detail = wrap.querySelector(".ci-facilities-copy-failure-detail");
     if (!detail) {
@@ -108,6 +108,10 @@
 
     const message = copyFailureMessage(lastCopyResponse);
     const outcome = copyOutcomeMessage(lastCopyResponse);
+    const signature = `${message}\n${outcome}`;
+    if (detail.dataset.copyFailureSignature === signature) return;
+    detail.dataset.copyFailureSignature = signature;
+
     detail.innerHTML = "";
     const errorLine = document.createElement("p");
     errorLine.className = "admin-small ci-item-copy-result-fail";
