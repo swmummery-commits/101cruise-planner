@@ -48,9 +48,9 @@ const OPERATIONAL_TIMEZONE = "Australia/Perth";
 
 const MAINTENANCE_SCHEDULES = {
   hal_weekly: {
-    cron_utc: "0 18 * * 0",
-    perth_display: "Monday 02:00 Australia/Perth",
-    utc_display: "Sunday 18:00 UTC",
+    cron_utc: "0 17 * * 0",
+    perth_display: "Monday 01:00 Australia/Perth",
+    utc_display: "Sunday 17:00 UTC",
     function: "hal-weekly-maintenance-cron",
     background_function: "hal-weekly-maintenance-background",
     schedule_registered: true
@@ -64,105 +64,74 @@ const MAINTENANCE_SCHEDULES = {
     schedule_registered: true
   },
   princess_weekly: {
-    cron_utc: "0 20 * * 0",
-    perth_display: "Monday 04:00 Australia/Perth",
-    utc_display: "Sunday 20:00 UTC",
+    cron_utc: "0 21 * * 0",
+    perth_display: "Monday 05:00 Australia/Perth",
+    utc_display: "Sunday 21:00 UTC",
     function: "princess-weekly-maintenance-cron",
     schedule_registered: false,
     netlify_schedule_enabled: false,
     authoritative_scheduler: "github_actions_self_hosted_princess_local_mac"
   },
-  /**
-   * Explora weekly launcher is registered in netlify.toml.
-   * Long-running work runs in the background worker.
-   */
   explora_weekly: {
-    cron_utc: "0 21 * * 0",
-    perth_display: "Monday 05:00 Australia/Perth",
-    utc_display: "Sunday 21:00 UTC",
+    cron_utc: "0 17 * * 1",
+    perth_display: "Tuesday 01:00 Australia/Perth",
+    utc_display: "Monday 17:00 UTC",
     function: "explora-weekly-maintenance-cron",
     background_function: "explora-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Seabourn weekly maintenance — intended Sunday 22:00 UTC after Prompt 7 enablement.
-   */
   seabourn_weekly: {
-    cron_utc: "0 22 * * 0",
-    perth_display: "Monday 06:00 Australia/Perth",
-    utc_display: "Sunday 22:00 UTC",
+    cron_utc: "0 19 * * 1",
+    perth_display: "Tuesday 03:00 Australia/Perth",
+    utc_display: "Monday 19:00 UTC",
     function: "seabourn-weekly-maintenance-cron",
     background_function: "seabourn-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Royal Caribbean weekly maintenance — Sunday 23:00 UTC (Monday 07:00 Perth).
-   * One hour after Seabourn (22:00 UTC) to avoid launcher collision.
-   */
   royal_caribbean_weekly: {
-    cron_utc: "0 23 * * 0",
-    perth_display: "Monday 07:00 Australia/Perth",
-    utc_display: "Sunday 23:00 UTC",
+    cron_utc: "0 17 * * 2",
+    perth_display: "Wednesday 01:00 Australia/Perth",
+    utc_display: "Tuesday 17:00 UTC",
     function: "royal-caribbean-weekly-maintenance-cron",
     background_function: "royal-caribbean-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Norwegian weekly maintenance — Monday 00:00 UTC (Monday 08:00 Perth).
-   * One hour after Royal Caribbean (23:00 UTC) to avoid launcher collision.
-   */
   norwegian_weekly: {
-    cron_utc: "0 0 * * 1",
-    perth_display: "Monday 08:00 Australia/Perth",
-    utc_display: "Monday 00:00 UTC",
+    cron_utc: "0 19 * * 2",
+    perth_display: "Wednesday 03:00 Australia/Perth",
+    utc_display: "Tuesday 19:00 UTC",
     function: "norwegian-weekly-maintenance-cron",
     background_function: "norwegian-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Carnival weekly maintenance — Monday 01:00 UTC (Monday 09:00 Perth).
-   * One hour after Norwegian (00:00 UTC) to avoid launcher collision.
-   */
   carnival_weekly: {
-    cron_utc: "0 1 * * 1",
-    perth_display: "Monday 09:00 Australia/Perth",
-    utc_display: "Monday 01:00 UTC",
+    cron_utc: "0 17 * * 3",
+    perth_display: "Thursday 01:00 Australia/Perth",
+    utc_display: "Wednesday 17:00 UTC",
     function: "carnival-weekly-maintenance-cron",
     background_function: "carnival-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Disney weekly maintenance — Monday 02:00 UTC / Monday 10:00 Perth (after Carnival 01:00 UTC).
-   */
   disney_weekly: {
-    cron_utc: "0 2 * * 1",
-    perth_display: "Monday 10:00 Australia/Perth",
-    utc_display: "Monday 02:00 UTC",
+    cron_utc: "0 19 * * 3",
+    perth_display: "Thursday 03:00 Australia/Perth",
+    utc_display: "Wednesday 19:00 UTC",
     function: "disney-weekly-maintenance-cron",
     background_function: "disney-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Azamara weekly maintenance — Monday 03:00 UTC (Monday 11:00 Perth).
-   * One hour after Disney (02:00 UTC) to avoid launcher collision.
-   */
   azamara_weekly: {
-    cron_utc: "0 3 * * 1",
-    perth_display: "Monday 11:00 Australia/Perth",
-    utc_display: "Monday 03:00 UTC",
+    cron_utc: "0 17 * * 4",
+    perth_display: "Friday 01:00 Australia/Perth",
+    utc_display: "Thursday 17:00 UTC",
     function: "azamara-weekly-maintenance-cron",
     background_function: "azamara-weekly-maintenance-background",
     schedule_registered: true
   },
-  /**
-   * Silversea weekly launcher — Monday 04:00 UTC (Monday 12:00 Perth).
-   * Scheduled production writes stay disabled until unified cruise_discovery_runs
-   * tracking is proven (SILVERSEA_WEEKLY_RECONCILIATION_ENABLED).
-   */
   silversea_weekly: {
-    cron_utc: "0 4 * * 1",
-    perth_display: "Monday 12:00 Australia/Perth",
-    utc_display: "Monday 04:00 UTC",
+    cron_utc: "0 19 * * 4",
+    perth_display: "Friday 03:00 Australia/Perth",
+    utc_display: "Thursday 19:00 UTC",
     function: "silversea-weekly-maintenance-cron",
     background_function: "silversea-weekly-maintenance-background",
     schedule_registered: true,

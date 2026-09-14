@@ -1,0 +1,202 @@
+{
+  "phase": "P3F",
+  "title": "Staggered-week validation + HAL / Royal / NCL / Seabourn repair",
+  "generated_at": "2026-09-14T04:35:00.000Z",
+  "perth_date": "2026-09-14",
+  "iso_week": "2026-W38",
+  "repository": "swmummery-commits/101cruise-planner",
+  "starting_sha": "381d8bd76ecd0a2464809483d70b65232dd97ce3",
+  "repair_sha": "7fcc37e194b10244e7e0beee783a19ad40a3b529",
+  "timetable_changed": false,
+  "daily_expiry_unchanged": true,
+  "public_cutoff_days_unchanged": 21,
+  "hal_collapse_gate_unchanged": true,
+  "royal_writes_enabled": false,
+  "carnival_writes_enabled": false,
+  "silversea_writes_enabled": false,
+  "write_caps_raised": false,
+  "schedule": {
+    "HAL": "MON 01:00 netlify 0 17 * * 0",
+    "Celebrity": "MON 03:00 netlify 0 19 * * 0",
+    "Princess": "MON 05:00 github 0 21 * * 0",
+    "Explora": "TUE 01:00 netlify 0 17 * * 1",
+    "Seabourn": "TUE 03:00 netlify 0 19 * * 1",
+    "Royal": "WED 01:00 netlify 0 17 * * 2",
+    "Norwegian": "WED 03:00 netlify 0 19 * * 2",
+    "Carnival": "THU 01:00 netlify 0 17 * * 3",
+    "Disney": "THU 03:00 netlify 0 19 * * 3",
+    "Azamara": "FRI 01:00 netlify 0 17 * * 4",
+    "Silversea": "FRI 03:00 netlify 0 19 * * 4",
+    "daily_expiry": "01:30 Perth every day 30 17 * * *",
+    "princess_netlify_unscheduled": true
+  },
+  "hal": {
+    "root_cause": "Official Solr reports numFound ~1787 and returns ~12 docs/page regardless of size=100. Serial pagination of ~149 pages cannot finish inside the Netlify 900s background budget, so Monday reported first-page numFound as complete while eligible collapsed to 46. P3E 80-page diagnostic cap could not exhaust numFound.",
+    "enumerator_truncated_before_numFound_exhausted": true,
+    "run_1": {
+      "num_found": 1787,
+      "pages_fetched": 149,
+      "rows_per_page": 12,
+      "raw_collected": 1787,
+      "source_identities": 1750,
+      "eligible": 1117,
+      "pagination_complete": true
+    },
+    "run_2": {
+      "num_found": 1787,
+      "pages_fetched": 149,
+      "source_identities": 1750,
+      "eligible": 1117,
+      "pagination_complete": true
+    },
+    "source_reproducible": true,
+    "readonly_reconciliation": {
+      "eligible": 1115,
+      "active_production": 1186,
+      "unchanged": 1104,
+      "proposed_inserts": 2,
+      "proposed_updates": 0,
+      "reviews": 0,
+      "source_absent": 82,
+      "quality_gate": "PASS",
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 96.70424978317432,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "writes_performed": 2,
+    "write_ids": [
+      {
+        "official_sailing_id": "O7N29A|W722A",
+        "uuid": "2ba7158c-e81b-4335-b353-4fbd5fd12830"
+      },
+      {
+        "official_sailing_id": "O6A14G|W676",
+        "uuid": "ae5941e2-2e6e-42af-8a75-2c2abbcbb524"
+      }
+    ],
+    "rollback_manifest_id": "48252906-27b2-4dcb-ad70-f4e8e66ea1f0",
+    "partial_write": false,
+    "classification": "HEALTHY_AFTER_CONTROLLED_RECOVERY"
+  },
+  "explora": {
+    "preflight_dispatch_id": "explora-journeys:p3f-preflight-2026-W38-1789359638532",
+    "preflight_eligible": 284,
+    "preflight_terminal": "completed",
+    "preflight_writes": 0,
+    "scheduled_lease_created_by_preflight": false,
+    "existing_w38_scheduled_lease_retained": true,
+    "tuesday_scheduled_slot_occurred": false,
+    "duplicate_worker_count": 0,
+    "classification": "TUESDAY_01:00_READY"
+  },
+  "seabourn": {
+    "preflight_dispatch_id": "seabourn-cruise-line:p3f-preflight-2026-W38-1789359819797",
+    "current_eligible": 672,
+    "current_reviews": 8,
+    "known_review_ids": [
+      "E7M21E|8763B",
+      "E7M14J|8766A",
+      "E7M21F|8766B",
+      "E7M07I|8767",
+      "E7M14K|8767A",
+      "E7M21G|8767B",
+      "O8A14C|7811",
+      "O8A26A|7811A"
+    ],
+    "insert_review": "W9W46A|6910D",
+    "tuesday_scheduled_slot_occurred": false,
+    "writes": 0,
+    "scheduled_lease_created_by_preflight": false,
+    "classification": "REVIEW_REQUIRED_OPERATIONAL_SUCCESS"
+  },
+  "royal": {
+    "union_run_1": 3212,
+    "union_run_2": 3212,
+    "recognised": 2819,
+    "proposed_inserts": 105,
+    "unexplained_current_ids": [],
+    "three_id_disposition": {
+      "EX07M807_2026-10-17": "SOURCE_REMOVED",
+      "BR07M821_2026-10-12": "SOURCE_REMOVED",
+      "EX07M840_2026-10-10": "SOURCE_REMOVED"
+    },
+    "absent_disposition_counts": {
+      "EXPIRED": 79,
+      "SOURCE_REMOVED": 18,
+      "UNEXPLAINED_CURRENT": 0
+    },
+    "source_health": true,
+    "writes": 0,
+    "classification": "READY_FOR_CONTROLLED_CATCHUP"
+  },
+  "norwegian": {
+    "review_count_before_parser_fix": 34,
+    "review_count_after_parser_fix": 0,
+    "missing_field_before": {
+      "ship": "RESOLVER_MISSING until itinerary prefix recovered official ship code",
+      "return": "PARSER_MISSING until return derived from official duration/nights encoded in itinerary"
+    },
+    "code_fixes": [
+      "infer ship code from official itinerary prefix when shipCode omitted",
+      "derive return date from official duration or itinerary night token"
+    ],
+    "existing_match_required_count": 37,
+    "writes": 0,
+    "classification": "PARSER_REPAIRED_ZERO_WRITES_WEDNESDAY_MAY_REMAIN_REVIEW_OR_COMPLETE"
+  },
+  "thu_fri_readiness": {
+    "carnival": "Thursday 01:00 read-only / not_yet_commissioned; writes remain disabled",
+    "disney": "Thursday 03:00; previous source runtime/convergence unresolved; no uncontrolled catch-up",
+    "azamara": "Friday 01:00; prior zero-source/redirect concerns — verify source before Friday; do not rush",
+    "silversea": "Friday 03:00; writes remain disabled; review/read-only"
+  },
+  "collision_audit": {
+    "flagged_overlap": "Daily expiry 01:30 Perth overlaps every 01:00 line (HAL Mon, Explora Tue, Royal Wed, Carnival Thu, Azamara Fri). HAL is the heaviest pairing because full Solr pagination now runs ~1–2 minutes locally / was 45 minutes serial in production.",
+    "other_jobs_0000_0600_perth": [
+      "cruise-discovery-cron 0 6 * * 1 = Monday 14:00 Perth — outside window",
+      "seg-ship-sync 0 7 * * 2 = Tuesday 15:00 Perth — outside window",
+      "reconcile-booking-documents 0 4 * * * = 12:00 Perth — outside window"
+    ],
+    "schedule_moved": false
+  },
+  "tests": {
+    "test-weekly-maintenance-reliability-p0": "99 passed",
+    "test-scheduled-maintenance": "20 passed",
+    "test-explora-weekly-maintenance": "29 passed",
+    "test-explora-weekly-background-dispatch": "23 passed",
+    "test-norwegian-weekly-maintenance": "30 passed",
+    "test-royal-caribbean-weekly-maintenance": "20 passed"
+  },
+  "discovered_cruises_writes_in_p3f": [
+    {
+      "line": "holland-america-line",
+      "action": "insert",
+      "official_sailing_id": "O7N29A|W722A",
+      "uuid": "2ba7158c-e81b-4335-b353-4fbd5fd12830",
+      "run_id": "hal-p3f-controlled-apply-1789359958854"
+    },
+    {
+      "line": "holland-america-line",
+      "action": "insert",
+      "official_sailing_id": "O6A14G|W676",
+      "uuid": "ae5941e2-2e6e-42af-8a75-2c2abbcbb524",
+      "run_id": "hal-p3f-controlled-apply-1789359958854"
+    }
+  ],
+  "partial_write_run": false,
+  "current_week_status_matrix_monday_afternoon_perth": [
+    { "line": "HAL", "slot": "MON 01:00", "due_state": "COMPLETED", "terminal": "HEALTHY_AFTER_CONTROLLED_RECOVERY" },
+    { "line": "Celebrity", "slot": "MON 03:00", "due_state": "COMPLETED", "terminal": "completed" },
+    { "line": "Princess", "slot": "MON 05:00", "due_state": "COMPLETED", "terminal": "completed" },
+    { "line": "Explora", "slot": "TUE 01:00", "due_state": "NOT_DUE", "terminal": "preflight completed 284" },
+    { "line": "Seabourn", "slot": "TUE 03:00", "due_state": "NOT_DUE", "terminal": "review_required expected" },
+    { "line": "Royal", "slot": "WED 01:00", "due_state": "NOT_DUE", "terminal": "READY_FOR_CONTROLLED_CATCHUP" },
+    { "line": "Norwegian", "slot": "WED 03:00", "due_state": "NOT_DUE", "terminal": "parser repaired; 0 incomplete reviews" },
+    { "line": "Carnival", "slot": "THU 01:00", "due_state": "NOT_DUE", "terminal": "not_yet_commissioned" },
+    { "line": "Disney", "slot": "THU 03:00", "due_state": "NOT_DUE", "terminal": "leave for Thursday" },
+    { "line": "Azamara", "slot": "FRI 01:00", "due_state": "NOT_DUE", "terminal": "leave for Friday" },
+    { "line": "Silversea", "slot": "FRI 03:00", "due_state": "NOT_DUE", "terminal": "leave for Friday" }
+  ]
+}

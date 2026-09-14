@@ -50,6 +50,12 @@ const {
   detectClaimedLeaseWithoutExecution,
   MISSED_SCHEDULE_RUN_TYPE
 } = require("./weekly-maintenance-schedule-control");
+const {
+  scheduleForSlug,
+  classifyWeeklyDueState,
+  slotStartMs,
+  formatPerthSlot
+} = require("./weekly-maintenance-schedule-map");
 
 const COMMISSIONED_WEEKLY_LINES = [
   {
@@ -411,12 +417,27 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const scheduledLease = await loadMaintenanceLockStatus(supabase, scheduledPeriodKey).catch(() => ({
     held: false
   }));
-  const missedSchedule = detectClaimedLeaseWithoutExecution({
-    lease: scheduledLease,
-    scheduledPeriodKey,
-    weeklyRuns: runs
+  const lineSchedule = scheduleForSlug(lineSlug);
+  const slotMs = lineSchedule ? slotStartMs(lineSchedule) : 0;
+  const scheduledThisWeek = (runs || []).some((run) => {
+    if ((run.stats?.trigger_type || run.trigger_type) !== "scheduled") return false;
+    const started = Date.parse(run.started_at || run.created_at || 0);
+    return Number.isFinite(started) && Number.isFinite(slotMs) && started >= slotMs - 30 * 60 * 1000;
   });
-  if (missedSchedule.missed) {
+  const due = classifyWeeklyDueState({
+    now: new Date(),
+    schedule: lineSchedule,
+    scheduledExecutionExists: scheduledThisWeek,
+    workerRunning: lastAttempt?.status === "running" || lockStatus.held
+  });
+  const missedSchedule = due.due_state === "MISSED_SCHEDULE"
+    ? detectClaimedLeaseWithoutExecution({
+        lease: scheduledLease.held ? scheduledLease : { held: true, acquired_at: new Date(slotMs).toISOString() },
+        scheduledPeriodKey,
+        weeklyRuns: runs
+      })
+    : { missed: false, reason: due.due_state };
+  if (due.due_state === "MISSED_SCHEDULE" && missedSchedule.missed) {
     await persistMissedScheduleEvent(supabase, {
       cruiseLineId,
       lineSlug,
@@ -466,6 +487,8 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
 
   const overdue =
     enabled &&
+    due.due_state !== "NOT_DUE" &&
+    due.due_state !== "DUE_RUNNING" &&
     !["Healthy", "Running", "Review Required", "Source Repair Required", "Source Unstable", "Not Yet Commissioned", "Read Only"].includes(
       freshness
     );
@@ -479,16 +502,18 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     !sourceFailure;
   const operational_status = classifyOperationalStatus({
     enabled,
+    notDue: due.due_state === "NOT_DUE",
+    dueRunning: due.due_state === "DUE_RUNNING",
     running: freshness === "Running",
     abandoned: freshness === "Stale / Abandoned",
-    reviewRequired: freshness === "Review Required",
-    sourceRepairRequired: freshness === "Source Repair Required",
-    sourceUnstable: freshness === "Source Unstable",
-    notYetCommissioned: freshness === "Not Yet Commissioned",
-    readOnly: freshness === "Read Only",
-    sourceFailure,
-    writeFailure,
-    missedSchedule: missedSchedule.missed === true && !latestRecovery,
+    reviewRequired: freshness === "Review Required" && due.due_state !== "NOT_DUE",
+    sourceRepairRequired: freshness === "Source Repair Required" && due.due_state !== "NOT_DUE",
+    sourceUnstable: freshness === "Source Unstable" && due.due_state !== "NOT_DUE",
+    notYetCommissioned: freshness === "Not Yet Commissioned" && due.due_state !== "NOT_DUE",
+    readOnly: freshness === "Read Only" && due.due_state !== "NOT_DUE",
+    sourceFailure: sourceFailure && due.due_state !== "NOT_DUE",
+    writeFailure: writeFailure && due.due_state !== "NOT_DUE",
+    missedSchedule: due.due_state === "MISSED_SCHEDULE",
     blockedDuplicate: duplicateScheduled
   });
 
@@ -499,9 +524,13 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     automation_flag: resolveEnvFlag(envKey ? process.env[envKey] : undefined),
     refresh_cadence: schedule?.perth_display || null,
     cron_utc: schedule?.cron_utc || null,
-    perth_schedule: schedule?.perth_display || null,
+    perth_schedule: schedule?.perth_display || (lineSchedule ? `${lineSchedule.weekday} ${formatPerthSlot(lineSchedule)}` : null),
     utc_schedule: schedule?.utc_display || null,
-    next_scheduled_refresh: schedule?.cron_utc || null,
+    weekly_due_state: due.due_state,
+    scheduled_perth_slot: lineSchedule ? formatPerthSlot(lineSchedule) : null,
+    scheduler_type: lineSchedule?.scheduler || null,
+    current_week_scheduled_execution: scheduledThisWeek,
+    next_scheduled_refresh: schedule?.cron_utc || lineSchedule?.cron_utc || null,
     last_attempted_refresh: lastAttempt?.started_at || null,
     last_successful_refresh: lastSuccess?.finished_at || null,
     last_failure: lastFailed?.finished_at || lastFailed?.started_at || null,
@@ -536,7 +565,18 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     inventory_changed_on_last_attempt: lastAttempt?.stats?.inventory_changed === true,
     duplicate_scheduled_invocation: duplicateScheduled,
     missed_schedule: missedSchedule.missed === true,
-    scheduled_slot_status: missedSchedule.missed ? "MISSED_SCHEDULE" : "PRESENT",
+    cron_fired: scheduledThisWeek,
+    worker_started: lastAttempt?.status === "running" || Boolean(lastAttempt?.started_at && scheduledThisWeek),
+    terminal_state: latest.terminal_status || lastAttempt?.status || null,
+    source_healthy:
+      due.due_state === "NOT_DUE"
+        ? null
+        : !sourceFailure && freshness !== "Source Repair Required" && freshness !== "Source Unstable",
+    writes_last_run: (latest.inserts || 0) + (latest.updates || 0),
+    last_successful_current_week_check: scheduledThisWeek
+      ? lastSuccess?.finished_at || lastAttempt?.finished_at || lastAttempt?.started_at
+      : null,
+    scheduled_slot_status: due.due_state,
     scheduled_period_key: scheduledPeriodKey,
     manual_recovery_does_not_clear_missed_schedule: missedSchedule.missed === true,
     latest_manual_recovery_id: latestRecovery?.id || null,
@@ -647,6 +687,21 @@ async function loadMaintenanceDashboard(supabase, lines = []) {
     overdue.length > 0
       ? `Commissioned weekly lines without a successful scheduled production refresh in cadence: ${overdue.join(", ")}.`
       : null;
+  dashboard.weekly_completeness = dashboard.lines.map((line) => ({
+    line: line.label || line.cruise_line_slug,
+    scheduled_perth_time: line.scheduled_perth_slot || line.perth_schedule,
+    due: line.weekly_due_state !== "NOT_DUE",
+    due_state: line.weekly_due_state,
+    cron_fired: line.cron_fired === true,
+    worker_started: line.worker_started === true,
+    terminal_state: line.terminal_state,
+    source_healthy: line.source_healthy,
+    writes: line.writes_last_run ?? ((line.newly_added_last_run || 0) + (line.updated_last_run || 0)),
+    reviews: line.review_candidates_last_run ?? 0,
+    last_successful_current_week_check: line.last_successful_current_week_check,
+    next_scheduled_run: line.next_scheduled_refresh,
+    operational_status: line.operational_status
+  }));
   dashboard.flag_hold = describeMaintenanceHold();
   return dashboard;
 }

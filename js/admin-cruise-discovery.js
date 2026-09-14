@@ -194,10 +194,10 @@
     if (["SOURCE_REPAIR_REQUIRED", "SOURCE_UNSTABLE", "SOURCE_FAILURE", "WRITE_FAILURE", "STALE_ABANDONED"].includes(value)) {
       return { label: "red", background: "#fee2e2", color: "#991b1b" };
     }
-    if (["REVIEW_REQUIRED", "READ_ONLY", "MISSED_SCHEDULE", "RUNNING", "BLOCKED_DUPLICATE"].includes(value)) {
+    if (["REVIEW_REQUIRED", "READ_ONLY", "MISSED_SCHEDULE", "RUNNING", "DUE_RUNNING", "BLOCKED_DUPLICATE"].includes(value)) {
       return { label: "amber", background: "#fef3c7", color: "#92400e" };
     }
-    if (["NOT_YET_COMMISSIONED", "DISABLED"].includes(value)) {
+    if (["NOT_YET_COMMISSIONED", "DISABLED", "NOT_DUE"].includes(value)) {
       return { label: "grey", background: "#e5e7eb", color: "#374151" };
     }
     if (value === "HEALTHY") return { label: "green", background: "#d1fae5", color: "#065f46" };
@@ -278,6 +278,53 @@
         <h3 class="admin-subheading">Hands-off inventory maintenance</h3>
         <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold. Public customer inventory hides sailings within ${esc(String(21))} days of departure (Perth calendar).</p>
         ${m.top_level_warning ? `<p class="admin-alert admin-alert-warn">${esc(m.top_level_warning)}</p>` : ""}
+        ${
+          Array.isArray(m.weekly_completeness) && m.weekly_completeness.length
+            ? `<section class="admin-panel" aria-label="Weekly completeness">
+          <h3 class="admin-subheading">Weekly completeness (Perth timetable)</h3>
+          <p class="admin-helper">A line is never MISSED before its own due time. Future slots stay NOT_DUE.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Line</th>
+                  <th>Scheduled Perth</th>
+                  <th>Due?</th>
+                  <th>Cron fired</th>
+                  <th>Worker</th>
+                  <th>Terminal</th>
+                  <th>Source healthy</th>
+                  <th>Writes</th>
+                  <th>Reviews</th>
+                  <th>Last current-week check</th>
+                  <th>Next scheduled</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${m.weekly_completeness
+                  .map((row) => {
+                    const dueTone = maintenanceStatusTone(row.operational_status || row.due_state);
+                    return `<tr>
+                    <td>${esc(row.line || "—")}</td>
+                    <td>${esc(row.scheduled_perth_time || "—")}</td>
+                    <td><span class="admin-maintenance-status" style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;background:${dueTone.background};color:${dueTone.color}">${esc(row.due_state || (row.due ? "DUE" : "NOT_DUE"))}</span></td>
+                    <td>${esc(row.cron_fired ? "yes" : "no")}</td>
+                    <td>${esc(row.worker_started ? "started" : "—")}</td>
+                    <td>${esc(row.terminal_state || "—")}</td>
+                    <td>${esc(row.source_healthy == null ? "—" : row.source_healthy ? "yes" : "no")}</td>
+                    <td>${esc(String(row.writes ?? 0))}</td>
+                    <td>${esc(String(row.reviews ?? 0))}</td>
+                    <td>${formatDate(row.last_successful_current_week_check)}</td>
+                    <td>${esc(row.next_scheduled_run || "—")}</td>
+                  </tr>`;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </section>`
+            : ""
+        }
         ${holdFlags}
         ${linePanels.map(renderMaintenancePanel).join("")}
         ${

@@ -15,6 +15,8 @@ const OPERATIONAL_STATUSES = Object.freeze([
   "SOURCE_FAILURE",
   "WRITE_FAILURE",
   "MISSED_SCHEDULE",
+  "NOT_DUE",
+  "DUE_RUNNING",
   "DISABLED",
   "RUNNING",
   "STALE_ABANDONED",
@@ -32,6 +34,8 @@ const OPERATIONAL_STATUS_SEVERITY = Object.freeze({
   NOT_YET_COMMISSIONED: "grey",
   DISABLED: "grey",
   MISSED_SCHEDULE: "amber",
+  DUE_RUNNING: "amber",
+  NOT_DUE: "grey",
   BLOCKED_DUPLICATE: "amber",
   RUNNING: "amber",
   HEALTHY: "green"
@@ -103,6 +107,8 @@ function classifyOperationalStatus({
   sourceFailure = false,
   writeFailure = false,
   missedSchedule = false,
+  notDue = false,
+  dueRunning = false,
   blockedDuplicate = false,
   sourceRepairRequired = false,
   sourceUnstable = false,
@@ -110,6 +116,8 @@ function classifyOperationalStatus({
   readOnly = false
 } = {}) {
   if (!enabled) return "DISABLED";
+  if (notDue) return "NOT_DUE";
+  if (dueRunning) return "DUE_RUNNING";
   if (running) return "RUNNING";
   if (abandoned) return "STALE_ABANDONED";
   if (blockedDuplicate) return "BLOCKED_DUPLICATE";
