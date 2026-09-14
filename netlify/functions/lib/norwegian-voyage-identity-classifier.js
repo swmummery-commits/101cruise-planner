@@ -637,6 +637,7 @@ module.exports = {
   P3B_CLASSIFICATIONS,
   AMBIGUITY_REASONS,
   voyageEquivalenceKey,
+  voyageKeyComplete,
   classifyNorwegianVoyageInsert,
   classifyNorwegianVoyageInsertSet,
   classifyNorwegianP3bCandidate,

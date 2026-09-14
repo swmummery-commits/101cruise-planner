@@ -194,7 +194,7 @@
     if (["SOURCE_REPAIR_REQUIRED", "SOURCE_UNSTABLE", "SOURCE_FAILURE", "WRITE_FAILURE", "STALE_ABANDONED"].includes(value)) {
       return { label: "red", background: "#fee2e2", color: "#991b1b" };
     }
-    if (["REVIEW_REQUIRED", "READ_ONLY", "MISSED_SCHEDULE", "RUNNING", "DUE_RUNNING", "BLOCKED_DUPLICATE"].includes(value)) {
+    if (["REVIEW_REQUIRED", "READ_ONLY", "CONTROLLED_CATCHUP_REQUIRED", "MISSED_SCHEDULE", "SCHEDULER_MISSING", "RUNNING", "DUE_RUNNING", "BLOCKED_DUPLICATE"].includes(value)) {
       return { label: "amber", background: "#fef3c7", color: "#92400e" };
     }
     if (["NOT_YET_COMMISSIONED", "DISABLED", "NOT_DUE"].includes(value)) {
@@ -282,7 +282,7 @@
           Array.isArray(m.weekly_completeness) && m.weekly_completeness.length
             ? `<section class="admin-panel" aria-label="Weekly completeness">
           <h3 class="admin-subheading">Weekly completeness (Perth timetable)</h3>
-          <p class="admin-helper">A line is never MISSED before its own due time. Future slots stay NOT_DUE.</p>
+          <p class="admin-helper">A line is never MISSED before its own due time. Future slots stay NOT_DUE. MISSED_SCHEDULE requires a claimed scheduled lease and no scheduled execution after grace; a missing launcher is scheduler_missing.</p>
           <div class="admin-table-wrap">
             <table class="admin-table">
               <thead>

@@ -403,6 +403,12 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const lastReadOnly =
     runs.find((r) => r.status === "completed" && (r.stats?.read_only === true || r.stats?.terminal_status === "read_only")) ||
     null;
+  const lastCatchup =
+    runs.find(
+      (r) =>
+        r.status === "completed" &&
+        (r.stats?.controlled_catchup_required === true || r.stats?.terminal_status === "controlled_catchup_required")
+    ) || null;
   const inventory = await loadLineActiveInventory(supabase, cruiseLineId, lineSlug);
   const spec = COMMISSIONED_WEEKLY_LINES.find((l) => l.slug === lineSlug);
   const enabled = spec ? spec.enabled() === true : false;
@@ -428,15 +434,21 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     now: new Date(),
     schedule: lineSchedule,
     scheduledExecutionExists: scheduledThisWeek,
-    workerRunning: lastAttempt?.status === "running" || lockStatus.held
+    workerRunning: lastAttempt?.status === "running" || lockStatus.held,
+    scheduledLeaseExists: scheduledLease.held === true
   });
-  const missedSchedule = due.due_state === "MISSED_SCHEDULE"
-    ? detectClaimedLeaseWithoutExecution({
-        lease: scheduledLease.held ? scheduledLease : { held: true, acquired_at: new Date(slotMs).toISOString() },
-        scheduledPeriodKey,
-        weeklyRuns: runs
-      })
-    : { missed: false, reason: due.due_state };
+  const missedSchedule =
+    due.due_state === "MISSED_SCHEDULE"
+      ? detectClaimedLeaseWithoutExecution({
+          lease: scheduledLease,
+          scheduledPeriodKey,
+          weeklyRuns: runs
+        })
+      : {
+          missed: false,
+          reason: due.due_state,
+          scheduler_missing: due.due_state === "SCHEDULER_MISSING"
+        };
   if (due.due_state === "MISSED_SCHEDULE" && missedSchedule.missed) {
     await persistMissedScheduleEvent(supabase, {
       cruiseLineId,
@@ -466,8 +478,10 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     freshness = "Review Required";
   } else if (lastCommissioning && (!lastSuccess || new Date(lastCommissioning.finished_at) > new Date(lastSuccess.finished_at || 0))) {
     freshness = "Not Yet Commissioned";
-  } else if (lastReadOnly && (!lastSuccess || new Date(lastReadOnly.finished_at) > new Date(lastSuccess.finished_at || 0))) {
+  } else if (    lastReadOnly && (!lastSuccess || new Date(lastReadOnly.finished_at) > new Date(lastSuccess.finished_at || 0))) {
     freshness = "Read Only";
+  } else if (lastCatchup && (!lastSuccess || new Date(lastCatchup.finished_at) > new Date(lastSuccess.finished_at || 0))) {
+    freshness = "Controlled Catchup Required";
   } else if (lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))) {
     freshness = "Failed";
   } else if (lastSuccess?.finished_at) {
@@ -489,7 +503,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     enabled &&
     due.due_state !== "NOT_DUE" &&
     due.due_state !== "DUE_RUNNING" &&
-    !["Healthy", "Running", "Review Required", "Source Repair Required", "Source Unstable", "Not Yet Commissioned", "Read Only"].includes(
+    !["Healthy", "Running", "Review Required", "Source Repair Required", "Source Unstable", "Not Yet Commissioned", "Read Only", "Controlled Catchup Required"].includes(
       freshness
     );
   const sourceFailure =
@@ -510,9 +524,11 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     sourceRepairRequired: freshness === "Source Repair Required" && due.due_state !== "NOT_DUE",
     sourceUnstable: freshness === "Source Unstable" && due.due_state !== "NOT_DUE",
     notYetCommissioned: freshness === "Not Yet Commissioned" && due.due_state !== "NOT_DUE",
+    controlledCatchupRequired: freshness === "Controlled Catchup Required" && due.due_state !== "NOT_DUE",
     readOnly: freshness === "Read Only" && due.due_state !== "NOT_DUE",
     sourceFailure: sourceFailure && due.due_state !== "NOT_DUE",
     writeFailure: writeFailure && due.due_state !== "NOT_DUE",
+    schedulerMissing: due.due_state === "SCHEDULER_MISSING",
     missedSchedule: due.due_state === "MISSED_SCHEDULE",
     blockedDuplicate: duplicateScheduled
   });
@@ -595,8 +611,12 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
           ? `${spec?.label || lineSlug} is not yet commissioned for production writes. Read-only reconciliation completed.`
           : freshness === "Read Only"
           ? `${spec?.label || lineSlug} completed a read-only source check — zero writes.`
+          : freshness === "Controlled Catchup Required"
+          ? `${spec?.label || lineSlug} source is healthy but the safe backlog exceeds the weekly write cap — controlled catch-up required; zero automatic writes.`
           : freshness === "Review Required"
           ? `${spec?.label || lineSlug} requires review — no production writes were performed.`
+          : due.due_state === "SCHEDULER_MISSING"
+            ? `${spec?.label || lineSlug} scheduled ${perthIsoWeek()} slot is scheduler_missing — the launcher never claimed a scheduled lease after grace. This is not MISSED_SCHEDULE.`
           : missedSchedule.missed
             ? `${spec?.label || lineSlug} scheduled ${perthIsoWeek()} slot is MISSED_SCHEDULE — dispatch lease was claimed but no scheduled execution record exists. Manual recovery does not rewrite that history.`
           : duplicateScheduled

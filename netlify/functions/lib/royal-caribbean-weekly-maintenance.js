@@ -381,7 +381,8 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   let weeklyManifest = frozenManifestInput;
   let applyResult = null;
 
-  if (performWrites) {
+  const volumeExceeded = weeklyHealth.weekly_change_volume_exceeded === true;
+  if (performWrites && !volumeExceeded) {
     if (!isRoyalCaribbeanWeeklyReconciliationEnabled()) {
       return {
         ok: false,
@@ -473,31 +474,41 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
     }
   }
 
-  const passed = performWrites ? applyResult?.ok === true && dryRunPassed : dryRunPassed;
+  const passed = performWrites && !volumeExceeded ? applyResult?.ok === true && dryRunPassed : dryRunPassed;
   const unexplainedCurrent = enumerationHealth.unexplained_current_production_ids || [];
-  const sourceRepairRequired = unexplainedCurrent.length > 0 || weeklyHealth.weekly_maintenance_healthy !== true;
+  const healthFailuresExcludingVolume = (weeklyHealth.failures || []).filter(
+    (failure) => failure !== "weekly_change_volume_exceeds_ceiling"
+  );
+  const sourceRepairRequired = unexplainedCurrent.length > 0 || healthFailuresExcludingVolume.length > 0;
+  const controlledCatchupRequired = !sourceRepairRequired && volumeExceeded;
   const terminalStatus = sourceRepairRequired
     ? "source_repair_required"
-    : !performWrites
-      ? "read_only"
-      : passed
-        ? "completed"
-        : null;
+    : controlledCatchupRequired
+      ? "controlled_catchup_required"
+      : !performWrites
+        ? "read_only"
+        : passed
+          ? "completed"
+          : null;
   summary.terminal_status = terminalStatus;
   summary.source_repair_required = sourceRepairRequired;
+  summary.controlled_catchup_required = controlledCatchupRequired;
   summary.unexplained_current_production_ids = unexplainedCurrent;
   summary.absent_production_disposition_counts = enumerationHealth.absent_production_disposition_counts || null;
   summary.review_sailing_ids = unexplainedCurrent;
 
   return {
-    ok: passed && !sourceRepairRequired,
-    success: !sourceRepairRequired && (passed || !performWrites),
-    dry_run: !performWrites,
-    blocked: !passed && !sourceRepairRequired,
+    ok: passed && !sourceRepairRequired && !controlledCatchupRequired,
+    success: !sourceRepairRequired && (passed || !performWrites || controlledCatchupRequired),
+    dry_run: !performWrites || controlledCatchupRequired,
+    blocked: (!passed && !sourceRepairRequired && !controlledCatchupRequired) || controlledCatchupRequired,
     source_repair_required: sourceRepairRequired,
+    controlled_catchup_required: controlledCatchupRequired,
     terminal_status: terminalStatus,
     reason: sourceRepairRequired
       ? "SOURCE_REPAIR_REQUIRED"
+      : controlledCatchupRequired
+        ? "CONTROLLED_CATCHUP_REQUIRED"
       : passed
         ? null
         : performWrites

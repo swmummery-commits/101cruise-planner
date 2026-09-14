@@ -72,6 +72,7 @@ const DELIBERATE_NON_WRITING_TERMINALS = Object.freeze([
   "source_repair_required",
   "source_unstable",
   "read_only",
+  "controlled_catchup_required",
   "not_yet_commissioned",
   "disabled"
 ]);
@@ -85,6 +86,7 @@ const CLASSIFIED_REASON_TERMINALS = Object.freeze({
   SOURCE_UNSTABLE: "source_unstable",
   SOURCE_TIMEOUT: "source_unstable",
   READ_ONLY: "read_only",
+  CONTROLLED_CATCHUP_REQUIRED: "controlled_catchup_required",
   NOT_YET_COMMISSIONED: "not_yet_commissioned",
   DISABLED: "disabled",
   carnival_discovery_write_not_yet_commissioned: "not_yet_commissioned",

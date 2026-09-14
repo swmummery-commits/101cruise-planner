@@ -179,6 +179,7 @@ function classifyWeeklyDueState({
   schedule,
   scheduledExecutionExists = false,
   workerRunning = false,
+  scheduledLeaseExists = null,
   graceMs = DEFAULT_MISSED_GRACE_MS
 } = {}) {
   if (!schedule) return { due_state: "NOT_DUE", reason: "unknown_schedule" };
@@ -205,6 +206,15 @@ function classifyWeeklyDueState({
     return {
       due_state: "DUE_RUNNING",
       missed: false,
+      slot_start_ms: start,
+      perth_slot: formatPerthSlot(schedule)
+    };
+  }
+  if (scheduledLeaseExists === false) {
+    return {
+      due_state: "SCHEDULER_MISSING",
+      missed: false,
+      scheduler_missing: true,
       slot_start_ms: start,
       perth_slot: formatPerthSlot(schedule)
     };
