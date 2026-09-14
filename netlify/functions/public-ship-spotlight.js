@@ -6,6 +6,26 @@
 
 const { getConfig, serviceHeaders } = require("./admin-auth");
 
+const PUBLIC_SHIP_EDITORIAL_FIELDS = [
+  "overview",
+  "personality",
+  "best_for",
+  "not_ideal_for",
+  "dining_summary",
+  "entertainment_summary",
+  "wellness_summary",
+  "accommodation_summary",
+  "accessibility_summary",
+  "connectivity_summary",
+  "dress_code_summary",
+  "included_summary",
+  "extra_cost_summary",
+  "family_summary",
+  "solo_traveller_summary",
+  "key_highlights",
+  "frequently_asked_questions"
+];
+
 function json(statusCode, body) {
   return {
     statusCode,
@@ -47,6 +67,14 @@ function cleanUuid(value) {
 
 function uniqueStrings(values) {
   return [...new Set((values || []).map((v) => String(v || "").trim()).filter(Boolean))];
+}
+
+function publicEditorialContent(content) {
+  const source = content && typeof content === "object" && !Array.isArray(content) ? content : {};
+  return PUBLIC_SHIP_EDITORIAL_FIELDS.reduce((out, key) => {
+    if (Object.prototype.hasOwnProperty.call(source, key)) out[key] = source[key];
+    return out;
+  }, {});
 }
 
 function mergedGallery({ spotlight, ship, media }) {
@@ -131,10 +159,11 @@ exports.handler = async (event) => {
       if (!ship) return json(404, { success: false, error: "Ship information is unavailable." });
     }
 
+    const researchStatus = preview ? "in.(published,reviewed)" : "eq.published";
     const [lineRows, mediaRows, researchRows, sailingRows] = await Promise.all([
       rest(`ci_cruise_lines?id=eq.${encodeURIComponent(ship.cruise_line_id)}&select=id,name,slug,logo_url,description&limit=1`),
       rest(`media_library?ship_id=eq.${encodeURIComponent(ship.id)}&is_active=eq.true&media_type=eq.ship&select=id,title,alt_text,public_url,is_default,created_at&order=is_default.desc,created_at.desc&limit=36`),
-      rest(`research_content?entity_type=eq.ship&entity_id=eq.${encodeURIComponent(ship.id)}&content_status=in.(published,reviewed)&select=summary_text,content_json,pauls_tip,seo_title,meta_description&order=content_version.desc&limit=1`),
+      rest(`research_content?entity_type=eq.ship&entity_id=eq.${encodeURIComponent(ship.id)}&content_status=${researchStatus}&select=summary_text,content_json,pauls_tip,seo_title,meta_description&order=content_version.desc&limit=1`),
       rest(`discovered_cruises?ship_id=eq.${encodeURIComponent(ship.id)}&status=eq.active&departure_date=gte.${new Date().toISOString().slice(0,10)}&select=id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,destination_id&order=departure_date.asc&limit=18`)
     ]);
 
@@ -143,7 +172,8 @@ exports.handler = async (event) => {
     const media = Array.isArray(mediaRows) ? mediaRows : [];
     const sailings = Array.isArray(sailingRows) ? sailingRows : [];
     const gallery = mergedGallery({ spotlight, ship, media });
-    const researchOverview = String(research?.content_json?.overview || "").trim();
+    const editorialContent = publicEditorialContent(research?.content_json);
+    const researchOverview = String(editorialContent.overview || "").trim();
     const researchSummary = String(research?.summary_text || "").trim();
 
     const destinationIds = uniqueStrings(sailings.map((row) => row.destination_id));
@@ -194,7 +224,7 @@ exports.handler = async (event) => {
       } : null,
       editorial: {
         summary: researchOverview || researchSummary,
-        content: research?.content_json || {},
+        content: editorialContent,
         pauls_tip: research?.pauls_tip || "",
         seo_title: research?.seo_title || "",
         meta_description: research?.meta_description || ""
