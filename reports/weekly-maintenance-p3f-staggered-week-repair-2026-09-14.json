@@ -7,6 +7,7 @@
   "repository": "swmummery-commits/101cruise-planner",
   "starting_sha": "381d8bd76ecd0a2464809483d70b65232dd97ce3",
   "repair_sha": "7fcc37e194b10244e7e0beee783a19ad40a3b529",
+  "monitoring_sha": "a0cee2f1c88ae8a0c9908d64ae04668a21dbc74e",
   "timetable_changed": false,
   "daily_expiry_unchanged": true,
   "public_cutoff_days_unchanged": 21,
