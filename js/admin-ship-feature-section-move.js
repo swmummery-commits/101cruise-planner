@@ -134,9 +134,14 @@
         if (remove) actions.insertBefore(button, remove);
         else actions.appendChild(button);
       } else {
-        button.dataset.section = section;
-        button.dataset.index = String(index);
-        button.textContent = section === "exclusive" ? "Move to Specialty →" : "← Move to Exclusive";
+        // Keep decoration idempotent. Rewriting textContent on every observer
+        // pass creates a new text node, which triggers the childList observer
+        // again and can starve the browser before the ship editor paints.
+        const nextIndex = String(index);
+        const nextText = section === "exclusive" ? "Move to Specialty →" : "← Move to Exclusive";
+        if (button.dataset.section !== section) button.dataset.section = section;
+        if (button.dataset.index !== nextIndex) button.dataset.index = nextIndex;
+        if (button.textContent !== nextText) button.textContent = nextText;
       }
     });
   }
