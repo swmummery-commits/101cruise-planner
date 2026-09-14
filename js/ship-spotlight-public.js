@@ -65,6 +65,22 @@
     hero.insertAdjacentElement("afterend", section);
   }
 
+  function insertPaulsTip(root, editorial) {
+    const renderer = window.ShipEditorialExperience;
+    const html = renderer?.renderPaulsTip?.(editorial) || "";
+    if (!html) return;
+    const intro = root?.querySelector(".public-spotlight-intro");
+    const hero = root?.querySelector(".ship-hero");
+    const anchor = intro || hero;
+    if (!anchor) return;
+    anchor.insertAdjacentHTML("afterend", html);
+  }
+
+  function editorialDetailsHtml(data) {
+    const renderer = window.ShipEditorialExperience;
+    return renderer?.renderSpotlightDetails?.(data?.editorial || {}) || "";
+  }
+
   function removeUnavailableSummaryFacts(root) {
     root?.querySelectorAll(".ship-summary-stat").forEach((stat) => {
       const value = String(stat.querySelector(".ship-summary-value")?.textContent || "").trim().toLowerCase();
@@ -250,11 +266,12 @@
       root.classList.add("public-ship-page");
       forcePublicH1(root);
       insertSpotlightIntro(root, spotlight);
+      insertPaulsTip(root, editorial);
       removeUnavailableSummaryFacts(root);
       enhanceFeatureLayout(root, profile);
     }
 
-    extras.innerHTML = `${galleryHtml(data)}${cruisesHtml(data)}`;
+    extras.innerHTML = `${editorialDetailsHtml(data)}${galleryHtml(data)}${cruisesHtml(data)}`;
     bindGallery();
 
     loading.hidden = true;
