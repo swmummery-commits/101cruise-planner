@@ -162,23 +162,28 @@ async function handleItemLevelCopy(body, sourceShip, targetShips) {
       hero_image_url: target.hero_image_url,
       facilities: target.facilities
     };
-    const execution = executeItemLevelCopy({
-      sourceFacilities: sourceShip.facilities,
-      target,
-      resolvedItems: validation.resolvedItems,
-      conflictResolutions
-    });
-    if (!execution.ok) {
-      results.push({
-        id: target.id,
-        name: target.name,
-        ok: false,
-        error: execution.error || "NO_CHANGES",
-        status: "failed"
-      });
-      continue;
-    }
+
     try {
+      // Keep planning/apply errors scoped to the individual target. One bad
+      // target must not abort the whole class/fleet operation before we can
+      // report which ship failed.
+      const execution = executeItemLevelCopy({
+        sourceFacilities: sourceShip.facilities,
+        target,
+        resolvedItems: validation.resolvedItems,
+        conflictResolutions
+      });
+      if (!execution.ok) {
+        results.push({
+          id: target.id,
+          name: target.name,
+          ok: false,
+          error: execution.error || "NO_CHANGES",
+          status: "failed"
+        });
+        continue;
+      }
+
       const updated = await supabase(`ci_cruise_ships?id=eq.${encodeURIComponent(target.id)}`, {
         method: "PATCH",
         headers: { Prefer: "return=representation" },
@@ -246,14 +251,15 @@ exports.handler = async function (event) {
   }
 
   const sourceShipId = String(body.source_ship_id || "").trim();
-  const targetIds = Array.isArray(body.target_ship_ids)
+  const rawTargetIds = Array.isArray(body.target_ship_ids)
     ? body.target_ship_ids.map((id) => String(id || "").trim()).filter(Boolean)
     : [];
+  // The Admin modal has both desktop-row and mobile-card checkboxes in the DOM.
+  // They represent the same logical target and can therefore submit the same ID
+  // twice after a re-render. Treat the request as a set of target ships.
+  const targetIds = [...new Set(rawTargetIds)];
   if (!sourceShipId || !targetIds.length) {
     return jsonResponse(400, { success: false, error: "SOURCE_OR_TARGETS_MISSING" });
-  }
-  if (new Set(targetIds).size !== targetIds.length) {
-    return jsonResponse(400, { success: false, error: "DUPLICATE_TARGETS" });
   }
 
   try {
