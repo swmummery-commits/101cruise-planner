@@ -273,6 +273,8 @@ async function loadMaintenanceLockStatus(supabase, lockKey) {
     owner_id: row.owner_id,
     run_id: row.run_id,
     run_record_id: row.run_record_id || null,
+    acquired_at: row.acquired_at || null,
+    created_at: row.acquired_at || null,
     expires_at: row.expires_at
   };
 }

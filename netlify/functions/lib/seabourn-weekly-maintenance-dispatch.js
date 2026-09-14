@@ -16,7 +16,6 @@ const {
   SEABOURN_MAX_WEEKLY_WRITES
 } = require("./cruise-discovery-maintenance-runner");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
-const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
 const { weeklyDispatchStatus } = require("./weekly-maintenance-write-accounting");
 
 const {
@@ -93,15 +92,6 @@ async function dispatchSeabournWeeklyBackground({
     throw err;
   }
 
-
-  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
-    supabase,
-    lineSlug: "seabourn-cruise-line",
-    triggerType,
-    dispatchId,
-    dryRun
-  });
-  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = buildBackgroundPayload({ dryRun, maxWrites, triggerType, dispatchId, nextRun, platformScheduled });

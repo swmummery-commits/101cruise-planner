@@ -8,8 +8,6 @@ const {
   RUN_TYPE
 } = require("./silversea-weekly-maintenance");
 const { supabase } = require("./cruise-discovery-ops");
-const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
-
 const { RUN_STATUS } = require("./cruise-discovery-controlled-production-run");
 const {
   assertSilverseaWeeklyMaintenanceEnabled,
@@ -74,15 +72,6 @@ async function dispatchSilverseaWeeklyBackground({
     throw err;
   }
 
-
-  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
-    supabase,
-    lineSlug: "silversea-cruises",
-    triggerType,
-    dispatchId,
-    dryRun
-  });
-  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = {

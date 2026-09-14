@@ -44,6 +44,12 @@ const {
   classifyOperationalStatus,
   detectMissedDailyExpirySlots
 } = require("./maintenance-operational-status");
+const {
+  scheduledWeeklyDispatchKey,
+  perthIsoWeek,
+  detectClaimedLeaseWithoutExecution,
+  MISSED_SCHEDULE_RUN_TYPE
+} = require("./weekly-maintenance-schedule-control");
 
 const COMMISSIONED_WEEKLY_LINES = [
   {
@@ -159,6 +165,8 @@ function isGenuineSuccessfulRefresh(run) {
   if (s.read_only === true) return false;
   if (s.blocked_by_global_lock === true) return false;
   if (s.already_dispatched === true) return false;
+  if (s.trigger_type === "missed_schedule" || s.run_type === MISSED_SCHEDULE_RUN_TYPE) return false;
+  if (s.terminal_status === "missed_schedule") return false;
   if (s.terminal_status === "completed_with_staged_rows") return false;
   if (s.terminal_status === "partial_write_failure") return false;
   if (s.terminal_status === "failed_before_writes") return false;
@@ -299,6 +307,55 @@ async function loadLineActiveInventory(supabase, cruiseLineId, lineSlug) {
   return { active, ocean_active: null, river_active: null };
 }
 
+async function persistMissedScheduleEvent(
+  supabase,
+  {
+    cruiseLineId,
+    lineSlug,
+    periodKey,
+    isoWeek,
+    reason = "claimed_lease_without_scheduled_execution"
+  }
+) {
+  const existing = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&select=id,stats&order=created_at.desc&limit=30`
+  ).catch(() => []);
+  const already = (existing || []).find(
+    (row) => row.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE && row.stats?.period_key === periodKey
+  );
+  if (already) return { created: false, id: already.id };
+
+  const runId = `${lineSlug}-missed-schedule-${isoWeek}`;
+  const stats = {
+    line_slug: lineSlug,
+    period_key: periodKey,
+    scheduled_period: isoWeek,
+    original_missed_scheduled_period: isoWeek,
+    terminal_status: "missed_schedule",
+    recovery_reason: reason,
+    writes_performed: 0,
+    inventory_changed: false
+  };
+  const row = await createMaintenanceRun(supabase, {
+    cruiseLineId,
+    runId,
+    runType: MISSED_SCHEDULE_RUN_TYPE,
+    triggerType: "missed_schedule",
+    stats
+  });
+  await finalizeMaintenanceRun(supabase, row?.id, {
+    status: "completed",
+    stats: {
+      run_type: MISSED_SCHEDULE_RUN_TYPE,
+      run_id: runId,
+      trigger_type: "missed_schedule",
+      ...stats
+    },
+    errorMessage: null
+  });
+  return { created: true, id: row?.id || null };
+}
+
 async function loadLineMaintenanceRuns(supabase, cruiseLineId, runType, limit = 10) {
   const runs = await supabase(
     `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&select=id,status,stats,started_at,finished_at,error_message&order=created_at.desc&limit=${limit}`
@@ -350,6 +407,26 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     held: false,
     worker_state: "idle"
   }));
+  const scheduledPeriodKey = scheduledWeeklyDispatchKey(lineSlug);
+  const scheduledLease = await loadMaintenanceLockStatus(supabase, scheduledPeriodKey).catch(() => ({
+    held: false
+  }));
+  const missedSchedule = detectClaimedLeaseWithoutExecution({
+    lease: scheduledLease,
+    scheduledPeriodKey,
+    weeklyRuns: runs
+  });
+  if (missedSchedule.missed) {
+    await persistMissedScheduleEvent(supabase, {
+      cruiseLineId,
+      lineSlug,
+      periodKey: scheduledPeriodKey,
+      isoWeek: perthIsoWeek(),
+      reason: missedSchedule.reason
+    }).catch(() => null);
+  }
+  const recoveryRuns = runs.filter((r) => r.stats?.trigger_type === "manual_recovery");
+  const latestRecovery = recoveryRuns[0] || null;
 
   let workerState = "idle";
   if (lockStatus.held) workerState = "already_running";
@@ -411,7 +488,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     readOnly: freshness === "Read Only",
     sourceFailure,
     writeFailure,
-    missedSchedule: freshness === "Stale" && enabled && !lastAttempt,
+    missedSchedule: missedSchedule.missed === true && !latestRecovery,
     blockedDuplicate: duplicateScheduled
   });
 
@@ -458,6 +535,11 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     dry_run_last_attempt: lastAttempt?.stats?.dry_run === true,
     inventory_changed_on_last_attempt: lastAttempt?.stats?.inventory_changed === true,
     duplicate_scheduled_invocation: duplicateScheduled,
+    missed_schedule: missedSchedule.missed === true,
+    scheduled_slot_status: missedSchedule.missed ? "MISSED_SCHEDULE" : "PRESENT",
+    scheduled_period_key: scheduledPeriodKey,
+    manual_recovery_does_not_clear_missed_schedule: missedSchedule.missed === true,
+    latest_manual_recovery_id: latestRecovery?.id || null,
     invocation_provenance: provenance,
     overdue_successful_refresh: overdue,
     warning:
@@ -475,6 +557,8 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
           ? `${spec?.label || lineSlug} completed a read-only source check — zero writes.`
           : freshness === "Review Required"
           ? `${spec?.label || lineSlug} requires review — no production writes were performed.`
+          : missedSchedule.missed
+            ? `${spec?.label || lineSlug} scheduled ${perthIsoWeek()} slot is MISSED_SCHEDULE — dispatch lease was claimed but no scheduled execution record exists. Manual recovery does not rewrite that history.`
           : duplicateScheduled
             ? `${spec?.label || lineSlug} has duplicate scheduled invocations in the same slot.`
             : null
@@ -576,6 +660,7 @@ module.exports = {
   loadDailyExpiryStatus,
   loadMaintenanceDashboard,
   isGenuineSuccessfulRefresh,
+  persistMissedScheduleEvent,
   COMMISSIONED_WEEKLY_LINES,
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,

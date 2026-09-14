@@ -19,6 +19,53 @@ const {
 const WEEKLY_DISPATCH_LEASE_SECONDS = 8 * 24 * 60 * 60;
 const DAILY_DISPATCH_LEASE_SECONDS = 26 * 60 * 60;
 const BACKGROUND_DISPATCH_LEASE_SECONDS = 2 * 60 * 60;
+const MISSED_SCHEDULE_GRACE_MS = 20 * 60 * 1000;
+const MISSED_SCHEDULE_RUN_TYPE = "weekly_schedule_miss";
+
+const DISPATCH_NAMESPACES = Object.freeze([
+  "scheduled",
+  "manual",
+  "manual_recovery",
+  "preflight",
+  "incident",
+  "validation"
+]);
+
+function normalizeDispatchNamespace(triggerType) {
+  const raw = String(triggerType || "").trim().toLowerCase();
+  if (raw === "scheduled") return "scheduled";
+  if (raw === "manual_recovery" || raw === "incident_recovery") return "manual_recovery";
+  if (raw === "preflight" || raw === "weekly_dry_run" || raw === "weekly_pre_apply_dry_run") return "preflight";
+  if (raw === "validation" || raw === "weekly_validation") return "validation";
+  if (raw === "incident") return "incident";
+  if (raw === "manual" || raw === "weekly_manual_apply") return "manual";
+  return raw || "manual";
+}
+
+function isScheduledTrigger(triggerType) {
+  return String(triggerType || "").trim() === "scheduled";
+}
+
+function isScheduledPeriodKey(periodKey) {
+  const key = String(periodKey || "").trim();
+  if (!key) return false;
+  if (key.endsWith(":scheduled")) return true;
+  if (/^weekly:[^:]+:[^:]+:scheduled$/.test(key)) return true;
+  if (key.startsWith("daily-expiry:") && key.endsWith(":scheduled")) return true;
+  return false;
+}
+
+function weeklyNamespacedDispatchKey(lineSlug, uniqueId, namespace) {
+  const ns = normalizeDispatchNamespace(namespace);
+  if (ns === "scheduled") {
+    throw new Error("scheduled_namespace_must_use_scheduledWeeklyDispatchKey");
+  }
+  const id = String(uniqueId || "").trim();
+  if (!id) {
+    throw new Error("namespaced_dispatch_requires_unique_id");
+  }
+  return `weekly:${lineSlug}:${id}:${ns}`;
+}
 
 function perthIsoWeek(reference = new Date()) {
   const calendar = perthCalendarDate(reference);
@@ -72,21 +119,65 @@ function collectInvocationProvenance(event = {}, env = process.env, extras = {})
   };
 }
 
+function assertLeaseClaimAllowed({ triggerType, periodKey }) {
+  if (isScheduledTrigger(triggerType) && periodKey && !isScheduledPeriodKey(periodKey)) {
+    const err = new Error("scheduled_trigger_rejected_nonscheduled_period_key");
+    err.code = "scheduled_trigger_rejected_nonscheduled_period_key";
+    throw err;
+  }
+}
+
+function detectClaimedLeaseWithoutExecution({
+  lease,
+  scheduledPeriodKey,
+  weeklyRuns = [],
+  now = new Date(),
+  graceMs = MISSED_SCHEDULE_GRACE_MS
+} = {}) {
+  if (!lease?.held) {
+    return { missed: false, reason: "no_scheduled_lease", period_key: scheduledPeriodKey || null };
+  }
+  const scheduledRuns = (weeklyRuns || []).filter((run) => {
+    if (run?.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE) return false;
+    const trigger = run?.stats?.trigger_type || run?.trigger_type;
+    return trigger === "scheduled";
+  });
+  if (scheduledRuns.length) {
+    return {
+      missed: false,
+      reason: "scheduled_execution_present",
+      period_key: scheduledPeriodKey || null,
+      scheduled_run_id: scheduledRuns[0]?.id || scheduledRuns[0]?.stats?.run_id || null
+    };
+  }
+  const acquired = Date.parse(lease.acquired_at || lease.created_at || lease.started_at || lease.updated_at || 0);
+  if (Number.isFinite(acquired) && now.getTime() - acquired < graceMs) {
+    return { missed: false, pending: true, reason: "within_grace", period_key: scheduledPeriodKey || null };
+  }
+  return {
+    missed: true,
+    reason: "claimed_lease_without_scheduled_execution",
+    period_key: scheduledPeriodKey || null,
+    lease
+  };
+}
+
 async function claimScheduledDispatchLease(supabase, {
   periodKey,
   ownerId,
   triggerType = "scheduled",
   leaseSeconds = WEEKLY_DISPATCH_LEASE_SECONDS
 } = {}) {
-  if (triggerType !== "scheduled") {
+  if (!isScheduledTrigger(triggerType)) {
     return {
       claimed: true,
       already_dispatched: false,
       skipped: true,
-      reason: "manual_authorised",
+      reason: `${normalizeDispatchNamespace(triggerType)}_authorised`,
       period_key: periodKey || null
     };
   }
+  assertLeaseClaimAllowed({ triggerType, periodKey });
   if (!supabase || !periodKey || !ownerId) {
     return {
       claimed: false,
@@ -159,6 +250,19 @@ async function claimOrSkipScheduledBackgroundDispatch({
   dryRun = false,
   extra = {}
 }) {
+  if (!isScheduledTrigger(triggerType)) {
+    return {
+      already_dispatched: false,
+      skipped: true,
+      period_key: weeklyNamespacedDispatchKey(lineSlug, dispatchId, triggerType),
+      claim: {
+        claimed: true,
+        already_dispatched: false,
+        skipped: true,
+        reason: `${normalizeDispatchNamespace(triggerType)}_authorised`
+      }
+    };
+  }
   const periodKey = scheduledWeeklyDispatchKey(lineSlug);
   const claim = await claimScheduledDispatchLease(supabase, {
     periodKey,
@@ -202,6 +306,23 @@ async function withScheduledDispatchLease({
   dailyExpiry = false,
   dispatch
 }) {
+  if (!isScheduledTrigger(triggerType)) {
+    const kick = await dispatch();
+    return {
+      already_dispatched: false,
+      claimed: false,
+      skipped: true,
+      claim: {
+        claimed: true,
+        already_dispatched: false,
+        skipped: true,
+        reason: `${normalizeDispatchNamespace(triggerType)}_authorised`
+      },
+      period_key: dispatchId ? weeklyNamespacedDispatchKey(lineSlug || "daily-expiry", dispatchId, triggerType) : null,
+      kick
+    };
+  }
+
   const periodKey = dailyExpiry
     ? scheduledDailyExpiryDispatchKey(reference)
     : scheduledWeeklyDispatchKey(lineSlug, reference);
@@ -523,10 +644,19 @@ module.exports = {
   WEEKLY_DISPATCH_LEASE_SECONDS,
   DAILY_DISPATCH_LEASE_SECONDS,
   BACKGROUND_DISPATCH_LEASE_SECONDS,
+  MISSED_SCHEDULE_GRACE_MS,
+  MISSED_SCHEDULE_RUN_TYPE,
+  DISPATCH_NAMESPACES,
   perthIsoWeek,
   scheduledWeeklyDispatchKey,
   scheduledDailyExpiryDispatchKey,
   backgroundDispatchExecutionKey,
+  weeklyNamespacedDispatchKey,
+  normalizeDispatchNamespace,
+  isScheduledTrigger,
+  isScheduledPeriodKey,
+  assertLeaseClaimAllowed,
+  detectClaimedLeaseWithoutExecution,
   collectInvocationProvenance,
   claimScheduledDispatchLease,
   releaseScheduledDispatchLease,

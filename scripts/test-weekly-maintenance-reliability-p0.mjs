@@ -183,6 +183,197 @@ await testAsync("manual authorised rerun remains possible", async () => {
   if (!manual.claimed || manual.skipped !== true) throw new Error("manual must skip lease");
 });
 
+await testAsync("preflight cannot claim or occupy the scheduled lease", async () => {
+  const sb = memoryLockStore();
+  const week = new Date("2026-09-14T00:00:00+08:00");
+  const leased = await schedule.withScheduledDispatchLease({
+    supabase: sb,
+    lineSlug: "explora-journeys",
+    triggerType: "preflight",
+    dispatchId: "explora-preflight-sunday",
+    reference: week,
+    dispatch: async () => ({ accepted: true, status: 202 })
+  });
+  if (leased.skipped !== true) throw new Error("preflight must skip scheduled lease path");
+  const scheduled = await schedule.loadScheduledLease
+    ? null
+    : await schedule.claimScheduledDispatchLease(sb, {
+        periodKey: schedule.scheduledWeeklyDispatchKey("explora-journeys", week),
+        ownerId: "monday-cron",
+        triggerType: "scheduled"
+      });
+  if (!scheduled.claimed || scheduled.already_dispatched) {
+    throw new Error("Monday scheduled lease must still be free after preflight");
+  }
+});
+
+await testAsync("scheduled cron claims then duplicate cron is already_dispatched", async () => {
+  const sb = memoryLockStore();
+  const week = new Date("2026-09-14T00:00:00+08:00");
+  const first = await schedule.withScheduledDispatchLease({
+    supabase: sb,
+    lineSlug: "seabourn-cruise-line",
+    triggerType: "scheduled",
+    dispatchId: "seabourn-monday-cron",
+    reference: week,
+    dispatch: async () => ({ accepted: true, status: 202 })
+  });
+  const second = await schedule.withScheduledDispatchLease({
+    supabase: sb,
+    lineSlug: "seabourn-cruise-line",
+    triggerType: "scheduled",
+    dispatchId: "seabourn-monday-cron-retry",
+    reference: week,
+    dispatch: async () => {
+      throw new Error("duplicate scheduled cron must not dispatch a second worker");
+    }
+  });
+  if (!first.claimed || first.already_dispatched) throw new Error("first scheduled must dispatch");
+  if (!second.already_dispatched) throw new Error("duplicate scheduled must already_dispatched");
+});
+
+await testAsync("manual recovery is allowed despite existing scheduled lease", async () => {
+  const sb = memoryLockStore();
+  const week = new Date("2026-09-14T00:00:00+08:00");
+  const periodKey = schedule.scheduledWeeklyDispatchKey("royal-caribbean-international", week);
+  await schedule.claimScheduledDispatchLease(sb, {
+    periodKey,
+    ownerId: "royal-scheduled",
+    triggerType: "scheduled"
+  });
+  const recovery = await schedule.withScheduledDispatchLease({
+    supabase: sb,
+    lineSlug: "royal-caribbean-international",
+    triggerType: "manual_recovery",
+    dispatchId: "royal-caribbean:w38:manual-recovery-2026-09-14",
+    reference: week,
+    dispatch: async () => ({ accepted: true, status: 202 })
+  });
+  if (recovery.already_dispatched) throw new Error("manual recovery must not be blocked by scheduled lease");
+  if (recovery.skipped !== true) throw new Error("manual recovery must use namespaced path");
+  const stillHeld = await schedule.claimScheduledDispatchLease(sb, {
+    periodKey,
+    ownerId: "royal-scheduled-2",
+    triggerType: "scheduled"
+  });
+  if (!stillHeld.already_dispatched) throw new Error("manual recovery must not alter scheduled lease");
+});
+
+await testAsync("manual recovery same dispatch ID no-ops via background execution lease", async () => {
+  const sb = memoryLockStore();
+  const dispatchId = "norwegian:w38:manual-recovery-2026-09-14";
+  const first = await schedule.claimBackgroundDispatchExecutionLease(sb, { dispatchId, ownerId: dispatchId });
+  const second = await schedule.claimBackgroundDispatchExecutionLease(sb, { dispatchId, ownerId: dispatchId });
+  if (!first.claimed || first.already_executed) throw new Error("first manual recovery must claim");
+  if (!second.already_executed) throw new Error("same manual dispatch ID must no-op");
+});
+
+await testAsync("second manual recovery with different ID is a separate authorised path", async () => {
+  const sb = memoryLockStore();
+  const a = await schedule.claimBackgroundDispatchExecutionLease(sb, {
+    dispatchId: "explora:w38:manual-recovery-2026-09-14",
+    ownerId: "explora:w38:manual-recovery-2026-09-14"
+  });
+  const b = await schedule.claimBackgroundDispatchExecutionLease(sb, {
+    dispatchId: "explora:w38:manual-recovery-2026-09-14-b",
+    ownerId: "explora:w38:manual-recovery-2026-09-14-b"
+  });
+  if (!a.claimed || !b.claimed) throw new Error("different manual recovery IDs must both be possible");
+});
+
+test("scheduled trigger rejects a preflight/manual period key", () => {
+  try {
+    schedule.assertLeaseClaimAllowed({
+      triggerType: "scheduled",
+      periodKey: schedule.weeklyNamespacedDispatchKey("explora-journeys", "validation-1", "preflight")
+    });
+    throw new Error("scheduled trigger must reject namespaced preflight key");
+  } catch (error) {
+    if (error.message === "scheduled trigger must reject namespaced preflight key") throw error;
+    if (error.code !== "scheduled_trigger_rejected_nonscheduled_period_key") {
+      throw new Error(error.code || error.message);
+    }
+  }
+});
+
+test("claimed schedule lease with no run is MISSED_SCHEDULE and recovery does not erase it", () => {
+  const periodKey = "explora-journeys:2026-W38:scheduled";
+  const missed = schedule.detectClaimedLeaseWithoutExecution({
+    lease: { held: true, acquired_at: "2026-09-13T21:00:39.000Z" },
+    scheduledPeriodKey: periodKey,
+    weeklyRuns: [],
+    now: new Date("2026-09-14T01:00:00.000Z")
+  });
+  if (!missed.missed) throw new Error("claimed lease without run must be missed");
+  const afterRecovery = schedule.detectClaimedLeaseWithoutExecution({
+    lease: { held: true, acquired_at: "2026-09-13T21:00:39.000Z" },
+    scheduledPeriodKey: periodKey,
+    weeklyRuns: [
+      {
+        id: "recovery-1",
+        stats: { trigger_type: "manual_recovery", run_type: "explora_weekly_maintenance" }
+      }
+    ],
+    now: new Date("2026-09-14T02:00:00.000Z")
+  });
+  if (!afterRecovery.missed) throw new Error("manual recovery must not erase MISSED_SCHEDULE");
+});
+
+test("dispatch layers must not re-claim the scheduled lease", () => {
+  const files = [
+    "explora-weekly-maintenance-dispatch.js",
+    "seabourn-weekly-maintenance-dispatch.js",
+    "royal-caribbean-weekly-maintenance-dispatch.js",
+    "norwegian-weekly-maintenance-dispatch.js",
+    "carnival-weekly-maintenance-dispatch.js",
+    "disney-weekly-maintenance-dispatch.js",
+    "azamara-weekly-maintenance-dispatch.js",
+    "silversea-weekly-maintenance-dispatch.js"
+  ];
+  for (const file of files) {
+    const src = fs.readFileSync(path.join(root, "netlify/functions/lib", file), "utf8");
+    if (src.includes("claimOrSkipScheduledBackgroundDispatch") || src.includes("claimScheduledDispatchLease(")) {
+      throw new Error(`${file} must not re-claim the scheduled lease after the launcher`);
+    }
+  }
+});
+
+test("HAL 20% collapse remains fail-closed and recovered source may proceed", () => {
+  const runner = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
+  const collapsed = runner.evaluateMaintenanceQualityGate({
+    lineSlug: "holland-america-line",
+    metrics: {
+      eligible_total: 46,
+      ship_resolution_pct: 100,
+      departure_port_resolution_pct: 100,
+      destination_resolution_pct: 100,
+      identity_coverage_pct: 100,
+      duplicate_official_identities: 0
+    },
+    previousEligible: { stats: { eligible_total: 1116 } },
+    dryRun: false
+  });
+  if (collapsed.passed || !collapsed.failures.includes("eligible_inventory_collapse_gt_20pct")) {
+    throw new Error("HAL collapse must remain fail-closed");
+  }
+  const recovered = runner.evaluateMaintenanceQualityGate({
+    lineSlug: "holland-america-line",
+    metrics: {
+      eligible_total: 1116,
+      ship_resolution_pct: 100,
+      departure_port_resolution_pct: 100,
+      destination_resolution_pct: 100,
+      identity_coverage_pct: 100,
+      duplicate_official_identities: 0
+    },
+    previousEligible: { stats: { eligible_total: 1116 } },
+    dryRun: false
+  });
+  if (!recovered.passed || recovered.failures.includes("eligible_inventory_collapse_gt_20pct")) {
+    throw new Error("recovered HAL source must be allowed to proceed");
+  }
+});
+
 await testAsync("daily expiry duplicate same Perth date is idempotent", async () => {
   const sb = memoryLockStore();
   const key = schedule.scheduledDailyExpiryDispatchKey(new Date("2026-08-31T01:30:00+08:00"));
