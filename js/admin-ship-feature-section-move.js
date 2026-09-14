@@ -55,9 +55,11 @@
     const moved = sourceRows.splice(index, 1)[0];
     if (!moved) return;
 
-    // Preserve the complete canonical item. Do not flatten descriptions or
-    // replace the chosen icon when moving between sections.
+    // Preserve the complete canonical item, including its stable identity. The
+    // identity lets class/fleet sync recognise this as the same feature after a
+    // category or title change rather than treating it as a separate item.
     targetRows.push({
+      feature_id: moved.feature_id || "",
       name: moved.name || moved.label || "",
       description: moved.description || "",
       icon_key: moved.icon_key || "",
