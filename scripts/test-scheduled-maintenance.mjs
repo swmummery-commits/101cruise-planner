@@ -36,8 +36,8 @@ function withEnv(key, value, fn) {
   }
 }
 
-test("1. HAL weekly cron uses Sunday 18:00 UTC", () => {
-  if (maintenance.MAINTENANCE_SCHEDULES.hal_weekly.cron_utc !== "0 18 * * 0") throw new Error("HAL cron mismatch");
+test("1. HAL weekly cron uses Sunday 17:00 UTC / Monday 01:00 Perth", () => {
+  if (maintenance.MAINTENANCE_SCHEDULES.hal_weekly.cron_utc !== "0 17 * * 0") throw new Error("HAL cron mismatch");
 });
 
 test("2. Celebrity weekly cron uses Sunday 19:00 UTC", () => {
@@ -78,8 +78,8 @@ test("7. Celebrity maintenance run type constant exists", () => {
   if (maintenance.CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE !== "celebrity_weekly_maintenance") throw new Error("Celebrity type");
 });
 
-test("8. Princess weekly cron uses Sunday 20:00 UTC", () => {
-  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.cron_utc !== "0 20 * * 0") throw new Error("Princess cron mismatch");
+test("8. Princess weekly cron uses Sunday 21:00 UTC / Monday 05:00 Perth GitHub APPLY", () => {
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.cron_utc !== "0 21 * * 0") throw new Error("Princess cron mismatch");
 });
 
 test("9. Princess weekly flag defaults false", () => {

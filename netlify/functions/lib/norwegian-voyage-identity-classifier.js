@@ -458,26 +458,79 @@ function fieldPresent(value) {
 
 function sourceVoyageFields(row = {}) {
   return {
-    ship: row.ship_id || row.canonical_ship_id || row.candidate?.ship_id || row.ship_name || null,
+    official_id: row.official_sailing_id || row.candidate?.official_sailing_id || null,
+    ship: row.ship_id || row.canonical_ship_id || row.candidate?.ship_id || null,
+    ship_name: row.ship_name || row.candidate?.ship_name || null,
     departure: String(row.departure_date || row.candidate?.departure_date || "").slice(0, 10) || null,
     return: String(row.return_date || row.candidate?.return_date || "").slice(0, 10) || null,
     nights: row.nights ?? row.candidate?.nights ?? null,
     departure_port: row.departure_port || row.canonical_departure_port || row.candidate?.departure_port || null,
     destination: row.destination_id || row.destination || row.candidate?.destination_id || null,
-    itinerary: row.itinerary || row.candidate?.itinerary || null,
-    official_identity: row.official_sailing_id || row.candidate?.official_sailing_id || null
+    itinerary: row.itinerary || row.candidate?.itinerary || row.itinerary_text || null,
+    source_url: row.source_url || row.official_url || row.candidate?.source_url || null
   };
 }
 
 function missingNorwegianSourceFields(row = {}) {
   const src = sourceVoyageFields(row);
-  const required = ["ship", "departure", "return", "nights", "departure_port"];
-  const optional = ["destination", "itinerary", "official_identity"];
+  const required = ["official_id", "ship", "departure", "return", "nights", "departure_port"];
+  const optional = ["destination", "itinerary", "source_url"];
   const missing = [];
   for (const field of [...required, ...optional]) {
     if (!fieldPresent(src[field])) missing.push(field);
   }
   return { fields: src, missing_required: required.filter((field) => !fieldPresent(src[field])), missing };
+}
+
+const INCOMPLETENESS_LAYERS = Object.freeze([
+  "OFFICIAL_SOURCE_MISSING",
+  "PARSER_MISSING",
+  "NORMALISATION_MISSING",
+  "RESOLVER_MISSING",
+  "REFERENCE_DATA_MISSING"
+]);
+
+function classifyNorwegianIncompletenessLayer(row = {}, missing = null) {
+  const src = missing?.fields || sourceVoyageFields(row);
+  const gaps = missing || missingNorwegianSourceFields(row);
+  if (gaps.missing_required.includes("official_id") && !fieldPresent(src.official_id)) {
+    return "OFFICIAL_SOURCE_MISSING";
+  }
+  if (gaps.missing_required.includes("ship") && fieldPresent(src.ship_name)) {
+    return "RESOLVER_MISSING";
+  }
+  if (gaps.missing_required.includes("ship") && !fieldPresent(src.ship_name)) {
+    return "REFERENCE_DATA_MISSING";
+  }
+  if (gaps.missing_required.some((field) => ["departure", "return", "nights"].includes(field))) {
+    return "PARSER_MISSING";
+  }
+  if (gaps.missing_required.includes("departure_port") || gaps.missing.includes("destination")) {
+    return "REFERENCE_DATA_MISSING";
+  }
+  if (gaps.missing.length) return "NORMALISATION_MISSING";
+  return "PARSER_MISSING";
+}
+
+const OPERATIONAL_IDENTITY_CLASSES = Object.freeze([
+  "EXISTING_ACTIVE",
+  "EXISTING_MATCH_REQUIRED",
+  "TRUE_NEW_COMPLETE",
+  "INCOMPLETE_SOURCE",
+  "AMBIGUOUS"
+]);
+
+function classifyNorwegianOperationalIdentity(row = {}) {
+  if (row.classification === "RECOGNISED" || row.classification === "ALREADY_ACTIVE_DIFFERENT_ID") {
+    return "EXISTING_ACTIVE";
+  }
+  if (row.classification === "ALREADY_MATCH_REQUIRED") return "EXISTING_MATCH_REQUIRED";
+  if (row.classification === "TRUE_NEW" || row.classification === "UNIQUE_ID_REMAP") return "TRUE_NEW_COMPLETE";
+  const missing = missingNorwegianSourceFields(row);
+  if (missing.missing_required.length > 0 || row.ambiguity_reason === "SOURCE_FIELD_INCOMPLETE") {
+    return "INCOMPLETE_SOURCE";
+  }
+  return "AMBIGUOUS";
 }
 
 function scoreNearestNorwegianProduction(source = {}, productionRows = []) {
@@ -509,18 +562,19 @@ function classifyNorwegianAmbiguityReason(candidate = {}, productionRows = []) {
   const missing = missingNorwegianSourceFields(candidate);
   const sourceIncomplete = missing.missing_required.length > 0;
   if (sourceIncomplete) {
-    const hasOfficialIdentity = fieldPresent(src.official_identity);
-    const origin = !hasOfficialIdentity
-      ? "official_ncl_source_or_parser"
+    const layer = classifyNorwegianIncompletenessLayer(candidate, missing);
+    const origin = !fieldPresent(src.official_id)
+      ? "OFFICIAL_SOURCE_MISSING"
       : missing.missing_required.includes("ship")
-        ? "ship_resolver_or_reference_data"
-        : "parser_or_normalisation";
+        ? layer
+        : layer;
     return {
       ambiguity_reason: "SOURCE_FIELD_INCOMPLETE",
       detail: `source voyage fingerprint missing ${missing.missing_required.join(", ")}`,
       missing_source_fields: missing.missing,
       missing_required_fields: missing.missing_required,
-      incompleteness_origin: origin
+      incompleteness_origin: origin,
+      incompleteness_layer: layer
     };
   }
 
@@ -589,6 +643,10 @@ module.exports = {
   classifyNorwegianP3bEligibleSet,
   classifyNorwegianAmbiguityReason,
   missingNorwegianSourceFields,
+  classifyNorwegianIncompletenessLayer,
+  classifyNorwegianOperationalIdentity,
+  INCOMPLETENESS_LAYERS,
+  OPERATIONAL_IDENTITY_CLASSES,
   norwegianP3bWriteAllowed,
   norwegianMultipleProductionMatchBlocksWrite
 };

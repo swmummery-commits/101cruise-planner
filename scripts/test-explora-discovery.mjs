@@ -488,8 +488,8 @@ test("40. Explora weekly reconciliation flag defaults false with its own run typ
   if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.schedule_registered !== true) {
     throw new Error("Explora schedule must be registered");
   }
-  if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.cron_utc !== "0 21 * * 0") {
-    throw new Error("Explora cron must remain 0 21 * * 0");
+  if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.cron_utc !== "0 17 * * 1") {
+    throw new Error("Explora cron must remain 0 17 * * 1");
   }
 });
 

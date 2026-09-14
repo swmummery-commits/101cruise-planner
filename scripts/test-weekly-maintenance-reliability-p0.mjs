@@ -2437,6 +2437,247 @@ await testAsync("partial writes still fail loudly", async () => {
   }
 });
 
+test("P3F staggered timetable matches netlify/GitHub and monitoring map", () => {
+  const map = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-map"));
+  const expected = {
+    "holland-america-line": ["0 17 * * 0", tomlBlock("hal-weekly-maintenance-cron")],
+    "celebrity-cruises": ["0 19 * * 0", tomlBlock("celebrity-weekly-maintenance-cron")],
+    "explora-journeys": ["0 17 * * 1", tomlBlock("explora-weekly-maintenance-cron")],
+    "seabourn-cruise-line": ["0 19 * * 1", tomlBlock("seabourn-weekly-maintenance-cron")],
+    "royal-caribbean-international": ["0 17 * * 2", tomlBlock("royal-caribbean-weekly-maintenance-cron")],
+    "norwegian-cruise-line": ["0 19 * * 2", tomlBlock("norwegian-weekly-maintenance-cron")],
+    "carnival-cruise-line": ["0 17 * * 3", tomlBlock("carnival-weekly-maintenance-cron")],
+    "disney-cruise-line": ["0 19 * * 3", tomlBlock("disney-weekly-maintenance-cron")],
+    azamara: ["0 17 * * 4", tomlBlock("azamara-weekly-maintenance-cron")],
+    "silversea-cruises": ["0 19 * * 4", tomlBlock("silversea-weekly-maintenance-cron")]
+  };
+  for (const [slug, [cron, block]] of Object.entries(expected)) {
+    const schedule = map.scheduleForSlug(slug);
+    if (schedule.cron_utc !== cron) throw new Error(`${slug} map cron ${schedule.cron_utc}`);
+    if (!block.includes(`schedule = "${cron}"`)) throw new Error(`${slug} netlify.toml drifted`);
+  }
+  const princess = map.scheduleForSlug("princess-cruises");
+  if (princess.cron_utc !== "0 21 * * 0" || princess.scheduler !== "github") {
+    throw new Error("Princess must remain GitHub Monday 05:00 Perth");
+  }
+  const princessNetlify = tomlBlock("princess-weekly-maintenance-cron");
+  if (/^\s*schedule\s*=/m.test(princessNetlify)) {
+    throw new Error("Princess Netlify cron must stay unscheduled");
+  }
+  if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 17 * * *") {
+    throw new Error("daily expiry must stay 01:30 Perth");
+  }
+});
+
+test("P3F NOT_DUE cannot become MISSED_SCHEDULE before a line's own slot", () => {
+  const map = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-map"));
+  const ops = require(path.join(root, "netlify/functions/lib/maintenance-operational-status"));
+  const tuesday10 = new Date("2026-09-15T10:00:00+08:00");
+  const dueByTue10 = {
+    "holland-america-line": true,
+    "celebrity-cruises": true,
+    "princess-cruises": true,
+    "explora-journeys": true,
+    "seabourn-cruise-line": true,
+    "royal-caribbean-international": false,
+    "norwegian-cruise-line": false,
+    "carnival-cruise-line": false,
+    "disney-cruise-line": false,
+    azamara: false,
+    "silversea-cruises": false
+  };
+  for (const [slug, due] of Object.entries(dueByTue10)) {
+    const state = map.classifyWeeklyDueState({
+      now: tuesday10,
+      schedule: map.scheduleForSlug(slug),
+      scheduledExecutionExists: false
+    });
+    if (due && state.due_state === "NOT_DUE") throw new Error(`${slug} should be evaluable Tuesday 10:00`);
+    if (!due && state.due_state !== "NOT_DUE") throw new Error(`${slug} must stay NOT_DUE Tuesday 10:00, got ${state.due_state}`);
+    if (!due && state.due_state === "MISSED_SCHEDULE") throw new Error(`${slug} NOT_DUE leaked into MISSED`);
+  }
+  const beforeHal = map.classifyWeeklyDueState({
+    now: new Date("2026-09-14T00:50:00+08:00"),
+    schedule: map.scheduleForSlug("holland-america-line")
+  });
+  if (beforeHal.due_state !== "NOT_DUE") throw new Error(beforeHal.due_state);
+  const withinGrace = map.classifyWeeklyDueState({
+    now: new Date("2026-09-14T01:10:00+08:00"),
+    schedule: map.scheduleForSlug("holland-america-line")
+  });
+  if (withinGrace.due_state !== "DUE_RUNNING") throw new Error(withinGrace.due_state);
+  const afterGrace = map.classifyWeeklyDueState({
+    now: new Date("2026-09-14T01:25:00+08:00"),
+    schedule: map.scheduleForSlug("holland-america-line")
+  });
+  if (afterGrace.due_state !== "MISSED_SCHEDULE") throw new Error(afterGrace.due_state);
+  const completed = map.classifyWeeklyDueState({
+    now: new Date("2026-09-14T01:25:00+08:00"),
+    schedule: map.scheduleForSlug("holland-america-line"),
+    scheduledExecutionExists: true
+  });
+  if (completed.due_state !== "COMPLETED") throw new Error(completed.due_state);
+  if (
+    ops.classifyOperationalStatus({
+      notDue: true,
+      missedSchedule: true,
+      sourceFailure: true
+    }) !== "NOT_DUE"
+  ) {
+    throw new Error("NOT_DUE must win over MISSED_SCHEDULE");
+  }
+});
+
+await testAsync("P3F every weekly dispatcher: only scheduled creates the scheduled lease", async () => {
+  const map = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-map"));
+  const week = new Date("2026-09-14T12:00:00+08:00");
+  const nonScheduled = ["preflight", "validation", "manual", "manual_recovery", "incident"];
+  for (const line of map.WEEKLY_LINE_SCHEDULE) {
+    const sb = memoryLockStore();
+    const periodKey = schedule.scheduledWeeklyDispatchKey(line.slug, week);
+    const before = await schedule.claimScheduledDispatchLease(sb, {
+      periodKey,
+      ownerId: "probe-before",
+      triggerType: "scheduled"
+    });
+    if (!before.claimed || before.already_dispatched) throw new Error(`${line.slug} scheduled lease was already occupied`);
+    const reset = memoryLockStore();
+    for (const trigger of nonScheduled) {
+      const leased = await schedule.withScheduledDispatchLease({
+        supabase: reset,
+        lineSlug: line.slug,
+        triggerType: trigger,
+        dispatchId: `${line.slug}:p3f:${trigger}`,
+        reference: week,
+        dispatch: async () => ({ accepted: true, status: 202 })
+      });
+      if (leased.skipped !== true) throw new Error(`${line.slug} ${trigger} must skip scheduled lease`);
+    }
+    const after = await schedule.claimScheduledDispatchLease(reset, {
+      periodKey,
+      ownerId: "monday-cron",
+      triggerType: "scheduled"
+    });
+    if (!after.claimed || after.already_dispatched) {
+      throw new Error(`${line.slug} non-scheduled trigger consumed ${periodKey}`);
+    }
+  }
+});
+
+test("P3F HAL pagination walks numFound and cannot silently truncate", () => {
+  const adapter = require(path.join(root, "netlify/functions/lib/holland-america-discovery-adapter"));
+  const plan = adapter.planHalPagination({ numFound: 1783, rowsPerPage: 12 });
+  if (plan.expectedPages !== 149) throw new Error(`expectedPages ${plan.expectedPages}`);
+  if (plan.maxPages !== 152) throw new Error(`maxPages ${plan.maxPages}`);
+  if (plan.starts[0] !== 0 || plan.starts.at(-1) !== 1776) throw new Error("starts do not cover numFound");
+  const runner = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner.js"),
+    "utf8"
+  );
+  if (!/source_pagination_truncated/.test(runner)) {
+    throw new Error("truncated HAL source must fail closed before collapse accounting");
+  }
+  if (!/eligible_inventory_collapse_gt_20pct/.test(runner)) {
+    throw new Error("HAL collapse gate must remain");
+  }
+  if (!/repeated_page/.test(fs.readFileSync(path.join(root, "netlify/functions/lib/holland-america-discovery-adapter.js"), "utf8"))) {
+    throw new Error("HAL must detect repeated pages");
+  }
+});
+
+test("P3F Royal expired/cutoff records are not unexplained current", () => {
+  const enumeration = require(path.join(root, "netlify/functions/lib/royal-caribbean-source-enumeration"));
+  const result = enumeration.classifyRoyalAbsentProductionRecords({
+    productionRows: [
+      { official_sailing_id: "EXPIRED_B", status: "expired", departure_date: "2026-08-01" },
+      { official_sailing_id: "CUTOFF_C", status: "active", departure_date: "2026-09-20" },
+      { official_sailing_id: "EX07M807_2026-10-17", status: "active", departure_date: "2026-10-17" }
+    ],
+    unionSailingIds: new Set(["CURRENT_A"]),
+    today: "2026-09-14",
+    detailLookupResults: [{ official_sailing_id: "EX07M807_2026-10-17", detail_ok: false, retrievable: false }]
+  });
+  if (result.counts.EXPIRED !== 1) throw new Error("expired missing");
+  if (result.counts.WITHIN_PUBLIC_CUTOFF !== 1) throw new Error("cutoff missing");
+  if (!result.unexplained_current_ids.includes("EX07M807_2026-10-17")) {
+    throw new Error("true current unexplained must remain");
+  }
+  const removed = enumeration.classifyRoyalAbsentProductionRecord({
+    row: { official_sailing_id: "BR07M821_2026-10-12", status: "active", departure_date: "2026-10-12" },
+    unionSailingIds: new Set(),
+    today: "2026-09-14",
+    detail: { group_missing: true, detail_ok: false, retrievable: false }
+  });
+  if (removed.disposition !== "SOURCE_REMOVED") throw new Error(removed.disposition);
+});
+
+test("P3F NCL incomplete mapping and match_required dedupe", () => {
+  const classifier = require(path.join(root, "netlify/functions/lib/norwegian-voyage-identity-classifier"));
+  const incomplete = classifier.classifyNorwegianAmbiguityReason(
+    { official_sailing_id: "EPIC6X|2027-11-12", ship_name: "Norwegian Epic" },
+    []
+  );
+  if (incomplete.ambiguity_reason !== "SOURCE_FIELD_INCOMPLETE") throw new Error(incomplete.ambiguity_reason);
+  if (!incomplete.missing_required_fields.includes("ship")) throw new Error("unresolved ship_id must count as missing ship");
+  if (incomplete.incompleteness_layer !== "RESOLVER_MISSING") throw new Error(incomplete.incompleteness_layer);
+  if (classifier.classifyNorwegianOperationalIdentity(incomplete) !== "INCOMPLETE_SOURCE") {
+    throw new Error("incomplete source operational class");
+  }
+  const match = classifier.classifyNorwegianVoyageInsert(
+    {
+      official_sailing_id: "EPIC6X|2027-11-12",
+      ship_id: "ship-1",
+      departure_date: "2027-11-12",
+      return_date: "2027-11-18",
+      nights: 6,
+      departure_port: "Port Canaveral"
+    },
+    [
+      {
+        id: "uuid-match",
+        official_sailing_id: "EPIC6X|2027-11-12",
+        status: "match_required",
+        ship_id: "ship-1",
+        departure_date: "2027-11-12",
+        return_date: "2027-11-18",
+        nights: 6,
+        departure_port: "Port Canaveral"
+      }
+    ]
+  );
+  if (match.classification !== "ALREADY_MATCH_REQUIRED") throw new Error(match.classification);
+  if (classifier.classifyNorwegianOperationalIdentity({ classification: "ALREADY_MATCH_REQUIRED" }) !== "EXISTING_MATCH_REQUIRED") {
+    throw new Error("match_required must map to EXISTING_MATCH_REQUIRED");
+  }
+  const nclAdapter = require(path.join(root, "netlify/functions/lib/norwegian-discovery-adapter"));
+  if (nclAdapter.inferNorwegianShipCodeFromItinerary("EPIC6PCVPOPSJUNPIPCV") !== "EPIC") {
+    throw new Error("itinerary prefix must recover official ship code");
+  }
+  const classified = nclAdapter.classifyNorwegianItinerary({ codes: ["EPIC6PCVPOPSJUNPIPCV"] });
+  if (classified.ship_code !== "EPIC" || classified.category !== "ocean") {
+    throw new Error("missing shipCode must infer from official itinerary code");
+  }
+  if (nclAdapter.inferNorwegianNightsFromItinerary("EPIC6PCVPOPSJUNPIPCV", "EPIC") !== 6) {
+    throw new Error("itinerary prefix must recover official nights");
+  }
+  const parsed = nclAdapter.parseRawSailingFromItinerary(
+    { codes: ["EPIC6PCVPOPSJUNPIPCV"], duration: 6 },
+    "2027-11-12"
+  );
+  if (parsed.return_date !== "2027-11-18") throw new Error(`derived return ${parsed.return_date}`);
+});
+
+test("P3F dashboard is schedule-aware", () => {
+  if (!adminJs.includes("weekly_completeness")) throw new Error("dashboard missing weekly completeness matrix");
+  if (!adminJs.includes("NOT_DUE")) throw new Error("dashboard missing NOT_DUE");
+  const trackingSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking.js"),
+    "utf8"
+  );
+  if (!trackingSrc.includes("classifyWeeklyDueState")) throw new Error("tracking must use due-time map");
+  if (!trackingSrc.includes('due.due_state !== "NOT_DUE"')) throw new Error("overdue must ignore NOT_DUE lines");
+});
+
 if (failures.length) {
   console.error(`\ntest-weekly-maintenance-reliability-p0: ${passed} passed, ${failures.length} failed`);
   process.exit(1);

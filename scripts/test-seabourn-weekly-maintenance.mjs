@@ -438,7 +438,7 @@ test("32. Seabourn schedule is registered and cron-enabled", () => {
   }
   const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
   if (!toml.includes('[functions."seabourn-weekly-maintenance-cron"]')) throw new Error("missing cron fn");
-  if (!toml.includes('schedule = "0 22 * * 0"')) throw new Error("missing seabourn schedule line");
+  if (!toml.includes('schedule = "0 19 * * 1"')) throw new Error("missing seabourn schedule line");
 });
 
 test("33. Seabourn lock key wired", () => {

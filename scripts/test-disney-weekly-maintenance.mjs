@@ -742,7 +742,7 @@ test("RUNNER 44. buildDisneyWeeklyManifest insert candidate without supabase", a
 test("RUNNER 45. netlify.toml registers Disney weekly cron schedule", () => {
   const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
   if (!toml.includes('[functions."disney-weekly-maintenance-cron"]')) throw new Error("missing cron fn");
-  if (!toml.includes('schedule = "0 2 * * 1"')) throw new Error("missing disney schedule line");
+  if (!toml.includes('schedule = "0 19 * * 3"')) throw new Error("missing disney schedule line");
 });
 
 test("RUNNER 46. bulk import flag DISNEY_DISCOVERY_WRITE_ENABLED must stay false", () => {

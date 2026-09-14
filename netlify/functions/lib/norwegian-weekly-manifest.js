@@ -24,7 +24,8 @@ const { shouldRemoveFromPublicInventory } = require("./public-discovered-cruise-
 const {
   classifyNorwegianVoyageInsertSet,
   classifyNorwegianP3bEligibleSet,
-  classifyNorwegianAmbiguityReason
+  classifyNorwegianAmbiguityReason,
+  classifyNorwegianOperationalIdentity
 } = require("./norwegian-voyage-identity-classifier");
 
 function mapNorwegianIdentityFields(product = {}) {
@@ -92,6 +93,11 @@ async function buildNorwegianWeeklyManifest({
       missing_source_fields: ambiguity?.missing_source_fields || [],
       missing_required_fields: ambiguity?.missing_required_fields || [],
       incompleteness_origin: ambiguity?.incompleteness_origin || null,
+      incompleteness_layer: ambiguity?.incompleteness_layer || null,
+      operational_classification: classifyNorwegianOperationalIdentity({
+        ...row,
+        ambiguity_reason: ambiguity?.ambiguity_reason || null
+      }),
       matching_production_ids: (row.matching_production || []).map((item) => item.id).filter(Boolean)
     };
   });

@@ -455,7 +455,7 @@ test("31 M4B canary protected in runner", () => {
 test("32 weekly cron configured after closeout", () => {
   const silverseaCron =
     /silversea-weekly-maintenance-cron/i.test(netlifyToml) &&
-    /schedule = "0 4 \* \* 1"/.test(netlifyToml);
+    /schedule = "0 19 \* \* 4"/.test(netlifyToml);
   if (!silverseaCron) throw new Error("silversea schedule missing");
 });
 

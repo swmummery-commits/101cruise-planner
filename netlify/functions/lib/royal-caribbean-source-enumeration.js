@@ -7,6 +7,7 @@
  */
 
 const crypto = require("crypto");
+const { shouldRemoveFromPublicInventory } = require("./public-discovered-cruise-inventory");
 const {
   fetchRoyalCaribbeanSearchPage,
   fetchRoyalCaribbeanFleet,
@@ -326,12 +327,15 @@ async function fetchRoyalCaribbeanCruiseDetail(groupId, { userAgent = USER_AGENT
     body: JSON.stringify({ query, variables: { id: groupId } })
   });
   const body = await response.json().catch(() => ({}));
+  const cruise = body.data?.cruise || null;
+  const graphqlError = body.errors?.[0]?.message || null;
   return {
-    ok: response.ok && !body.errors?.length && Boolean(body.data?.cruise?.id),
+    ok: response.ok && !body.errors?.length && Boolean(cruise?.id),
     status: response.status,
     group_id: groupId,
-    cruise: body.data?.cruise || null,
-    error: body.errors?.[0]?.message || null
+    cruise,
+    error: graphqlError,
+    group_missing: response.ok && !body.errors?.length && !cruise
   };
 }
 
@@ -365,7 +369,9 @@ async function auditProductionIdsViaDetailLookup({
       group_id: groupId,
       detail_ok: detail.ok === true,
       sailing_present_in_detail: sailingPresent,
-      retrievable: detail.ok === true && sailingPresent
+      retrievable: detail.ok === true && sailingPresent,
+      group_missing: detail.group_missing === true,
+      http_status: detail.status
     });
   }
   return results;
@@ -397,7 +403,9 @@ function evaluateWeeklyAuthoritativeEnumerationHealth({
   const allProductionAbsent = [...productionSailingIds].filter((id) => !unionSailingIds.has(id));
   const enumerationGaps = detailLookupResults.filter((row) => row.retrievable);
   const confirmedSourceRemoved = detailLookupResults.filter(
-    (row) => row.detail_ok === true && row.sailing_present_in_detail === false
+    (row) =>
+      (row.detail_ok === true && row.sailing_present_in_detail === false) ||
+      row.group_missing === true
   );
   const unexplainedAbsent = absentFromUnion.filter((id) => {
     if (explained.has(id)) return false;
@@ -485,6 +493,85 @@ function sourceAbsenceActionAllowed(health) {
   return health?.royal_caribbean_source_enumeration_ok === true;
 }
 
+const ROYAL_ABSENCE_DISPOSITIONS = Object.freeze([
+  "WITHIN_PUBLIC_CUTOFF",
+  "EXPIRED",
+  "SOURCE_REMOVED",
+  "CURRENT_DETAIL_FOUND",
+  "IDENTITY_REMAP",
+  "LEGACY",
+  "UNEXPLAINED_CURRENT"
+]);
+
+function classifyRoyalAbsentProductionRecord({
+  row = {},
+  unionSailingIds = new Set(),
+  today,
+  detail = null
+} = {}) {
+  const id = String(row.official_sailing_id || "").trim();
+  if (!id || unionSailingIds.has(id)) return null;
+  const status = String(row.status || "").toLowerCase();
+  if (status === "expired") {
+    return { official_sailing_id: id, disposition: "EXPIRED" };
+  }
+  if (
+    shouldRemoveFromPublicInventory({
+      departureDate: row.departure_date,
+      status: row.status,
+      perthToday: today
+    })
+  ) {
+    return { official_sailing_id: id, disposition: "WITHIN_PUBLIC_CUTOFF" };
+  }
+  if (status === "legacy" || row.inventory_class === "legacy" || row.legacy === true) {
+    return { official_sailing_id: id, disposition: "LEGACY" };
+  }
+  if (detail?.identity_remap || detail?.remap) {
+    return { official_sailing_id: id, disposition: "IDENTITY_REMAP" };
+  }
+  if (detail?.retrievable === true) {
+    return { official_sailing_id: id, disposition: "CURRENT_DETAIL_FOUND" };
+  }
+  if (
+    detail?.group_missing === true ||
+    (detail?.detail_ok === true && detail.sailing_present_in_detail === false)
+  ) {
+    return { official_sailing_id: id, disposition: "SOURCE_REMOVED" };
+  }
+  return { official_sailing_id: id, disposition: "UNEXPLAINED_CURRENT" };
+}
+
+function classifyRoyalAbsentProductionRecords({
+  productionRows = [],
+  unionSailingIds = new Set(),
+  today,
+  detailLookupResults = []
+} = {}) {
+  const details = new Map(
+    (detailLookupResults || []).map((row) => [String(row.official_sailing_id || ""), row])
+  );
+  const dispositions = [];
+  for (const row of productionRows || []) {
+    const classified = classifyRoyalAbsentProductionRecord({
+      row,
+      unionSailingIds,
+      today,
+      detail: details.get(String(row.official_sailing_id || ""))
+    });
+    if (classified) dispositions.push({ ...classified, departure_date: row.departure_date || null, status: row.status || null });
+  }
+  const counts = Object.fromEntries(ROYAL_ABSENCE_DISPOSITIONS.map((name) => [name, 0]));
+  for (const row of dispositions) counts[row.disposition] = (counts[row.disposition] || 0) + 1;
+  return {
+    dispositions,
+    counts,
+    unexplained_current_ids: dispositions
+      .filter((row) => row.disposition === "UNEXPLAINED_CURRENT")
+      .map((row) => row.official_sailing_id)
+  };
+}
+
 module.exports = {
   AUTHORITATIVE_PAGE_SIZES,
   DEFAULT_UNION_PAGE_SIZES,
@@ -500,5 +587,8 @@ module.exports = {
   computeSourceSnapshotIdFromSailingIds,
   evaluateSourceEnumerationHealth,
   evaluateWeeklyAuthoritativeEnumerationHealth,
+  classifyRoyalAbsentProductionRecord,
+  classifyRoyalAbsentProductionRecords,
+  ROYAL_ABSENCE_DISPOSITIONS,
   sourceAbsenceActionAllowed
 };

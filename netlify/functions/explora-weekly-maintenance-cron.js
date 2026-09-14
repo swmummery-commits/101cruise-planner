@@ -1,7 +1,7 @@
 /**
  * Explora Journeys weekly maintenance — thin Scheduled Function launcher.
  *
- * Target slot: schedule = "0 21 * * 0" (Sunday 21:00 UTC / Monday 05:00 Australia/Perth)
+ * Target slot: schedule = "0 17 * * 1" (Monday 17:00 UTC / Tuesday 01:00 Australia/Perth)
  */
 
 const { supabase } = require("./lib/cruise-discovery-maintenance-cron");

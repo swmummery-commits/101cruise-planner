@@ -88,6 +88,31 @@ const PORT_ANALYSIS_SAMPLES = Object.freeze([
   "Tokyo (Yokohama)"
 ]);
 
+function addIsoDays(iso, days) {
+  const [year, month, day] = String(iso || "").split("-").map(Number);
+  if (!year || !month || !day || !Number.isFinite(Number(days))) return null;
+  return new Date(Date.UTC(year, month - 1, day + Number(days))).toISOString().slice(0, 10);
+}
+
+function inferNorwegianNightsFromItinerary(itineraryCode, shipCode) {
+  const code = String(itineraryCode || "").toUpperCase();
+  const ship = String(shipCode || inferNorwegianShipCodeFromItinerary(code) || "");
+  if (!ship || !code.startsWith(ship)) return null;
+  const match = code.slice(ship.length).match(/^(\d+)/);
+  const nights = match ? Number(match[1]) : null;
+  return Number.isFinite(nights) && nights > 0 ? nights : null;
+}
+
+function inferNorwegianShipCodeFromItinerary(itineraryCode) {
+  const code = String(itineraryCode || "").trim().toUpperCase();
+  if (!code) return null;
+  return (
+    Object.keys(NCL_SHIP_CODE_TO_NAME)
+      .sort((a, b) => b.length - a.length)
+      .find((ship) => code === ship || (code.startsWith(ship) && /[0-9_]/.test(code[ship.length] || ""))) || null
+  );
+}
+
 function officialProductKey(row) {
   if (row?.official_product_key) return row.official_product_key;
   return source.officialProductKey(row?.itinerary_code, row?.departure_date);
@@ -100,7 +125,9 @@ function norwegianExternalKey(cruiseLineId, productKey) {
 
 function classifyNorwegianItinerary(record) {
   const itineraryCode = source.itineraryCodeFromRecord(record);
-  const shipCode = String(record?.shipCode || "").trim().toUpperCase();
+  const shipCode =
+    String(record?.shipCode || "").trim().toUpperCase() ||
+    inferNorwegianShipCodeFromItinerary(itineraryCode);
 
   if (!itineraryCode) {
     return {
@@ -218,20 +245,28 @@ function analyseItineraryClassification(itineraries) {
 function parseRawSailingFromItinerary(record, sailingEntry) {
   const itineraryCode = source.itineraryCodeFromRecord(record);
   const parsedDate = source.parseSailingDateEntry(sailingEntry);
-  const shipCode = String(record?.shipCode || "").trim().toUpperCase() || null;
+  const shipCode =
+    String(record?.shipCode || "").trim().toUpperCase() ||
+    inferNorwegianShipCodeFromItinerary(itineraryCode) ||
+    null;
+  const duration =
+    Number(record?.duration) || inferNorwegianNightsFromItinerary(itineraryCode, shipCode) || null;
+  const returnDate =
+    parsedDate.return_date ||
+    (parsedDate.departure_date && duration != null ? addIsoDays(parsedDate.departure_date, duration) : null);
 
   return {
     source: "ncl_browse_v1",
     itinerary_code: itineraryCode,
     ship_code: shipCode,
     ship_name: NCL_SHIP_CODE_TO_NAME[shipCode] || null,
-    duration: Number(record?.duration) || null,
+    duration,
     port_of_departure_code: String(record?.portOfDepartureCode || "").trim().toUpperCase() || null,
     destination_codes: Array.isArray(record?.destinationCodes)
       ? record.destinationCodes.map((d) => String(d).trim().toUpperCase()).filter(Boolean)
       : [],
     departure_date: parsedDate.departure_date,
-    return_date: parsedDate.return_date,
+    return_date: returnDate,
     official_product_key: source.officialProductKey(itineraryCode, parsedDate.departure_date),
     schedule_url: source.buildScheduleUrl(itineraryCode),
     raw_itinerary: record,
@@ -286,7 +321,10 @@ function buildShipMappings(filtersPayload, dbShips = []) {
 
 function resolveNorwegianShip(raw, context = {}) {
   const { cruiseLine, ships = [], shipAliases = [] } = context;
-  const code = String(raw?.ship_code || "").trim().toUpperCase();
+  const code =
+    String(raw?.ship_code || "").trim().toUpperCase() ||
+    inferNorwegianShipCodeFromItinerary(raw?.itinerary_code) ||
+    "";
   const expectedName = NCL_SHIP_CODE_TO_NAME[code] || raw?.ship_name;
 
   const byOfficialId = ships.find(
@@ -1208,6 +1246,8 @@ module.exports = {
   PORT_ANALYSIS_SAMPLES,
   officialProductKey,
   norwegianExternalKey,
+  inferNorwegianShipCodeFromItinerary,
+  inferNorwegianNightsFromItinerary,
   classifyNorwegianItinerary,
   analyseItineraryClassification,
   parseRawSailingFromItinerary,

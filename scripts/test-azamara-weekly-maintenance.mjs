@@ -83,7 +83,7 @@ process.env.AZAMARA_DISCOVERY_WRITE_ENABLED = prevFlag;
 /* D. schedule registered */
 const schedule = maintenance.MAINTENANCE_SCHEDULES.azamara_weekly;
 assert(schedule, "MAINTENANCE_SCHEDULES includes azamara_weekly");
-assert(schedule.cron_utc === "0 3 * * 1", "azamara_weekly scheduled Monday 03:00 UTC");
+assert(schedule.cron_utc === "0 17 * * 4", "azamara_weekly scheduled Friday 01:00 Perth");
 assert(schedule.function === "azamara-weekly-maintenance-cron", "azamara weekly cron function wired");
 assert(schedule.schedule_registered === true, "azamara weekly schedule registered");
 
@@ -497,7 +497,7 @@ assert(scheduleForged, "header-only schedule spoof rejected");
 /* P. netlify.toml wiring */
 const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
 assert(toml.includes('[functions."azamara-weekly-maintenance-cron"]'), "netlify.toml cron function present");
-assert(toml.includes('schedule = "0 3 * * 1"'), "netlify.toml azamara schedule present");
+assert(toml.includes('schedule = "0 17 * * 4"'), "netlify.toml azamara schedule present");
 assert(toml.includes('[functions."azamara-weekly-maintenance-background"]'), "netlify.toml background function present");
 
 /* Q. cron dispatches background worker */

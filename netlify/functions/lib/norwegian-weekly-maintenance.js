@@ -25,6 +25,8 @@ const NCL_MAX_WEEKLY_WRITES = 200;
 function incompleteNorwegianFieldBreakdown(reviewItems = []) {
   const counts = {};
   const origins = {};
+  const layers = {};
+  const operational = {};
   for (const item of reviewItems) {
     for (const field of item.missing_required_fields || item.missing_source_fields || []) {
       counts[field] = (counts[field] || 0) + 1;
@@ -32,8 +34,19 @@ function incompleteNorwegianFieldBreakdown(reviewItems = []) {
     if (item.incompleteness_origin) {
       origins[item.incompleteness_origin] = (origins[item.incompleteness_origin] || 0) + 1;
     }
+    if (item.incompleteness_layer) {
+      layers[item.incompleteness_layer] = (layers[item.incompleteness_layer] || 0) + 1;
+    }
+    if (item.operational_classification) {
+      operational[item.operational_classification] = (operational[item.operational_classification] || 0) + 1;
+    }
   }
-  return { missing_required_field_counts: counts, incompleteness_origin_counts: origins };
+  return {
+    missing_required_field_counts: counts,
+    incompleteness_origin_counts: origins,
+    incompleteness_layer_counts: layers,
+    operational_classification_counts: operational
+  };
 }
 
 async function runNorwegianWeeklyMaintenance(context = {}) {

@@ -518,6 +518,31 @@ async function runHalWeeklyMaintenance(context = {}) {
       useCache: false
     });
 
+    if (simulation?.pagination?.truncated) {
+      const summary = {
+        line_slug: lineSlug,
+        run_id: runId,
+        run_type: runType,
+        trigger_type: context.triggerType || context.trigger_type || "scheduled",
+        dry_run: dryRun,
+        official_source_total: simulation.num_found_official || simulation.pagination?.num_found || null,
+        eligible_total: simulation.complete_high_confidence || 0,
+        pagination: simulation.pagination,
+        source_repair_required: true,
+        inventory_changed: false
+      };
+      return {
+        ok: false,
+        blocked: true,
+        failed: true,
+        source_repair_required: true,
+        reason: `source_pagination_truncated:${simulation.pagination.truncated_reason || "numfound_not_exhausted"}`,
+        line_slug: lineSlug,
+        summary,
+        simulation
+      };
+    }
+
     if (!simulation?.voyages?.length && simulation?.fetch_failed) {
       return {
         ok: false,

@@ -56,7 +56,7 @@ test("3 unhealthy source blocks actions", () => {
 
 test("4 netlify schedule present", () => {
   if (!netlifyToml.includes("silversea-weekly-maintenance-cron")) throw new Error("cron");
-  if (!/schedule = "0 4 \* \* 1"/.test(netlifyToml)) throw new Error("schedule slot");
+  if (!/schedule = "0 19 \* \* 4"/.test(netlifyToml)) throw new Error("schedule slot");
 });
 
 test("5 cron dispatches background", () => {

@@ -50,6 +50,9 @@ const SOURCE_CONTRACT = {
 const DEFAULT_LOCALE_PATH = "en/au";
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_MAX_API_CALLS = 200;
+const HAL_PAGE_SAFETY = 3;
+const HAL_FETCH_CONCURRENCY = 4;
+const HAL_SOURCE_DEADLINE_MS = 12 * 60 * 1000;
 
 /** Official HAL destination codes from destinationNames (name#@#code). */
 const HAL_DESTINATION_CODE_SLUG = Object.freeze({
@@ -325,37 +328,64 @@ async function fetchHalSearchPage({ start = 0, size = DEFAULT_PAGE_SIZE, query =
   return result;
 }
 
+function pageSignature(docs = []) {
+  return docs.map((doc) => `${doc?.cruiseId || ""}|${doc?.departDate || ""}`).join(",");
+}
+
+function planHalPagination({ numFound, rowsPerPage, safety = HAL_PAGE_SAFETY } = {}) {
+  const rows = Math.max(1, Number(rowsPerPage) || 1);
+  const found = Math.max(0, Number(numFound) || 0);
+  const expectedPages = found ? Math.ceil(found / rows) : 0;
+  const maxPages = expectedPages + Math.max(0, Number(safety) || 0);
+  const starts = [];
+  for (let start = 0; start < found && starts.length < maxPages; start += rows) {
+    starts.push(start);
+  }
+  return { expectedPages, maxPages, starts, rowsPerPage: rows, numFound: found };
+}
+
+async function mapPool(items, concurrency, worker) {
+  const results = new Array(items.length);
+  let index = 0;
+  async function run() {
+    while (index < items.length) {
+      const current = index;
+      index += 1;
+      results[current] = await worker(items[current], current);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, concurrency) }, () => run()));
+  return results;
+}
+
 async function fetchAllRawVoyages(options = {}) {
   const requestedSize = Math.min(100, Math.max(1, Number(options.pageSize) || DEFAULT_PAGE_SIZE));
-  const maxApiCalls = Math.max(1, Number(options.maxApiCalls) || DEFAULT_MAX_API_CALLS);
   const localePrefix = options.localePrefix || "en_us";
   const today = options.today || new Date().toISOString().slice(0, 10);
   const futureOnly = options.futureOnly !== false;
+  const concurrency = Math.max(1, Number(options.concurrency) || HAL_FETCH_CONCURRENCY);
+  const deadlineMs = Number(options.deadlineMs) || HAL_SOURCE_DEADLINE_MS;
+  const startedAt = Date.now();
 
   const pages = [];
   const byIdentity = new Map();
+  const signatures = new Set();
   let numFound = 0;
-  let start = 0;
   let apiCalls = 0;
   let rawDocsSeen = 0;
   let pastDepartures = 0;
   let malformedDocs = 0;
+  let repeatedPages = 0;
+  let truncatedReason = null;
 
-  while (apiCalls < maxApiCalls) {
-    const batch = await fetchHalSearchPage({ start, size: requestedSize });
-    apiCalls += 1;
-    pages.push({
-      start,
-      ok: batch.ok,
-      docs_returned: batch.docs?.length || 0,
-      url: batch.url
-    });
-    if (!batch.ok) break;
-    numFound = batch.numFound || numFound;
-    const docs = batch.docs || [];
-    if (!docs.length) break;
+  function ingestDocs(docs) {
     rawDocsSeen += docs.length;
-
+    const signature = pageSignature(docs);
+    if (signature && signatures.has(signature)) {
+      repeatedPages += 1;
+      return { repeated: true };
+    }
+    if (signature) signatures.add(signature);
     for (const doc of docs) {
       if (!doc?.cruiseId || !doc?.departDate) {
         malformedDocs += 1;
@@ -373,10 +403,97 @@ async function fetchAllRawVoyages(options = {}) {
       const id = officialProductKey(raw);
       if (!byIdentity.has(id)) byIdentity.set(id, raw);
     }
-
-    start += docs.length;
-    if (start >= numFound) break;
+    return { repeated: false };
   }
+
+  const first = await fetchHalSearchPage({ start: 0, size: requestedSize });
+  apiCalls += 1;
+  pages.push({
+    start: 0,
+    ok: first.ok,
+    docs_returned: first.docs?.length || 0,
+    url: first.url
+  });
+  if (!first.ok) {
+    return {
+      voyages: [],
+      numFound: 0,
+      raw_docs_seen: 0,
+      pages_fetched: 1,
+      page_log: pages,
+      api_calls: apiCalls,
+      rows_per_page: 0,
+      expected_pages: 0,
+      pagination_complete: false,
+      pagination_truncated: true,
+      truncated_reason: first.error || "first_page_failed",
+      ingestion_audit: { past_departures: 0, malformed_docs: 0, exact_duplicate_products_suppressed: 0, repeated_pages: 0 }
+    };
+  }
+
+  numFound = first.numFound || 0;
+  const firstDocs = first.docs || [];
+  const rowsPerPage = firstDocs.length || 0;
+  if (!firstDocs.length) {
+    return {
+      voyages: [],
+      numFound,
+      raw_docs_seen: 0,
+      pages_fetched: 1,
+      page_log: pages,
+      api_calls: apiCalls,
+      rows_per_page: 0,
+      expected_pages: 0,
+      pagination_complete: numFound === 0,
+      pagination_truncated: numFound > 0,
+      truncated_reason: numFound > 0 ? "empty_first_page" : null,
+      ingestion_audit: { past_departures: 0, malformed_docs: 0, exact_duplicate_products_suppressed: 0, repeated_pages: 0 }
+    };
+  }
+  ingestDocs(firstDocs);
+
+  const plan = planHalPagination({ numFound, rowsPerPage });
+  const remainingStarts = plan.starts.filter((start) => start > 0);
+  const hardCap = Math.max(1, Number(options.maxApiCalls) || Math.min(DEFAULT_MAX_API_CALLS, plan.maxPages));
+
+  const remaining = remainingStarts.slice(0, Math.max(0, hardCap - 1));
+  const fetched = await mapPool(remaining, concurrency, async (start) => {
+    if (Date.now() - startedAt > deadlineMs) {
+      return { start, skipped: true, reason: "deadline" };
+    }
+    const batch = await fetchHalSearchPage({ start, size: requestedSize });
+    return { start, batch };
+  });
+
+  for (const item of fetched) {
+    if (item?.skipped) {
+      truncatedReason = truncatedReason || item.reason;
+      break;
+    }
+    apiCalls += 1;
+    const batch = item.batch || {};
+    pages.push({
+      start: item.start,
+      ok: batch.ok,
+      docs_returned: batch.docs?.length || 0,
+      url: batch.url
+    });
+    if (!batch.ok) {
+      truncatedReason = truncatedReason || batch.error || "page_failed";
+      break;
+    }
+    const docs = batch.docs || [];
+    if (!docs.length) break;
+    const ingested = ingestDocs(docs);
+    if (ingested.repeated) {
+      truncatedReason = truncatedReason || "repeated_page";
+      break;
+    }
+  }
+
+  const paginationComplete = rawDocsSeen >= numFound || (pages.length >= plan.expectedPages && rawDocsSeen > 0);
+  const truncated = !paginationComplete || Boolean(truncatedReason);
+  if (truncated && !truncatedReason) truncatedReason = "numfound_not_exhausted";
 
   return {
     voyages: [...byIdentity.values()],
@@ -385,10 +502,16 @@ async function fetchAllRawVoyages(options = {}) {
     pages_fetched: pages.length,
     page_log: pages,
     api_calls: apiCalls,
+    rows_per_page: rowsPerPage,
+    expected_pages: plan.expectedPages,
+    pagination_complete: paginationComplete && !truncatedReason,
+    pagination_truncated: truncated,
+    truncated_reason: truncated ? truncatedReason : null,
     ingestion_audit: {
       past_departures: pastDepartures,
       malformed_docs: malformedDocs,
-      exact_duplicate_products_suppressed: Math.max(0, rawDocsSeen - pastDepartures - malformedDocs - byIdentity.size)
+      exact_duplicate_products_suppressed: Math.max(0, rawDocsSeen - pastDepartures - malformedDocs - byIdentity.size),
+      repeated_pages: repeatedPages
     }
   };
 }
@@ -712,10 +835,13 @@ function catalogueDestinations(dbDestinations) {
 }
 
 async function simulateHalDiscovery(context = {}) {
+  if (context.useCache === false) clearHalFetchCache();
   const fetchResult = await fetchAllRawVoyages({
     pageSize: context.pageSize || DEFAULT_PAGE_SIZE,
-    maxApiCalls: context.maxApiCalls || DEFAULT_MAX_API_CALLS,
-    today: context.today
+    maxApiCalls: context.maxApiCalls,
+    today: context.today,
+    concurrency: context.concurrency,
+    deadlineMs: context.deadlineMs
   });
 
   const normalised = [];
@@ -852,6 +978,18 @@ async function simulateHalDiscovery(context = {}) {
     failure_reason_counts: failureCounts,
     unknown_ships: unknownShips,
     estimated_full_inventory: fetchResult.numFound,
+    pagination: {
+      complete: fetchResult.pagination_complete === true,
+      truncated: fetchResult.pagination_truncated === true,
+      truncated_reason: fetchResult.truncated_reason || null,
+      pages_fetched: fetchResult.pages_fetched,
+      rows_per_page: fetchResult.rows_per_page,
+      expected_pages: fetchResult.expected_pages,
+      num_found: fetchResult.numFound,
+      raw_collected: fetchResult.raw_docs_seen,
+      unique_source_identities: fetchResult.voyages.length
+    },
+    fetch_failed: fetchResult.pagination_truncated === true,
     examples: diverseExamples.map((n) => ({
       title: n.raw.title,
       ship: n.ship_resolution.ship?.name || n.raw.ship_name,
@@ -888,6 +1026,10 @@ module.exports = {
   voyageIdentity,
   fetchHalSearchPage,
   fetchAllRawVoyages,
+  planHalPagination,
+  HAL_PAGE_SAFETY,
+  HAL_FETCH_CONCURRENCY,
+  HAL_SOURCE_DEADLINE_MS,
   auditHalIngestion,
   normaliseHalVoyage,
   simulateHalDiscovery,

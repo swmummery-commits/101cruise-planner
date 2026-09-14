@@ -138,15 +138,15 @@ test("CLI max writes capped at total ceiling", () => {
 test("cruise-discovery-maintenance RC schedule registered at 23:00 UTC", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.royal_caribbean_weekly;
   if (schedule.schedule_registered !== true) throw new Error("schedule_registered must be true after activation");
-  if (schedule.cron_utc !== "0 23 * * 0") throw new Error("expected Sunday 23:00 UTC cron (after Seabourn 22:00)");
+  if (schedule.cron_utc !== "0 17 * * 2") throw new Error("expected Tuesday 17:00 UTC / Wednesday 01:00 Perth");
 });
 
 test("netlify.toml enables RC cron schedule at 23:00 UTC", () => {
   const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
   const cronBlock =
     toml.match(/\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
-  if (!/^\s*schedule\s*=\s*"0 23 \* \* 0"/m.test(cronBlock)) {
-    throw new Error("RC cron schedule must be enabled at 0 23 * * 0");
+  if (!/^\s*schedule\s*=\s*"0 17 \* \* 2"/m.test(cronBlock)) {
+    throw new Error("RC cron schedule must be enabled at 0 17 * * 2");
   }
 });
 

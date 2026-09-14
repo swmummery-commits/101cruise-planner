@@ -1,6 +1,6 @@
 /**
  * Holland America weekly maintenance — thin Scheduled Function launcher.
- * Schedule: Sunday 18:00 UTC = Monday 02:00 Australia/Perth.
+ * Schedule: Sunday 17:00 UTC = Monday 01:00 Australia/Perth.
  * Must stay under the Scheduled Function cap. Long work runs in
  * hal-weekly-maintenance-background.
  */

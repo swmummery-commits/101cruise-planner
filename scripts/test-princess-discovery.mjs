@@ -129,7 +129,7 @@ test("6. Princess maintenance run type and cron", () => {
   if (maintenance.PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE !== "princess_weekly_maintenance") {
     throw new Error("run type");
   }
-  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.cron_utc !== "0 20 * * 0") {
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.cron_utc !== "0 21 * * 0") {
     throw new Error("cron");
   }
 });

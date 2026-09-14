@@ -568,11 +568,11 @@ test("41. apply workflow supports workflow_dispatch and schedule", () => {
   if (!/^\s*schedule:/m.test(applyWorkflowSrc)) throw new Error("missing schedule trigger");
 });
 
-test("42. apply workflow schedule cron is Sunday 20:00 UTC", () => {
-  if (!applyWorkflowSrc.includes('cron: "0 20 * * 0"') && !applyWorkflowSrc.includes("cron: '0 20 * * 0'")) {
-    throw new Error("apply workflow must use cron 0 20 * * 0");
+test("42. apply workflow schedule cron is Sunday 21:00 UTC / Monday 05:00 Perth", () => {
+  if (!applyWorkflowSrc.includes('cron: "0 21 * * 0"') && !applyWorkflowSrc.includes("cron: '0 21 * * 0'")) {
+    throw new Error("apply workflow must use cron 0 21 * * 0");
   }
-  if (!applyWorkflowSrc.includes("Monday 04:00 Australia/Perth = Sunday 20:00 UTC")) {
+  if (!applyWorkflowSrc.includes("Monday 05:00 Australia/Perth")) {
     throw new Error("missing Perth schedule comment");
   }
 });

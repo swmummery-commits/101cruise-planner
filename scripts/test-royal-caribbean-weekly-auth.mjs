@@ -59,7 +59,7 @@ test("3. cron launcher exports handler", () => {
 test("4. RC schedule uses launcher + background at 23:00 UTC", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.royal_caribbean_weekly;
   if (schedule.schedule_registered !== true) throw new Error("schedule must be registered after activation");
-  if (schedule.cron_utc !== "0 23 * * 0") throw new Error("expected Sunday 23:00 UTC (after Seabourn 22:00)");
+  if (schedule.cron_utc !== "0 17 * * 2") throw new Error("expected Tuesday 17:00 UTC / Wednesday 01:00 Perth");
   if (schedule.function !== "royal-caribbean-weekly-maintenance-cron") throw new Error(schedule.function);
   if (schedule.background_function !== "royal-caribbean-weekly-maintenance-background") {
     throw new Error(schedule.background_function);

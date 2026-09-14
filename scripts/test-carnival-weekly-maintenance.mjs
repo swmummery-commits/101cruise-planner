@@ -73,7 +73,7 @@ process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED = prevFlag;
 
 const schedule = maintenance.MAINTENANCE_SCHEDULES.carnival_weekly;
 assert(schedule, "MAINTENANCE_SCHEDULES includes carnival_weekly");
-assert(schedule.cron_utc === "0 1 * * 1", "carnival_weekly scheduled Monday 01:00 UTC");
+assert(schedule.cron_utc === "0 17 * * 3", "carnival_weekly scheduled Thursday 01:00 Perth");
 assert(schedule.function === "carnival-weekly-maintenance-cron", "carnival weekly cron function wired");
 assert(schedule.schedule_registered === true, "carnival weekly schedule registered");
 

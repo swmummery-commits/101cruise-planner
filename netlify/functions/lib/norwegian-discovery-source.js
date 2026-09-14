@@ -51,6 +51,9 @@ function epochMsToIso(value) {
 
 function parseSailingDateEntry(entry) {
   if (entry == null) return { departure_date: null, return_date: null, raw: entry };
+  if (typeof entry === "string" && /^\d{4}-\d{2}-\d{2}/.test(entry.trim())) {
+    return { departure_date: entry.trim().slice(0, 10), return_date: null, raw: entry };
+  }
   if (typeof entry === "number" || (typeof entry === "string" && /^\d+$/.test(String(entry).trim()))) {
     const departure_date = epochMsToIso(entry);
     return { departure_date, return_date: null, raw: entry };
@@ -67,7 +70,7 @@ function parseSailingDateEntry(entry) {
 
 function itineraryCodeFromRecord(record) {
   const codes = Array.isArray(record?.codes) ? record.codes : [];
-  return String(codes[0] || "").trim().toUpperCase() || null;
+  return String(codes[0] || record?.itineraryCode || record?.itinerary_code || "").trim().toUpperCase() || null;
 }
 
 function officialProductKey(itineraryCode, departureDate) {
@@ -172,24 +175,81 @@ async function fetchNorwegianFilters(options = {}) {
   };
 }
 
+const NCL_ITINERARY_SHIP_CODES = Object.freeze([
+  "PRIDE_AMER",
+  "BREAKAWAY",
+  "GETAWAY",
+  "ESCAPE",
+  "ENCORE",
+  "SPIRIT",
+  "BLISS",
+  "PRIMA",
+  "PEARL",
+  "JEWEL",
+  "DAWN",
+  "EPIC",
+  "AQUA",
+  "AURA",
+  "GEM",
+  "JADE",
+  "JOY",
+  "LUNA",
+  "SKY",
+  "STAR",
+  "SUN",
+  "VIVA"
+]);
+
+function addIsoDays(iso, days) {
+  const [year, month, day] = String(iso || "").split("-").map(Number);
+  if (!year || !month || !day || !Number.isFinite(Number(days))) return null;
+  return new Date(Date.UTC(year, month - 1, day + Number(days))).toISOString().slice(0, 10);
+}
+
+function inferNorwegianShipCodeFromItinerary(itineraryCode) {
+  const code = String(itineraryCode || "").trim().toUpperCase();
+  if (!code) return null;
+  return (
+    [...NCL_ITINERARY_SHIP_CODES]
+      .sort((a, b) => b.length - a.length)
+      .find((ship) => code === ship || (code.startsWith(ship) && /[0-9_]/.test(code[ship.length] || ""))) || null
+  );
+}
+
+function inferNorwegianNightsFromItinerary(itineraryCode, shipCode) {
+  const code = String(itineraryCode || "").toUpperCase();
+  const ship = String(shipCode || inferNorwegianShipCodeFromItinerary(code) || "");
+  if (!ship || !code.startsWith(ship)) return null;
+  const match = code.slice(ship.length).match(/^(\d+)/);
+  const nights = match ? Number(match[1]) : null;
+  return Number.isFinite(nights) && nights > 0 ? nights : null;
+}
+
 function expandItineraryRecord(record) {
   const itineraryCode = itineraryCodeFromRecord(record);
-  const shipCode = String(record?.shipCode || "").trim().toUpperCase() || null;
+  const shipCode =
+    String(record?.shipCode || "").trim().toUpperCase() ||
+    inferNorwegianShipCodeFromItinerary(itineraryCode) ||
+    null;
+  const duration = Number(record?.duration) || inferNorwegianNightsFromItinerary(itineraryCode, shipCode) || null;
   const sailingDates = Array.isArray(record?.sailingDates) ? record.sailingDates : [];
   const expanded = [];
 
   for (const entry of sailingDates) {
     const parsed = parseSailingDateEntry(entry);
+    const returnDate =
+      parsed.return_date ||
+      (parsed.departure_date && duration != null ? addIsoDays(parsed.departure_date, duration) : null);
     expanded.push({
       itinerary_code: itineraryCode,
       ship_code: shipCode,
-      duration: Number(record?.duration) || null,
+      duration,
       port_of_departure_code: String(record?.portOfDepartureCode || "").trim().toUpperCase() || null,
       destination_codes: Array.isArray(record?.destinationCodes)
         ? record.destinationCodes.map((d) => String(d).trim().toUpperCase()).filter(Boolean)
         : [],
       departure_date: parsed.departure_date,
-      return_date: parsed.return_date,
+      return_date: returnDate,
       official_product_key: officialProductKey(itineraryCode, parsed.departure_date),
       schedule_url: buildScheduleUrl(itineraryCode),
       raw_itinerary: record,
@@ -225,5 +285,7 @@ module.exports = {
   fetchNorwegianBrowseCatalogue,
   fetchNorwegianFilters,
   expandItineraryRecord,
-  expandBrowseCatalogue
+  expandBrowseCatalogue,
+  inferNorwegianShipCodeFromItinerary,
+  inferNorwegianNightsFromItinerary
 };

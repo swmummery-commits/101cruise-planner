@@ -36,6 +36,7 @@ const {
   computeSourceSnapshotIdFromSailingIds,
   evaluateWeeklyAuthoritativeEnumerationHealth,
   auditProductionIdsViaDetailLookup,
+  classifyRoyalAbsentProductionRecords,
   sourceAbsenceActionAllowed
 } = require("./royal-caribbean-source-enumeration");
 const {
@@ -206,6 +207,23 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
     shipCoverage,
     detailLookupResults
   });
+  const absenceAccounting = classifyRoyalAbsentProductionRecords({
+    productionRows: productionIndex.rows || [],
+    unionSailingIds,
+    today,
+    detailLookupResults
+  });
+  enumerationHealth.absent_production_dispositions = absenceAccounting.dispositions;
+  enumerationHealth.absent_production_disposition_counts = absenceAccounting.counts;
+  enumerationHealth.unexplained_current_production_ids = absenceAccounting.unexplained_current_ids;
+  enumerationHealth.unexplained_production_absent_count = absenceAccounting.unexplained_current_ids.length;
+  if (absenceAccounting.unexplained_current_ids.length === 0) {
+    enumerationHealth.failures = (enumerationHealth.failures || []).filter(
+      (failure) => failure !== "production_ids_missing_from_union"
+    );
+    enumerationHealth.royal_caribbean_source_enumeration_ok =
+      enumerationHealth.failures.filter((f) => f !== "enumeration_gap_recovered_via_detail_lookup").length === 0;
+  }
 
   const retrievableEnumerationGapIds = new Set(
     detailLookupResults.filter((row) => row.retrievable).map((row) => row.official_sailing_id)
@@ -468,6 +486,7 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   summary.terminal_status = terminalStatus;
   summary.source_repair_required = sourceRepairRequired;
   summary.unexplained_current_production_ids = unexplainedCurrent;
+  summary.absent_production_disposition_counts = enumerationHealth.absent_production_disposition_counts || null;
   summary.review_sailing_ids = unexplainedCurrent;
 
   return {

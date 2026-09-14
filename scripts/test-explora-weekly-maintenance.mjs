@@ -319,7 +319,7 @@ test("26. the Explora cron launcher is registered with the approved schedule", (
   const schedule = maintenance.MAINTENANCE_SCHEDULES.explora_weekly;
   if (!schedule) throw new Error("missing schedule entry");
   if (schedule.schedule_registered !== true) throw new Error("Explora schedule must be registered");
-  if (schedule.cron_utc !== "0 21 * * 0") throw new Error(schedule.cron_utc);
+  if (schedule.cron_utc !== "0 17 * * 1") throw new Error(schedule.cron_utc);
   if (schedule.function !== "explora-weekly-maintenance-cron") throw new Error(schedule.function);
   if (schedule.background_function !== "explora-weekly-maintenance-background") {
     throw new Error(schedule.background_function);
