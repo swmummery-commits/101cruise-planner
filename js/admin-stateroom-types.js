@@ -5,6 +5,8 @@
 (function (global) {
   "use strict";
 
+  const BASE_ROOM_CATEGORIES = ["Inside", "Oceanview", "Balcony", "Suite"];
+
   let stateroomTypes = [];
   let cruiseLines = [];
   let allocations = {};
@@ -17,6 +19,7 @@
   let draftName = "";
   let message = "";
   let messageTone = "";
+  const baseCategorySavingIds = new Set();
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -52,13 +55,19 @@
     loadError = "";
     if (!quiet) rerender();
     try {
-      const [types, allocationMap, lineResult] = await Promise.all([
+      const [types, allocationMap, lineResult, categoryResult] = await Promise.all([
         service.listAllStateroomTypes(),
         service.loadCruiseLineStateroomAllocations(),
-        supabase.from("ci_cruise_lines").select("id,name,sold_by_101cruise").eq("sold_by_101cruise", true).order("name", { ascending: true })
+        supabase.from("ci_cruise_lines").select("id,name,sold_by_101cruise").eq("sold_by_101cruise", true).order("name", { ascending: true }),
+        supabase.from("stateroom_types").select("id,base_room_category")
       ]);
       if (lineResult.error) throw new Error(lineResult.error.message || "Could not load cruise lines.");
-      stateroomTypes = types || [];
+      if (categoryResult.error) throw new Error(categoryResult.error.message || "Could not load base room categories.");
+      const categoryById = new Map((categoryResult.data || []).map((row) => [String(row.id), row.base_room_category || null]));
+      stateroomTypes = (types || []).map((row) => ({
+        ...row,
+        base_room_category: categoryById.get(String(row.id)) || null
+      }));
       allocations = allocationMap || {};
       cruiseLines = lineResult.data || [];
       loaded = true;
@@ -134,6 +143,46 @@
     }
   }
 
+  async function updateBaseRoomCategory(id, value, selectElement) {
+    const supabase = client();
+    const row = stateroomTypes.find((item) => String(item.id) === String(id));
+    const typeId = String(id || "").trim();
+    if (!supabase || !row || !typeId || baseCategorySavingIds.has(typeId)) return;
+
+    const requested = String(value ?? "").trim();
+    const category = requested || null;
+    const previous = row.base_room_category || null;
+    if (category && !BASE_ROOM_CATEGORIES.includes(category)) {
+      if (selectElement) selectElement.value = previous || "";
+      return;
+    }
+    if (category === previous) return;
+
+    baseCategorySavingIds.add(typeId);
+    if (selectElement) selectElement.disabled = true;
+    try {
+      const { data, error } = await supabase
+        .from("stateroom_types")
+        .update({ base_room_category: category, updated_at: new Date().toISOString() })
+        .eq("id", typeId)
+        .select("id,base_room_category")
+        .single();
+      if (error) throw new Error(error.message || "Could not save base room category.");
+      row.base_room_category = data?.base_room_category || null;
+      if (selectElement) {
+        selectElement.value = row.base_room_category || "";
+        selectElement.title = "Saved";
+      }
+    } catch (error) {
+      row.base_room_category = previous;
+      if (selectElement) selectElement.value = previous || "";
+      global.alert(error?.message || "Could not save base room category.");
+    } finally {
+      baseCategorySavingIds.delete(typeId);
+      if (selectElement) selectElement.disabled = false;
+    }
+  }
+
   async function toggleAllocation(lineId, typeId, checked) {
     const service = svc();
     if (!service || !lineId || !typeId || savingKey) return;
@@ -190,6 +239,14 @@
       </div>`;
   }
 
+  function renderBaseCategoryOptions(value) {
+    const selected = BASE_ROOM_CATEGORIES.includes(value) ? value : "";
+    return ["", ...BASE_ROOM_CATEGORIES].map((category) => {
+      const label = category || "Not Set";
+      return `<option value="${esc(category)}" ${selected === category ? "selected" : ""}>${esc(label)}</option>`;
+    }).join("");
+  }
+
   function renderTypeCard(type, lines) {
     const boxes = lines.map((line) => {
       const selected = new Set((allocations[line.id] || []).map(String));
@@ -205,7 +262,16 @@
       <div class="admin-list-item compact-item stateroom-type-row" data-stateroom-type-id="${esc(type.id)}">
         <div class="admin-list-top" style="align-items:flex-start; gap:16px;">
           <div style="min-width:180px; padding-top:4px;"><strong>${esc(type.name)}</strong></div>
-          <div class="admin-inline-actions">
+          <div class="admin-inline-actions" style="align-items:flex-end; flex-wrap:wrap;">
+            <label style="display:flex; flex-direction:column; gap:4px; min-width:150px;">
+              <span class="admin-small" style="font-weight:600;">Base Room Category</span>
+              <select aria-label="Base Room Category for ${esc(type.name)}"
+                onchange="StateroomTypesAdmin.updateBaseRoomCategory('${esc(type.id)}',this.value,this)"
+                style="min-width:150px; height:34px; padding:0 30px 0 10px; border:1px solid #d1d5db; border-radius:6px; background:#fff; font-size:13px;"
+                ${baseCategorySavingIds.has(String(type.id)) ? "disabled" : ""}>
+                ${renderBaseCategoryOptions(type.base_room_category)}
+              </select>
+            </label>
             <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.startEdit('${esc(type.id)}')" ${savingKey ? "disabled" : ""}>Edit</button>
             <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.deleteStateroomType('${esc(type.id)}')" ${savingKey ? "disabled" : ""}>Delete</button>
           </div>
@@ -243,5 +309,5 @@
       </div>`;
   }
 
-  global.StateroomTypesAdmin = { renderPanel, ensureLoaded, retryLoad, startCreate, startEdit, cancelEdit, saveStateroomType, deleteStateroomType, toggleAllocation };
+  global.StateroomTypesAdmin = { renderPanel, ensureLoaded, retryLoad, startCreate, startEdit, cancelEdit, saveStateroomType, deleteStateroomType, updateBaseRoomCategory, toggleAllocation };
 })(typeof window !== "undefined" ? window : globalThis);
