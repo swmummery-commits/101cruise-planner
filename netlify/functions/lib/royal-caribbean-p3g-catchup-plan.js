@@ -141,14 +141,24 @@ function freezeRoyalCatchupMasterPlan({
   const indexes = indexProductionRows(productionRows);
   const classified = [...proposedInserts, ...proposedUpdates].map((entry) => {
     const classification = classifyRoyalCatchupCandidate(entry, indexes);
+    const candidate = entry.candidate || null;
     return {
-      official_sailing_id: classification.official_sailing_id || entry.official_sailing_id || null,
+      official_sailing_id: classification.official_sailing_id || entry.official_sailing_id || entry.stable_identity_key || null,
+      source_identity: entry.stable_identity_key || classification.official_sailing_id || entry.official_sailing_id || null,
       proposed_action: entry.proposed_action || null,
-      identity_key: entry.identity_key || entry.candidate?.identity_key || null,
-      external_key: entry.external_key || entry.candidate?.external_key || null,
-      ship_id: entry.canonical_ship_id || entry.candidate?.ship_id || null,
-      departure_port: entry.resolved_embarkation_port_name || entry.candidate?.departure_port || null,
-      destination_id: entry.resolved_destination_id || entry.candidate?.destination_id || null,
+      identity_key: entry.identity_key || candidate?.identity_key || null,
+      external_key: entry.external_key || candidate?.external_key || null,
+      ship_id: entry.canonical_ship_id || candidate?.ship_id || null,
+      ship_name: entry.canonical_ship_name || candidate?.ship_name || null,
+      departure_date: entry.departure_date || candidate?.departure_date || null,
+      return_date: entry.return_date || candidate?.return_date || null,
+      nights: entry.nights ?? candidate?.nights ?? null,
+      departure_port: entry.official_departure_port || entry.resolved_embarkation_port_name || candidate?.departure_port || null,
+      destination_id: entry.resolved_destination_id || entry.destination_id || candidate?.destination_id || null,
+      destination_name: entry.destination_name || null,
+      source_evidence: entry.source_url || entry.official_url || candidate?.official_url || candidate?.source_url || null,
+      canonical_write_payload: candidate,
+      candidate,
       ...classification
     };
   });
@@ -187,11 +197,74 @@ function freezeRoyalCatchupMasterPlan({
   return plan;
 }
 
+function verifyFrozenRoyalCatchupPlanHash(plan) {
+  const trueNew = (plan?.classified || []).filter((row) => row.classification === "TRUE_NEW_COMPLETE");
+  const expected = crypto.createHash("sha256").update(JSON.stringify({
+    mode: plan.mode,
+    perth_today: plan.perth_today,
+    source_snapshot_id: plan.source_snapshot_id,
+    official_sailing_ids: trueNew.map((row) => row.official_sailing_id),
+    batch_cap: plan.batch_cap
+  })).digest("hex");
+  return { ok: expected === plan.plan_hash, expected, actual: plan.plan_hash };
+}
+
+function buildRoyalCatchupBatchWeeklyManifest({
+  plan,
+  batch,
+  runId,
+  computeManifestHash,
+  weeklyManifestMode,
+  confirmToken
+}) {
+  if (!batch || (batch.expected_record_count || 0) > P3G_ROYAL_CATCHUP_BATCH_CAP) {
+    throw new Error("royal_catchup_batch_exceeds_cap_30");
+  }
+  const byId = new Map((plan.classified || []).map((row) => [row.official_sailing_id, row]));
+  const inserts = (batch.official_sailing_ids || []).map((id) => {
+    const row = byId.get(id);
+    if (!row?.candidate) {
+      throw new Error(`royal_catchup_missing_write_payload:${id}`);
+    }
+    return {
+      official_sailing_id: id,
+      identity_key: row.identity_key || row.candidate.identity_key || null,
+      external_key: row.external_key || row.candidate.external_key || null,
+      proposed_action: "insert_active",
+      candidate: row.candidate
+    };
+  });
+  const weeklyManifest = {
+    generated_at: new Date().toISOString(),
+    mode: weeklyManifestMode,
+    confirm_token: confirmToken,
+    perth_today: plan.perth_today,
+    first_activation_cycle: false,
+    source_snapshot_id: plan.source_snapshot_id,
+    run_id: runId,
+    inserts,
+    updates: [],
+    cutoff_hides: [],
+    source_absence_observations: [],
+    source_absence_hides: [],
+    review_required: [],
+    writes_performed: false,
+    actual_writes: 0,
+    p3h_catchup: true,
+    p3h_master_plan_hash: plan.plan_hash,
+    p3h_batch_number: batch.batch_number
+  };
+  weeklyManifest.manifest_hash = computeManifestHash(weeklyManifest);
+  return weeklyManifest;
+}
+
 module.exports = {
   P3G_ROYAL_CATCHUP_BATCH_CAP,
   P3G_CATCHUP_MASTER_MODE,
   CATCHUP_CLASSES,
   classifyRoyalCatchupCandidate,
   freezeRoyalCatchupMasterPlan,
+  verifyFrozenRoyalCatchupPlanHash,
+  buildRoyalCatchupBatchWeeklyManifest,
   indexProductionRows
 };

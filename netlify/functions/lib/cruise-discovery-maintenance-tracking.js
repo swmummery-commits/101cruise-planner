@@ -271,6 +271,9 @@ function buildMaintenanceRunStats(summary, extra = {}) {
     recovered_after_fetch_failure: summary.recovered_after_fetch_failure ?? 0,
     write_attempts: accounted.write_attempts,
     proposed_inserts: summary.proposed_inserts ?? 0,
+    proposed_insert_ids: Array.isArray(summary.proposed_insert_ids)
+      ? summary.proposed_insert_ids
+      : extra.proposed_insert_ids || null,
     proposed_updates: summary.proposed_updates ?? 0,
     proposed_identity_review: summary.proposed_identity_review ?? null,
     identity_review_sailing_ids: summary.identity_review_sailing_ids || null,

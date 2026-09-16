@@ -258,6 +258,7 @@ function enrichRoyalCaribbeanMaintenanceStats(summary = {}, extra = {}) {
     union_sailing_identities: summary.union_sailing_identities ?? null,
     recognised_existing_eligible: summary.recognised_existing_eligible_sailings ?? null,
     proposed_inserts: summary.proposed_inserts ?? 0,
+    proposed_insert_ids: Array.isArray(summary.proposed_insert_ids) ? summary.proposed_insert_ids : null,
     proposed_updates: summary.proposed_updates ?? 0,
     weekly_maintenance_healthy: summary.weekly_maintenance_healthy ?? null,
     royal_caribbean_source_enumeration_ok: summary.royal_caribbean_source_enumeration_ok ?? null,

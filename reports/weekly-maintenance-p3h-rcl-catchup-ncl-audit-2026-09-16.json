@@ -1,0 +1,2304 @@
+{
+  "generated_at": "2026-09-16T11:31:38.712Z",
+  "perth_date": "2026-09-16",
+  "prompt": "weekly-maintenance-p3h-rcl-catchup-ncl-audit",
+  "repository": {
+    "starting_sha": "f2fe45c02bad84ad3c41b01d8e9c900070b28585",
+    "known_main_at_prompt": "f2fe45c02bad84ad3c41b01d8e9c900070b28585",
+    "reset_to_maintenance_era": false,
+    "preserved_unrelated_work": [
+      "stateroom",
+      "Ship Spotlight",
+      "newsletter",
+      "My Cruise",
+      "CRM",
+      "SEG"
+    ]
+  },
+  "rcl": {
+    "wednesday": {
+      "run_record_id": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+      "union_sailing_identities": 3206,
+      "proposed_inserts": 106,
+      "proposed_insert_ids_persisted": false,
+      "source_snapshot_id": "918844922327452c",
+      "recognised_existing_eligible": 2824,
+      "proposed_updates": 0,
+      "reviews": 0,
+      "source_absent_active": 13,
+      "source_absence_actions": 0,
+      "writes": 0,
+      "terminal_status": "controlled_catchup_required"
+    },
+    "fresh_preflight": {
+      "dispatch_id": "royal-caribbean-international:p3h-preflight-2026-W38-1789557707037",
+      "trigger_type": "preflight",
+      "scheduled_period_key": "royal-caribbean-international:2026-W38:scheduled",
+      "scheduled_lease_created": false,
+      "union_sailing_identities": 3210,
+      "official_source_total": 920,
+      "recognised_existing_eligible": 2825,
+      "proposed_inserts": 107,
+      "proposed_insert_ids": [
+        "NV02I144_2027-05-29",
+        "NV02I144_2027-07-10",
+        "OV03R015_2027-11-05",
+        "NV03I222_2027-05-31",
+        "NV03I222_2027-06-07",
+        "NV03I222_2027-06-14",
+        "NV03I222_2027-06-21",
+        "NV03I222_2027-06-28",
+        "NV03I222_2027-07-12",
+        "NV03I222_2027-07-19",
+        "NV03I222_2027-07-26",
+        "NV03I222_2027-09-20",
+        "NV03I222_2027-09-27",
+        "NV03I222_2027-10-04",
+        "VY02K041_2027-12-02",
+        "NV04X071_2027-11-15",
+        "NV04X074_2027-12-20",
+        "NV04X075_2028-01-10",
+        "NV04X071_2028-01-24",
+        "NV04X071_2028-02-07",
+        "NV04X075_2028-02-28",
+        "NV04X071_2028-03-06",
+        "NV04X071_2028-03-27",
+        "NV04X071_2028-04-10",
+        "NV04X072_2027-11-29",
+        "NV04X073_2027-12-13",
+        "VY04I917_2028-02-15",
+        "NV04I912_2027-08-27",
+        "NV04I907_2027-06-03",
+        "NV04I907_2027-06-10",
+        "NV04I907_2027-06-17",
+        "NV04I907_2027-06-24",
+        "NV04I907_2027-07-01",
+        "NV04I908_2027-07-15",
+        "NV04I907_2027-07-22",
+        "NV04I908_2027-07-29",
+        "NV04I909_2027-08-02",
+        "NV04I911_2027-08-10",
+        "NV04I908_2027-08-19",
+        "NV04I909_2027-08-23",
+        "NV04I913_2027-08-31",
+        "NV04I914_2027-09-04",
+        "NV04I915_2027-09-08",
+        "NV04I916_2027-09-12",
+        "NV04I907_2027-09-16",
+        "NV04I908_2027-09-23",
+        "NV04I908_2027-09-30",
+        "NV04I907_2027-10-07",
+        "NV04I909_2027-10-11",
+        "NV03X059_2027-11-12",
+        "NV03X059_2027-11-26",
+        "NV03X060_2027-12-10",
+        "NV03X059_2027-12-17",
+        "NV03X059_2028-01-07",
+        "NV03X059_2028-01-21",
+        "NV03X059_2028-02-04",
+        "NV03X059_2028-02-25",
+        "NV03X059_2028-03-03",
+        "NV03X059_2028-03-24",
+        "NV03X059_2028-04-07",
+        "WN3BH291_2027-02-12",
+        "NV04I910_2027-08-06",
+        "VY05J071_2028-01-31",
+        "VY05J075_2028-02-24",
+        "OV03K102_2027-12-10",
+        "OV03K103_2028-01-04",
+        "OV03K104_2028-01-21",
+        "OV03K105_2028-03-03",
+        "NV05J066_2027-05-24",
+        "NV05J067_2027-07-05",
+        "NV05J068_2027-08-14",
+        "VY05J070_2028-01-26",
+        "VY05J072_2028-02-05",
+        "VY05J074_2028-02-19",
+        "VY05J073_2028-02-10",
+        "VY03K107_2027-12-15",
+        "VY05J069_2028-01-21",
+        "OV04K067_2028-01-24",
+        "OV04K068_2028-03-06",
+        "OV09H023_2027-11-08",
+        "OV06K035_2027-12-04",
+        "VI09N080_2026-10-08",
+        "OV07K132_2027-12-21",
+        "OV07K136_2028-01-28",
+        "OV07K137_2028-02-04",
+        "OV07K140_2028-02-25",
+        "OV07K142_2028-03-17",
+        "OV07K144_2028-03-31",
+        "OV07K145_2028-04-07",
+        "OV07K133_2027-12-28",
+        "OV07K134_2028-01-07",
+        "OV07K135_2028-01-14",
+        "OV07K138_2028-02-11",
+        "OV07K139_2028-02-18",
+        "OV07K141_2028-03-10",
+        "OV07K143_2028-03-24",
+        "NV17T059_2027-10-27",
+        "NV12I249_2027-05-12",
+        "OV08K135_2027-12-13",
+        "LB06U015_2026-10-10",
+        "VY11K176_2027-12-04",
+        "VY09K187_2027-12-28",
+        "OV16T119_2027-11-17",
+        "NV12I250_2027-10-15",
+        "VY15K028_2028-01-06",
+        "VY10K193_2027-12-18",
+        "VI11D102_2027-05-10"
+      ],
+      "proposed_updates": 0,
+      "review_items": 0,
+      "incomplete_skipped": 14,
+      "source_absent_active": 12,
+      "source_absent_action_eligible_count": 11,
+      "cutoff_candidates": 157,
+      "source_snapshot_id": "af30188b30c12209",
+      "weekly_maintenance_healthy": true,
+      "royal_caribbean_source_enumeration_ok": true,
+      "reconciliation_arithmetic_ok": true,
+      "perth_today": "2026-09-16"
+    },
+    "candidate_compare": {
+      "wednesday_count": 106,
+      "fresh_count": 107,
+      "intersection": "not_computable_wednesday_identities_not_persisted_in_ledger",
+      "wednesday_only": "not_computable_wednesday_identities_not_persisted_in_ledger",
+      "fresh_only": "not_computable_wednesday_identities_not_persisted_in_ledger",
+      "reconstructed_cutoff_aging_ids": [
+        "SC04I849_2026-10-07"
+      ],
+      "count_delta": 1,
+      "union_delta": 4,
+      "delta_classification": [
+        {
+          "class": "NEW_OFFICIAL_PUBLICATION",
+          "evidence": "union 3206→3210 (+4); proposed inserts 106→107 (+1); source snapshot 918844922327452c→af30188b30c12209"
+        },
+        {
+          "class": "CUT_OFF_DATE_AGING",
+          "ids": [
+            "SC04I849_2026-10-07"
+          ],
+          "evidence": "Perth as_of 2026-09-15→2026-09-16; SC04I849_2026-10-07 is 21 days out on 2026-09-16"
+        }
+      ],
+      "unexplained_candidate_identities": []
+    },
+    "freeze_gate": {
+      "source_healthy": true,
+      "enumeration_healthy": true,
+      "reconciliation_exact": true,
+      "review_count": 0,
+      "ambiguous_count": 0,
+      "all_fresh_inserts_complete": true,
+      "official_id_collision": 0,
+      "external_key_collision": 0,
+      "identity_key_collision": 0,
+      "freeze_authorised": true,
+      "master_plan_size": 107,
+      "master_plan_hash": "215e97d926fdc3abe7c814f3a1f7a61a0809868b80f49062fef0d9307f1d1f4d",
+      "classification_counts": {
+        "TRUE_NEW_COMPLETE": 107,
+        "SAFE_METADATA": 0,
+        "REVIEW_REQUIRED": 0,
+        "COLLISION": 0,
+        "AMBIGUOUS": 0
+      },
+      "batches": [
+        30,
+        30,
+        30,
+        17
+      ]
+    },
+    "catchup": {
+      "batch_cap": 30,
+      "batch_writes": [
+        {
+          "batch_number": 1,
+          "attempted": 30,
+          "inserted": 30,
+          "updated": 0,
+          "expired": 0,
+          "failed_writes": 0,
+          "source_absence_hides": 0,
+          "rollback_manifest_id": "23db0640-383b-4c3a-8767-0976312f9c9d",
+          "verified": 30,
+          "ok": true
+        },
+        {
+          "batch_number": 2,
+          "attempted": 30,
+          "inserted": 30,
+          "updated": 0,
+          "expired": 0,
+          "failed_writes": 0,
+          "source_absence_hides": 0,
+          "rollback_manifest_id": "1676f548-18ed-4ff4-9438-7ffd0333417a",
+          "verified": 30,
+          "ok": true
+        },
+        {
+          "batch_number": 3,
+          "attempted": 30,
+          "inserted": 30,
+          "updated": 0,
+          "expired": 0,
+          "failed_writes": 0,
+          "source_absence_hides": 0,
+          "rollback_manifest_id": "405d5356-86a3-4f76-b261-03b4a87cab79",
+          "verified": 30,
+          "ok": true
+        },
+        {
+          "batch_number": 4,
+          "attempted": 17,
+          "inserted": 17,
+          "updated": 0,
+          "expired": 0,
+          "failed_writes": 0,
+          "source_absence_hides": 0,
+          "rollback_manifest_id": "6cbd189f-2da3-4dd1-b32f-9677b8317f29",
+          "verified": 17,
+          "ok": true
+        }
+      ],
+      "total_inserted": 107,
+      "failed_writes": 0,
+      "rollback_manifest_ids": [
+        "23db0640-383b-4c3a-8767-0976312f9c9d",
+        "1676f548-18ed-4ff4-9438-7ffd0333417a",
+        "405d5356-86a3-4f76-b261-03b4a87cab79",
+        "6cbd189f-2da3-4dd1-b32f-9677b8317f29"
+      ],
+      "source_absence_actions_applied": 0,
+      "deletes": 0,
+      "later_batches_stopped": {
+        "stop": false,
+        "skipped": []
+      },
+      "inserted_records": [
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "a582a797-8ca6-40a2-914b-523191989f14",
+          "official_sailing_id": "NV02I144_2027-05-29",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "2b720417-b3cc-4acf-adfd-ffa603318fd6",
+          "official_sailing_id": "NV02I144_2027-07-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "1f11a46b-7c82-4c52-8a89-e013f0f49447",
+          "official_sailing_id": "OV03R015_2027-11-05",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "99acab16-eb93-4c4e-ac02-466904f6dcfb",
+          "official_sailing_id": "NV03I222_2027-05-31",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "98c32df7-220d-47f1-8a60-7b4fbf1dd8ed",
+          "official_sailing_id": "NV03I222_2027-06-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "8b6f8c53-e90b-4fbb-b9bf-40ba6dd8886c",
+          "official_sailing_id": "NV03I222_2027-06-14",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "0bbd2b10-e5de-4e55-9257-963b00a962e6",
+          "official_sailing_id": "NV03I222_2027-06-21",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "337ee7b6-9554-4238-964b-7fa517b9f590",
+          "official_sailing_id": "NV03I222_2027-06-28",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "bf0febfd-42a7-41b3-80c1-824fbbf42c81",
+          "official_sailing_id": "NV03I222_2027-07-12",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "ad0061ef-b779-4707-aae9-41fac942b6a8",
+          "official_sailing_id": "NV03I222_2027-07-19",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "0d12ef2c-462a-4cf9-bce7-34f2a3af415f",
+          "official_sailing_id": "NV03I222_2027-07-26",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "d978d66b-6221-47bc-b58f-902941796848",
+          "official_sailing_id": "NV03I222_2027-09-20",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "0483733e-4751-444f-a95b-437f2a991f0c",
+          "official_sailing_id": "NV03I222_2027-09-27",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "a924b8f0-1bff-467b-b95d-48a3e089eec3",
+          "official_sailing_id": "NV03I222_2027-10-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "e817ea87-ceee-465f-8f85-5c145d4d9a0b",
+          "official_sailing_id": "VY02K041_2027-12-02",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "7c1fadce-af2a-4351-959d-d8f825a3064d",
+          "official_sailing_id": "NV04X071_2027-11-15",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "2a6e18d5-19c2-4184-ad34-a485d4a82408",
+          "official_sailing_id": "NV04X074_2027-12-20",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "5e2e8457-b862-4c53-9cbe-43a53683fdf7",
+          "official_sailing_id": "NV04X075_2028-01-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "86e79d51-8ed2-4e9e-be41-6a72bae8ab4f",
+          "official_sailing_id": "NV04X071_2028-01-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "b5b0832d-4908-4de2-92ef-d459fddbc8e5",
+          "official_sailing_id": "NV04X071_2028-02-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "285efb51-fb55-44ee-b86b-f5b53e62d6de",
+          "official_sailing_id": "NV04X075_2028-02-28",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "92838170-d454-4be3-bc0b-02a128c9319c",
+          "official_sailing_id": "NV04X071_2028-03-06",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "b951612e-851e-44b5-8f4b-bb4c3cd967b1",
+          "official_sailing_id": "NV04X071_2028-03-27",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "6c001859-0ac6-4e2a-9fa5-51bae2c37312",
+          "official_sailing_id": "NV04X071_2028-04-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "7ca80dc7-14b6-4379-ad70-3c488475e311",
+          "official_sailing_id": "NV04X072_2027-11-29",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "f893af2b-a481-41a6-8709-750cc8090578",
+          "official_sailing_id": "NV04X073_2027-12-13",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "235a3bba-ff69-4a22-a033-96cede28216e",
+          "official_sailing_id": "VY04I917_2028-02-15",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "e5934c04-0c2f-4977-a8e4-ea060ec6a63d",
+          "official_sailing_id": "NV04I912_2027-08-27",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "26233fdd-d32b-4394-8995-5c890d48a343",
+          "official_sailing_id": "NV04I907_2027-06-03",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 1,
+          "discovered_cruise_id": "b1c31764-8598-4871-ba36-b327e5cdfa9d",
+          "official_sailing_id": "NV04I907_2027-06-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "db0aaae0-7fad-4746-ab7e-02bff82e173d",
+          "official_sailing_id": "NV04I907_2027-06-17",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "8f68da0e-918d-4c0f-a51a-8c463ba269e2",
+          "official_sailing_id": "NV04I907_2027-06-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "42e63385-bfc8-4944-a657-8f84547f696e",
+          "official_sailing_id": "NV04I907_2027-07-01",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "1b5da2b6-eae5-4bbe-b145-46ecb875f06e",
+          "official_sailing_id": "NV04I908_2027-07-15",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "4dc2fe42-ac3f-4184-9637-ddfa011e907e",
+          "official_sailing_id": "NV04I907_2027-07-22",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "efa84d72-a965-417e-b3c3-facb5dce0730",
+          "official_sailing_id": "NV04I908_2027-07-29",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "8c6fc9b5-f790-4c62-8dbe-4212e8597c6c",
+          "official_sailing_id": "NV04I909_2027-08-02",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "241db8a6-086c-47e6-8e72-d81242d96abc",
+          "official_sailing_id": "NV04I911_2027-08-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "4db4373b-ac80-417e-9062-bc7c7a98f77f",
+          "official_sailing_id": "NV04I908_2027-08-19",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "7188859f-e488-4d5e-abef-80c9afd03191",
+          "official_sailing_id": "NV04I909_2027-08-23",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "2c90acf9-63c7-4237-b8cc-607103b68219",
+          "official_sailing_id": "NV04I913_2027-08-31",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "729b7115-7ae2-483c-b293-d55045c22600",
+          "official_sailing_id": "NV04I914_2027-09-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "09ff0969-b732-46cd-8023-4f79456aad37",
+          "official_sailing_id": "NV04I915_2027-09-08",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "5f3cb8f4-1d5b-46ea-8511-fa8da48b1b72",
+          "official_sailing_id": "NV04I916_2027-09-12",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "a6c046a8-34f9-4c2a-bfd7-03eace571e6f",
+          "official_sailing_id": "NV04I907_2027-09-16",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "f92bbaff-6f04-4d5c-9961-bb13dbeab75e",
+          "official_sailing_id": "NV04I908_2027-09-23",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "bbea3201-7964-4ea6-b7c3-48633af0062e",
+          "official_sailing_id": "NV04I908_2027-09-30",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "9dd4a093-74b3-427a-a1df-9a392dac5055",
+          "official_sailing_id": "NV04I907_2027-10-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "24130ecf-a2e6-4b6c-8dd4-36a66b6ca53f",
+          "official_sailing_id": "NV04I909_2027-10-11",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "428d7293-2940-4aa7-ab8f-e019c28d598c",
+          "official_sailing_id": "NV03X059_2027-11-12",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "6a872a78-cc22-4406-8156-139b08332351",
+          "official_sailing_id": "NV03X059_2027-11-26",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "86bb02ef-6d94-434b-853d-1659c1cb34e2",
+          "official_sailing_id": "NV03X060_2027-12-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "5b534ffb-084f-4f33-ac49-1e8b228edc41",
+          "official_sailing_id": "NV03X059_2027-12-17",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "823576dc-5040-4c29-b253-254681e1115d",
+          "official_sailing_id": "NV03X059_2028-01-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "e27b5e28-66d7-4731-b817-2315875916d5",
+          "official_sailing_id": "NV03X059_2028-01-21",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "e3de3b0f-2461-4fdc-bdbd-91e7aa3ce6bf",
+          "official_sailing_id": "NV03X059_2028-02-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "64c446d4-cc7f-4b6f-af78-727b1e108649",
+          "official_sailing_id": "NV03X059_2028-02-25",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "7c8a71b4-fa44-4f6e-bf84-464212a807d5",
+          "official_sailing_id": "NV03X059_2028-03-03",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "edc186a1-b141-4408-80fc-e60a241877f3",
+          "official_sailing_id": "NV03X059_2028-03-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 2,
+          "discovered_cruise_id": "8114cb35-cabd-48df-9f1a-a29183f6a3ab",
+          "official_sailing_id": "NV03X059_2028-04-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "bf64dcad-3a31-4a82-a1c1-7954c2031116",
+          "official_sailing_id": "WN3BH291_2027-02-12",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "70ee3290-cf1d-4bc1-9048-80f498cdbdac",
+          "official_sailing_id": "NV04I910_2027-08-06",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "5903c205-090c-475d-8233-d83364a8ea3b",
+          "official_sailing_id": "VY05J071_2028-01-31",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "f295d9ba-26fd-46dc-8561-2a1d20179e2e",
+          "official_sailing_id": "VY05J075_2028-02-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "c2466480-8282-4cdf-9cf2-056edd25db3c",
+          "official_sailing_id": "OV03K102_2027-12-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "c4e0eb98-a17c-4786-bac5-658b3a97c693",
+          "official_sailing_id": "OV03K103_2028-01-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "7030d37f-fa18-405c-bc95-b9e189683656",
+          "official_sailing_id": "OV03K104_2028-01-21",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "4c8822fd-57a6-4cf6-abc0-416000392e34",
+          "official_sailing_id": "OV03K105_2028-03-03",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "865e319d-b9a7-46e2-a69d-491729600422",
+          "official_sailing_id": "NV05J066_2027-05-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "3c216d01-b225-4d70-a766-21ae8e9284dc",
+          "official_sailing_id": "NV05J067_2027-07-05",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "6b64e0fe-a9e1-434a-9155-f4412de76998",
+          "official_sailing_id": "NV05J068_2027-08-14",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "e75d8a3a-1d6c-4622-ba6a-64918ec74911",
+          "official_sailing_id": "VY05J070_2028-01-26",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "dc3cc08a-6dc7-4c80-8dc8-982ec9690281",
+          "official_sailing_id": "VY05J072_2028-02-05",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "4e81a6eb-3375-4b3c-acb9-c593a0e0ede4",
+          "official_sailing_id": "VY05J074_2028-02-19",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "1cff17f9-7719-4202-95dc-e91b25ee6da0",
+          "official_sailing_id": "VY05J073_2028-02-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "ae2f34f7-88ad-4f88-a8e0-20b61eb76ce5",
+          "official_sailing_id": "VY03K107_2027-12-15",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "314c6414-5f9f-4dce-95aa-b8e126d8f932",
+          "official_sailing_id": "VY05J069_2028-01-21",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "a4ab5f69-c5d4-4b68-b262-0e3d91b651c8",
+          "official_sailing_id": "OV04K067_2028-01-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "a77de677-b289-4085-9773-addb250363e6",
+          "official_sailing_id": "OV04K068_2028-03-06",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "69496f97-5e21-4b28-b1d0-9e7f1ba8efd0",
+          "official_sailing_id": "OV09H023_2027-11-08",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "0860f210-7f43-41fb-ac59-9294c17959c1",
+          "official_sailing_id": "OV06K035_2027-12-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "37b8f9b6-0697-4002-8e34-0c32a9a57915",
+          "official_sailing_id": "VI09N080_2026-10-08",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "a2ecae6d-015b-4447-b015-855c31fed5f9",
+          "official_sailing_id": "OV07K132_2027-12-21",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "e9b09487-e2be-4c39-bef8-a2fd1fc8de0d",
+          "official_sailing_id": "OV07K136_2028-01-28",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "558a9e13-6a01-4a1b-9347-e29e1c2d082d",
+          "official_sailing_id": "OV07K137_2028-02-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "664fa55f-c707-49bb-8de7-5f7f52f6e325",
+          "official_sailing_id": "OV07K140_2028-02-25",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "8d49e6f7-6673-4ca0-a77e-0602219de5ec",
+          "official_sailing_id": "OV07K142_2028-03-17",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "e7f8894f-83b1-4fa0-8d96-55889e2cc19d",
+          "official_sailing_id": "OV07K144_2028-03-31",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "eb41b049-33d7-4f9c-9fa2-c00d819d2494",
+          "official_sailing_id": "OV07K145_2028-04-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 3,
+          "discovered_cruise_id": "bdc5a0cf-18db-4168-b0b2-737fdc92d42c",
+          "official_sailing_id": "OV07K133_2027-12-28",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "81ef5c44-28b8-4066-a518-dcc41faa688d",
+          "official_sailing_id": "OV07K134_2028-01-07",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "676042c5-5009-4f85-aebc-eaa9ca30cdf1",
+          "official_sailing_id": "OV07K135_2028-01-14",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "d075995c-3d6b-45bd-8111-76e0b69c5cc6",
+          "official_sailing_id": "OV07K138_2028-02-11",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "0ed3a49d-56f6-48d6-b0dd-57ab2905a455",
+          "official_sailing_id": "OV07K139_2028-02-18",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "945ee4e8-2545-472f-b2f1-2de96a923395",
+          "official_sailing_id": "OV07K141_2028-03-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "10959e5a-7a29-44d0-8c04-3585a30ca14c",
+          "official_sailing_id": "OV07K143_2028-03-24",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "25e4bd1d-e079-4098-ab78-bde104459ef3",
+          "official_sailing_id": "NV17T059_2027-10-27",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "4aa955a9-d1c4-4670-9957-0982316d603b",
+          "official_sailing_id": "NV12I249_2027-05-12",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "94b00daf-8a3c-4c99-9dd9-35dc3ddb7a46",
+          "official_sailing_id": "OV08K135_2027-12-13",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "da40ac84-56d2-4d04-896b-985b7f497de2",
+          "official_sailing_id": "LB06U015_2026-10-10",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "2c25cc93-cc63-473c-a88d-92b96d6316c6",
+          "official_sailing_id": "VY11K176_2027-12-04",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "3d1056db-34ac-4214-b52e-2b97d893d25e",
+          "official_sailing_id": "VY09K187_2027-12-28",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "fbdb6089-59f7-48dd-b8ca-5662e2222067",
+          "official_sailing_id": "OV16T119_2027-11-17",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "8aa5b341-7f7e-4f18-ad23-2a231206d259",
+          "official_sailing_id": "NV12I250_2027-10-15",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "40a98156-3588-43d1-9f58-652fc4ef4905",
+          "official_sailing_id": "VY15K028_2028-01-06",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "ee59fc6c-ec3f-4466-a918-311e01bf0c9f",
+          "official_sailing_id": "VY10K193_2027-12-18",
+          "status": "active",
+          "identity_match": true
+        },
+        {
+          "batch_number": 4,
+          "discovered_cruise_id": "41e74996-9bb3-4720-8165-1ef68c4782f9",
+          "official_sailing_id": "VI11D102_2027-05-10",
+          "status": "active",
+          "identity_match": true
+        }
+      ]
+    },
+    "final_reconciliation": {
+      "dispatch_id": "royal-caribbean-international:p3h-preflight-2026-W38-1789558108612",
+      "union_sailing_identities": 3210,
+      "official_source_total": 920,
+      "recognised_existing_eligible": 2932,
+      "proposed_inserts": 0,
+      "proposed_updates": 0,
+      "reviews": 0,
+      "source_absent_active": 12,
+      "source_absent_action_eligible_count": 11,
+      "cutoff_candidates": 157,
+      "source_snapshot_id": "af30188b30c12209",
+      "weekly_maintenance_healthy": true,
+      "royal_caribbean_source_enumeration_ok": true,
+      "frozen_backlog_remaining": 0,
+      "new_publications_during_catchup": [],
+      "terminal_status": "read_only"
+    },
+    "final_classification": "READY_FOR_NORMAL_APPLY",
+    "normal_scheduled_apply_recommendation": {
+      "enable": true,
+      "flip_permanent_flag_in_this_change": false,
+      "rationale": "Insert catch-up backlog is 0, source/enumeration/arithmetic healthy, reviews 0. Keep weekly ceilings and source-health gates. Next scheduled run still observes 157 cutoff-hide candidates and 11 source-absence-action-eligible rows; those were intentionally not part of this catch-up and may still exceed the 150 total-change ceiling if applied together. Do not apply source-absence hides as part of enabling normal inserts."
+    }
+  },
+  "ncl": {
+    "scheduled_run_id": "9e15fbc1-8865-42b4-b196-18e1a785f403",
+    "rollback_manifest_id": "af30212c-baa7-4fb5-8052-ebff8b7c27e1",
+    "inserts_verified": 11,
+    "invalid_or_ambiguous_inserts": [],
+    "insert_rows": [
+      {
+        "uuid": "0a82a3b3-1245-484f-a04e-2390c07edd99",
+        "official_sailing_id": "ENCORE1VANSEA|2028-04-15",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "departure": "2028-04-15",
+        "return": "2028-04-16",
+        "nights": 1,
+        "departure_port": "Vancouver",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/ENCORE1VANSEA/schedule?itineraryCode=ENCORE1VANSEA",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:02:07.08264+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "3be7ec0c-b6d9-4642-9014-0ffe7005da03",
+        "official_sailing_id": "ENCORE6VANSFOLAX|2027-10-18",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "departure": "2027-10-18",
+        "return": "2027-10-24",
+        "nights": 6,
+        "departure_port": "Vancouver",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/ENCORE6VANSFOLAX/schedule?itineraryCode=ENCORE6VANSFOLAX",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:02:02.201955+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "55b4442c-521c-4345-8cf5-0ac675428813",
+        "official_sailing_id": "EPIC8PCVPOPSTTPHITOVNPIPCV|2028-03-09",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "departure": "2028-03-09",
+        "return": "2028-03-17",
+        "nights": 8,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/EPIC8PCVPOPSTTPHITOVNPIPCV/schedule?itineraryCode=EPIC8PCVPOPSTTPHITOVNPIPCV",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:02:03.87583+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "5c93d5ab-b659-44d9-bc60-4be7200fe0fa",
+        "official_sailing_id": "PRIMA3CIVPMIBCN|2027-05-04",
+        "ship_id": "8f81fee3-8338-4c27-be32-2114f7754391",
+        "departure": "2027-05-04",
+        "return": "2027-05-07",
+        "nights": 3,
+        "departure_port": "Civitavecchia",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/PRIMA3CIVPMIBCN/schedule?itineraryCode=PRIMA3CIVPMIBCN",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:49.094835+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "853b168d-211c-455a-96c1-cb97df1d8d89",
+        "official_sailing_id": "EPIC6PCVPOPSJUNPIPCV|2028-03-03",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "departure": "2028-03-03",
+        "return": "2028-03-09",
+        "nights": 6,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/EPIC6PCVPOPSJUNPIPCV/schedule?itineraryCode=EPIC6PCVPOPSJUNPIPCV",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:50.762035+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "8895202a-ea1d-4436-89f6-5e866cca05ef",
+        "official_sailing_id": "ENCORE7SEAJNUSGYKTNVICSEA|2027-10-10",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "departure": "2027-10-10",
+        "return": "2027-10-17",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/ENCORE7SEAJNUSGYKTNVICSEA/schedule?itineraryCode=ENCORE7SEAJNUSGYKTNVICSEA",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:02:00.535566+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "8a80cf9d-747c-4d8f-8d62-5e07dc7b3346",
+        "official_sailing_id": "DAWN14JAXNPIPDLFNCBCN|2028-04-17",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "departure": "2028-04-17",
+        "return": "2028-05-01",
+        "nights": 14,
+        "departure_port": "Jacksonville",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/DAWN14JAXNPIPDLFNCBCN/schedule?itineraryCode=DAWN14JAXNPIPDLFNCBCN",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:57.312674+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "b78d9945-f08b-48f0-8e88-9256b929fb16",
+        "official_sailing_id": "ENCORE7SEAJNUSGYKTNVICSEA|2028-04-16",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "departure": "2028-04-16",
+        "return": "2028-04-23",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/ENCORE7SEAJNUSGYKTNVICSEA/schedule?itineraryCode=ENCORE7SEAJNUSGYKTNVICSEA",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:58.937044+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "db16abd9-b316-4e2d-8dc8-3bac26869bd1",
+        "official_sailing_id": "EPIC8PCVPOPSTTPHITOVNPIPCV|2027-11-18",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "departure": "2027-11-18",
+        "return": "2027-11-26",
+        "nights": 8,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/EPIC8PCVPOPSTTPHITOVNPIPCV/schedule?itineraryCode=EPIC8PCVPOPSTTPHITOVNPIPCV",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:02:05.49298+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "e4c5d9f9-c8af-423b-b0f5-24512fecd7bb",
+        "official_sailing_id": "ENCORE6LAXASTVICVAN|2028-04-09",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "departure": "2028-04-09",
+        "return": "2028-04-15",
+        "nights": 6,
+        "departure_port": "Los Angeles",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/ENCORE6LAXASTVICVAN/schedule?itineraryCode=ENCORE6LAXASTVICVAN",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:54.429839+00:00",
+        "classification": "VALID_NEW_INSERT"
+      },
+      {
+        "uuid": "f7b45eca-0d3e-4b9e-b506-8552da9ed3a0",
+        "official_sailing_id": "EPIC6PCVPOPSJUNPIPCV|2027-11-12",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "departure": "2027-11-12",
+        "return": "2027-11-18",
+        "nights": 6,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "source_evidence": "https://www.ncl.com/au/en/cruises/EPIC6PCVPOPSJUNPIPCV/schedule?itineraryCode=EPIC6PCVPOPSJUNPIPCV",
+        "status": "match_required",
+        "created_at": "2026-09-15T19:01:52.834568+00:00",
+        "classification": "VALID_NEW_INSERT"
+      }
+    ],
+    "cutoff_hides": [
+      {
+        "id": "0153595a-9a4c-449a-a995-6cb397885e81",
+        "official_sailing_id": "JADE11YOKSMZOSASDAHKDAOMAKIKZWSAKINC|2026-10-07",
+        "departure_date": "2026-10-07",
+        "previous_status": "active",
+        "new_status": "expired",
+        "perth_as_of": "2026-09-16",
+        "days_until_departure": 21,
+        "public_booking_cutoff_days": 21,
+        "hide_reason": "within_public_booking_cutoff",
+        "expiration_run_id": "norwegian-cruise-line-weekly-2026-09-15T19-00-37-605Z",
+        "within_21_day_cutoff": true,
+        "failures": []
+      },
+      {
+        "id": "181eb97a-282d-4ad9-b725-62d394c898af",
+        "official_sailing_id": "JOY16LAXCSLACAPRQPCLPCTCTGOCJMIA|2026-10-07",
+        "departure_date": "2026-10-07",
+        "previous_status": "active",
+        "new_status": "expired",
+        "perth_as_of": "2026-09-16",
+        "days_until_departure": 21,
+        "public_booking_cutoff_days": 21,
+        "hide_reason": "within_public_booking_cutoff",
+        "expiration_run_id": "norwegian-cruise-line-weekly-2026-09-15T19-00-37-605Z",
+        "within_21_day_cutoff": true,
+        "failures": []
+      },
+      {
+        "id": "22a05522-f361-4563-9df8-9d16c268115b",
+        "official_sailing_id": "STAR13LISFNCSCTLPAPDRAGACASTNGMOTGIBCADPRMLIS|2026-10-07",
+        "departure_date": "2026-10-07",
+        "previous_status": "active",
+        "new_status": "expired",
+        "perth_as_of": "2026-09-16",
+        "days_until_departure": 21,
+        "public_booking_cutoff_days": 21,
+        "hide_reason": "within_public_booking_cutoff",
+        "expiration_run_id": "norwegian-cruise-line-weekly-2026-09-15T19-00-37-605Z",
+        "within_21_day_cutoff": true,
+        "failures": []
+      },
+      {
+        "id": "7bafc72c-0d66-451f-b93c-c5aeb3335774",
+        "official_sailing_id": "JEWEL10QUELBICHASYNHALBHBPWMBOSPHL|2026-10-07",
+        "departure_date": "2026-10-07",
+        "previous_status": "active",
+        "new_status": "expired",
+        "perth_as_of": "2026-09-16",
+        "days_until_departure": 21,
+        "public_booking_cutoff_days": 21,
+        "hide_reason": "within_public_booking_cutoff",
+        "expiration_run_id": "norwegian-cruise-line-weekly-2026-09-15T19-00-37-605Z",
+        "within_21_day_cutoff": true,
+        "failures": []
+      }
+    ],
+    "all_4_within_21_day_cutoff": true,
+    "public_booking_cutoff_days": 21,
+    "match_required": {
+      "before_p3g": 37,
+      "after": 48,
+      "prior_excluding_new_inserts": 37,
+      "new_inserts_now_match_required": 11,
+      "null_official_id": 5,
+      "audit": {
+        "SOURCE_NOW_COMPLETE": 0,
+        "SOURCE_STILL_INCOMPLETE": 13,
+        "DUPLICATE_ACTIVE": 30,
+        "LEGACY": 5,
+        "SOURCE_ABSENT": 0,
+        "AMBIGUOUS": 0
+      },
+      "duplicates_with_new_inserts": 0
+    },
+    "post_write": {
+      "proposed_inserts": 0,
+      "proposed_insert_ids": [],
+      "duplicate_proposals_for_todays_11": [],
+      "old_34_incomplete_reviews": 0,
+      "recognised_inserted": 11,
+      "failed_writes": 0,
+      "rollback_complete": true
+    },
+    "final_classification": "NCL_WEDNESDAY_WRITES_CLEAN"
+  },
+  "system": {
+    "discovered_cruises_writes_in_p3h": [
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "a582a797-8ca6-40a2-914b-523191989f14",
+        "official_sailing_id": "NV02I144_2027-05-29",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "2b720417-b3cc-4acf-adfd-ffa603318fd6",
+        "official_sailing_id": "NV02I144_2027-07-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "1f11a46b-7c82-4c52-8a89-e013f0f49447",
+        "official_sailing_id": "OV03R015_2027-11-05",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "99acab16-eb93-4c4e-ac02-466904f6dcfb",
+        "official_sailing_id": "NV03I222_2027-05-31",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "98c32df7-220d-47f1-8a60-7b4fbf1dd8ed",
+        "official_sailing_id": "NV03I222_2027-06-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "8b6f8c53-e90b-4fbb-b9bf-40ba6dd8886c",
+        "official_sailing_id": "NV03I222_2027-06-14",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "0bbd2b10-e5de-4e55-9257-963b00a962e6",
+        "official_sailing_id": "NV03I222_2027-06-21",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "337ee7b6-9554-4238-964b-7fa517b9f590",
+        "official_sailing_id": "NV03I222_2027-06-28",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "bf0febfd-42a7-41b3-80c1-824fbbf42c81",
+        "official_sailing_id": "NV03I222_2027-07-12",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "ad0061ef-b779-4707-aae9-41fac942b6a8",
+        "official_sailing_id": "NV03I222_2027-07-19",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "0d12ef2c-462a-4cf9-bce7-34f2a3af415f",
+        "official_sailing_id": "NV03I222_2027-07-26",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "d978d66b-6221-47bc-b58f-902941796848",
+        "official_sailing_id": "NV03I222_2027-09-20",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "0483733e-4751-444f-a95b-437f2a991f0c",
+        "official_sailing_id": "NV03I222_2027-09-27",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "a924b8f0-1bff-467b-b95d-48a3e089eec3",
+        "official_sailing_id": "NV03I222_2027-10-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "e817ea87-ceee-465f-8f85-5c145d4d9a0b",
+        "official_sailing_id": "VY02K041_2027-12-02",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "7c1fadce-af2a-4351-959d-d8f825a3064d",
+        "official_sailing_id": "NV04X071_2027-11-15",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "2a6e18d5-19c2-4184-ad34-a485d4a82408",
+        "official_sailing_id": "NV04X074_2027-12-20",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "5e2e8457-b862-4c53-9cbe-43a53683fdf7",
+        "official_sailing_id": "NV04X075_2028-01-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "86e79d51-8ed2-4e9e-be41-6a72bae8ab4f",
+        "official_sailing_id": "NV04X071_2028-01-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "b5b0832d-4908-4de2-92ef-d459fddbc8e5",
+        "official_sailing_id": "NV04X071_2028-02-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "285efb51-fb55-44ee-b86b-f5b53e62d6de",
+        "official_sailing_id": "NV04X075_2028-02-28",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "92838170-d454-4be3-bc0b-02a128c9319c",
+        "official_sailing_id": "NV04X071_2028-03-06",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "b951612e-851e-44b5-8f4b-bb4c3cd967b1",
+        "official_sailing_id": "NV04X071_2028-03-27",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "6c001859-0ac6-4e2a-9fa5-51bae2c37312",
+        "official_sailing_id": "NV04X071_2028-04-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "7ca80dc7-14b6-4379-ad70-3c488475e311",
+        "official_sailing_id": "NV04X072_2027-11-29",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "f893af2b-a481-41a6-8709-750cc8090578",
+        "official_sailing_id": "NV04X073_2027-12-13",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "235a3bba-ff69-4a22-a033-96cede28216e",
+        "official_sailing_id": "VY04I917_2028-02-15",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "e5934c04-0c2f-4977-a8e4-ea060ec6a63d",
+        "official_sailing_id": "NV04I912_2027-08-27",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "26233fdd-d32b-4394-8995-5c890d48a343",
+        "official_sailing_id": "NV04I907_2027-06-03",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 1,
+        "discovered_cruise_id": "b1c31764-8598-4871-ba36-b327e5cdfa9d",
+        "official_sailing_id": "NV04I907_2027-06-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "db0aaae0-7fad-4746-ab7e-02bff82e173d",
+        "official_sailing_id": "NV04I907_2027-06-17",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "8f68da0e-918d-4c0f-a51a-8c463ba269e2",
+        "official_sailing_id": "NV04I907_2027-06-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "42e63385-bfc8-4944-a657-8f84547f696e",
+        "official_sailing_id": "NV04I907_2027-07-01",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "1b5da2b6-eae5-4bbe-b145-46ecb875f06e",
+        "official_sailing_id": "NV04I908_2027-07-15",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "4dc2fe42-ac3f-4184-9637-ddfa011e907e",
+        "official_sailing_id": "NV04I907_2027-07-22",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "efa84d72-a965-417e-b3c3-facb5dce0730",
+        "official_sailing_id": "NV04I908_2027-07-29",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "8c6fc9b5-f790-4c62-8dbe-4212e8597c6c",
+        "official_sailing_id": "NV04I909_2027-08-02",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "241db8a6-086c-47e6-8e72-d81242d96abc",
+        "official_sailing_id": "NV04I911_2027-08-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "4db4373b-ac80-417e-9062-bc7c7a98f77f",
+        "official_sailing_id": "NV04I908_2027-08-19",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "7188859f-e488-4d5e-abef-80c9afd03191",
+        "official_sailing_id": "NV04I909_2027-08-23",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "2c90acf9-63c7-4237-b8cc-607103b68219",
+        "official_sailing_id": "NV04I913_2027-08-31",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "729b7115-7ae2-483c-b293-d55045c22600",
+        "official_sailing_id": "NV04I914_2027-09-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "09ff0969-b732-46cd-8023-4f79456aad37",
+        "official_sailing_id": "NV04I915_2027-09-08",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "5f3cb8f4-1d5b-46ea-8511-fa8da48b1b72",
+        "official_sailing_id": "NV04I916_2027-09-12",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "a6c046a8-34f9-4c2a-bfd7-03eace571e6f",
+        "official_sailing_id": "NV04I907_2027-09-16",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "f92bbaff-6f04-4d5c-9961-bb13dbeab75e",
+        "official_sailing_id": "NV04I908_2027-09-23",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "bbea3201-7964-4ea6-b7c3-48633af0062e",
+        "official_sailing_id": "NV04I908_2027-09-30",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "9dd4a093-74b3-427a-a1df-9a392dac5055",
+        "official_sailing_id": "NV04I907_2027-10-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "24130ecf-a2e6-4b6c-8dd4-36a66b6ca53f",
+        "official_sailing_id": "NV04I909_2027-10-11",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "428d7293-2940-4aa7-ab8f-e019c28d598c",
+        "official_sailing_id": "NV03X059_2027-11-12",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "6a872a78-cc22-4406-8156-139b08332351",
+        "official_sailing_id": "NV03X059_2027-11-26",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "86bb02ef-6d94-434b-853d-1659c1cb34e2",
+        "official_sailing_id": "NV03X060_2027-12-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "5b534ffb-084f-4f33-ac49-1e8b228edc41",
+        "official_sailing_id": "NV03X059_2027-12-17",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "823576dc-5040-4c29-b253-254681e1115d",
+        "official_sailing_id": "NV03X059_2028-01-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "e27b5e28-66d7-4731-b817-2315875916d5",
+        "official_sailing_id": "NV03X059_2028-01-21",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "e3de3b0f-2461-4fdc-bdbd-91e7aa3ce6bf",
+        "official_sailing_id": "NV03X059_2028-02-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "64c446d4-cc7f-4b6f-af78-727b1e108649",
+        "official_sailing_id": "NV03X059_2028-02-25",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "7c8a71b4-fa44-4f6e-bf84-464212a807d5",
+        "official_sailing_id": "NV03X059_2028-03-03",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "edc186a1-b141-4408-80fc-e60a241877f3",
+        "official_sailing_id": "NV03X059_2028-03-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 2,
+        "discovered_cruise_id": "8114cb35-cabd-48df-9f1a-a29183f6a3ab",
+        "official_sailing_id": "NV03X059_2028-04-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "bf64dcad-3a31-4a82-a1c1-7954c2031116",
+        "official_sailing_id": "WN3BH291_2027-02-12",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "70ee3290-cf1d-4bc1-9048-80f498cdbdac",
+        "official_sailing_id": "NV04I910_2027-08-06",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "5903c205-090c-475d-8233-d83364a8ea3b",
+        "official_sailing_id": "VY05J071_2028-01-31",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "f295d9ba-26fd-46dc-8561-2a1d20179e2e",
+        "official_sailing_id": "VY05J075_2028-02-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "c2466480-8282-4cdf-9cf2-056edd25db3c",
+        "official_sailing_id": "OV03K102_2027-12-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "c4e0eb98-a17c-4786-bac5-658b3a97c693",
+        "official_sailing_id": "OV03K103_2028-01-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "7030d37f-fa18-405c-bc95-b9e189683656",
+        "official_sailing_id": "OV03K104_2028-01-21",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "4c8822fd-57a6-4cf6-abc0-416000392e34",
+        "official_sailing_id": "OV03K105_2028-03-03",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "865e319d-b9a7-46e2-a69d-491729600422",
+        "official_sailing_id": "NV05J066_2027-05-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "3c216d01-b225-4d70-a766-21ae8e9284dc",
+        "official_sailing_id": "NV05J067_2027-07-05",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "6b64e0fe-a9e1-434a-9155-f4412de76998",
+        "official_sailing_id": "NV05J068_2027-08-14",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "e75d8a3a-1d6c-4622-ba6a-64918ec74911",
+        "official_sailing_id": "VY05J070_2028-01-26",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "dc3cc08a-6dc7-4c80-8dc8-982ec9690281",
+        "official_sailing_id": "VY05J072_2028-02-05",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "4e81a6eb-3375-4b3c-acb9-c593a0e0ede4",
+        "official_sailing_id": "VY05J074_2028-02-19",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "1cff17f9-7719-4202-95dc-e91b25ee6da0",
+        "official_sailing_id": "VY05J073_2028-02-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "ae2f34f7-88ad-4f88-a8e0-20b61eb76ce5",
+        "official_sailing_id": "VY03K107_2027-12-15",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "314c6414-5f9f-4dce-95aa-b8e126d8f932",
+        "official_sailing_id": "VY05J069_2028-01-21",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "a4ab5f69-c5d4-4b68-b262-0e3d91b651c8",
+        "official_sailing_id": "OV04K067_2028-01-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "a77de677-b289-4085-9773-addb250363e6",
+        "official_sailing_id": "OV04K068_2028-03-06",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "69496f97-5e21-4b28-b1d0-9e7f1ba8efd0",
+        "official_sailing_id": "OV09H023_2027-11-08",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "0860f210-7f43-41fb-ac59-9294c17959c1",
+        "official_sailing_id": "OV06K035_2027-12-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "37b8f9b6-0697-4002-8e34-0c32a9a57915",
+        "official_sailing_id": "VI09N080_2026-10-08",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "a2ecae6d-015b-4447-b015-855c31fed5f9",
+        "official_sailing_id": "OV07K132_2027-12-21",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "e9b09487-e2be-4c39-bef8-a2fd1fc8de0d",
+        "official_sailing_id": "OV07K136_2028-01-28",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "558a9e13-6a01-4a1b-9347-e29e1c2d082d",
+        "official_sailing_id": "OV07K137_2028-02-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "664fa55f-c707-49bb-8de7-5f7f52f6e325",
+        "official_sailing_id": "OV07K140_2028-02-25",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "8d49e6f7-6673-4ca0-a77e-0602219de5ec",
+        "official_sailing_id": "OV07K142_2028-03-17",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "e7f8894f-83b1-4fa0-8d96-55889e2cc19d",
+        "official_sailing_id": "OV07K144_2028-03-31",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "eb41b049-33d7-4f9c-9fa2-c00d819d2494",
+        "official_sailing_id": "OV07K145_2028-04-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 3,
+        "discovered_cruise_id": "bdc5a0cf-18db-4168-b0b2-737fdc92d42c",
+        "official_sailing_id": "OV07K133_2027-12-28",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "81ef5c44-28b8-4066-a518-dcc41faa688d",
+        "official_sailing_id": "OV07K134_2028-01-07",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "676042c5-5009-4f85-aebc-eaa9ca30cdf1",
+        "official_sailing_id": "OV07K135_2028-01-14",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "d075995c-3d6b-45bd-8111-76e0b69c5cc6",
+        "official_sailing_id": "OV07K138_2028-02-11",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "0ed3a49d-56f6-48d6-b0dd-57ab2905a455",
+        "official_sailing_id": "OV07K139_2028-02-18",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "945ee4e8-2545-472f-b2f1-2de96a923395",
+        "official_sailing_id": "OV07K141_2028-03-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "10959e5a-7a29-44d0-8c04-3585a30ca14c",
+        "official_sailing_id": "OV07K143_2028-03-24",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "25e4bd1d-e079-4098-ab78-bde104459ef3",
+        "official_sailing_id": "NV17T059_2027-10-27",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "4aa955a9-d1c4-4670-9957-0982316d603b",
+        "official_sailing_id": "NV12I249_2027-05-12",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "94b00daf-8a3c-4c99-9dd9-35dc3ddb7a46",
+        "official_sailing_id": "OV08K135_2027-12-13",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "da40ac84-56d2-4d04-896b-985b7f497de2",
+        "official_sailing_id": "LB06U015_2026-10-10",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "2c25cc93-cc63-473c-a88d-92b96d6316c6",
+        "official_sailing_id": "VY11K176_2027-12-04",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "3d1056db-34ac-4214-b52e-2b97d893d25e",
+        "official_sailing_id": "VY09K187_2027-12-28",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "fbdb6089-59f7-48dd-b8ca-5662e2222067",
+        "official_sailing_id": "OV16T119_2027-11-17",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "8aa5b341-7f7e-4f18-ad23-2a231206d259",
+        "official_sailing_id": "NV12I250_2027-10-15",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "40a98156-3588-43d1-9f58-652fc4ef4905",
+        "official_sailing_id": "VY15K028_2028-01-06",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "ee59fc6c-ec3f-4466-a918-311e01bf0c9f",
+        "official_sailing_id": "VY10K193_2027-12-18",
+        "status": "active",
+        "identity_match": true
+      },
+      {
+        "line": "royal-caribbean-international",
+        "action": "insert_active",
+        "batch_number": 4,
+        "discovered_cruise_id": "41e74996-9bb3-4720-8165-1ef68c4782f9",
+        "official_sailing_id": "VI11D102_2027-05-10",
+        "status": "active",
+        "identity_match": true
+      }
+    ],
+    "ncl_writes_in_p3h": [],
+    "rollback_manifests": [
+      "23db0640-383b-4c3a-8767-0976312f9c9d",
+      "1676f548-18ed-4ff4-9438-7ffd0333417a",
+      "405d5356-86a3-4f76-b261-03b4a87cab79",
+      "6cbd189f-2da3-4dd1-b32f-9677b8317f29",
+      "af30212c-baa7-4fb5-8052-ebff8b7c27e1"
+    ],
+    "partial_write_run": false,
+    "tests": {
+      "test:weekly-maintenance-p3h": {
+        "passed": 12,
+        "failed": 0
+      },
+      "test:weekly-maintenance-p3g": {
+        "passed": 21,
+        "failed": 0
+      },
+      "test:public-booking-cutoff": {
+        "passed": 17,
+        "failed": 0
+      }
+    },
+    "staggered_timetable_disturbed": false
+  },
+  "supporting_reports": {
+    "royal_preflight": "reports/royal-p3h-readonly-snapshot-1789557871241.json",
+    "royal_apply": "reports/royal-p3h-controlled-catchup-apply-1789558101843.json",
+    "royal_final": "reports/royal-p3h-readonly-snapshot-1789558246024.json",
+    "ncl_audit": "reports/norwegian-p3h-write-audit-1789557769141.json"
+  }
+}

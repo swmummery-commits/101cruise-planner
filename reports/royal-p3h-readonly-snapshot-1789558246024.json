@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-09-16T11:30:46.024Z",
+  "trigger_type": "preflight",
+  "dispatch_id": "royal-caribbean-international:p3h-preflight-2026-W38-1789558108612",
+  "scheduled_period_key": "royal-caribbean-international:2026-W38:scheduled",
+  "scheduled_lease_before": {
+    "held": true,
+    "expired": false,
+    "worker_state": "running",
+    "owner_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_record_id": null,
+    "acquired_at": "2026-09-13T23:00:38.984351+00:00",
+    "created_at": "2026-09-13T23:00:38.984351+00:00",
+    "expires_at": "2026-09-21T23:00:38.984351+00:00"
+  },
+  "scheduled_lease_after": {
+    "held": true,
+    "expired": false,
+    "worker_state": "running",
+    "owner_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_record_id": null,
+    "acquired_at": "2026-09-13T23:00:38.984351+00:00",
+    "created_at": "2026-09-13T23:00:38.984351+00:00",
+    "expires_at": "2026-09-21T23:00:38.984351+00:00"
+  },
+  "scheduled_lease_created_by_preflight": false,
+  "wednesday": {
+    "run_record_id": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+    "union_sailing_identities": 3206,
+    "proposed_inserts": 106,
+    "proposed_insert_ids": [],
+    "identities_persisted": false,
+    "source_snapshot_id": "918844922327452c"
+  },
+  "fresh": {
+    "union_sailing_identities": 3210,
+    "official_source_total": 920,
+    "recognised_existing_eligible": 2932,
+    "proposed_inserts": 0,
+    "proposed_insert_ids": [],
+    "proposed_updates": 0,
+    "review_items": 0,
+    "incomplete_skipped": 14,
+    "source_absent_active": 12,
+    "source_absent_action_eligible_count": 11,
+    "cutoff_candidates": 157,
+    "source_snapshot_id": "af30188b30c12209",
+    "weekly_maintenance_healthy": true,
+    "royal_caribbean_source_enumeration_ok": true,
+    "reconciliation_arithmetic_ok": true,
+    "terminal_status": "read_only",
+    "perth_today": "2026-09-16"
+  },
+  "compare": {
+    "wednesday_count": 0,
+    "fresh_count": 0,
+    "intersection_count": 0,
+    "intersection": [],
+    "wednesday_only": [],
+    "fresh_only": [],
+    "comparable": false
+  },
+  "reconstructed_cutoff_aging_ids": [
+    "SC04I849_2026-10-07"
+  ],
+  "deltas": {
+    "classified": [],
+    "counts": {
+      "NEW_OFFICIAL_PUBLICATION": 0,
+      "SOURCE_REMOVED": 0,
+      "CUT_OFF_DATE_AGING": 0,
+      "IDENTITY_REMAP": 0,
+      "SOURCE_VOLATILITY": 0,
+      "UNEXPLAINED": 0
+    },
+    "unexplained": []
+  },
+  "freeze_gate": {
+    "freeze_authorised": false,
+    "failures": [
+      "unexplained_candidate_disappearance"
+    ],
+    "delta_zero": false,
+    "delta_explained": true,
+    "wednesday_identities_persisted": false,
+    "classification": "READY_FOR_CONTROLLED_CATCHUP"
+  },
+  "master_plan": {
+    "mode": "royal_caribbean_p3g_catchup_master",
+    "frozen_at": "2026-09-16T11:30:46.017Z",
+    "perth_today": "2026-09-16",
+    "source_snapshot_id": "af30188b30c12209",
+    "union_count": 3210,
+    "batch_cap": 30,
+    "safe_backlog": 0,
+    "review_or_ambiguous": 0,
+    "collision_count": 0,
+    "classification_counts": {
+      "TRUE_NEW_COMPLETE": 0,
+      "SAFE_METADATA": 0,
+      "REVIEW_REQUIRED": 0,
+      "COLLISION": 0,
+      "AMBIGUOUS": 0
+    },
+    "batches": [],
+    "classified": [],
+    "plan_hash": "1a7be488c0778d68f653774ac9a23747584eb264ef9bc2c0bc12c12ef511c583"
+  },
+  "weekly_manifest_inserts": [],
+  "writes": 0
+}
