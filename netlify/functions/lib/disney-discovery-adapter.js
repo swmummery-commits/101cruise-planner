@@ -823,7 +823,7 @@ async function fetchDisneyCompleteSnapshot(options = {}) {
   };
 
   const auth = await mark("bootstrap", () => source.authenticateDisneySession({ fetchImpl, requestDelayMs }));
-  const filters = await mark("product enumeration", () =>
+  const filters = await mark("pavas_filter_options", () =>
     source.fetchDisneyFilterOptions({
       fetchImpl,
       cookieJar: auth.cookieJar,
@@ -831,7 +831,7 @@ async function fetchDisneyCompleteSnapshot(options = {}) {
     })
   );
 
-  const harvest = await mark("product enumeration", () =>
+  const harvest = await mark("pavas_product_listing", () =>
     source.harvestDisneyProductCatalogue({
       fetchImpl,
       cookieJar: filters.cookieJar,
@@ -840,11 +840,12 @@ async function fetchDisneyCompleteSnapshot(options = {}) {
       maxApiCalls,
       phase2: true,
       useLosslessCatalogue: true,
-      deadlineAt
+      deadlineAt,
+      harvestConcurrency: options.harvestConcurrency ?? source.DISNEY_HARVEST_PLAN_CONCURRENCY
     })
   );
 
-  const expansion = await mark("per-product/date expansion", () =>
+  const expansion = await mark("dated_sailing_expansion", () =>
     source.expandDisneySailingCatalogueLossless(harvest.products, {
       fetchImpl,
       cookieJar: harvest.cookieJar,
@@ -853,7 +854,7 @@ async function fetchDisneyCompleteSnapshot(options = {}) {
       losslessCatalogue: harvest.lossless_catalogue,
       preserveFilterContext: false,
       deadlineAt,
-      concurrency: options.concurrency
+      concurrency: options.concurrency ?? source.DISNEY_EXPANSION_CONCURRENCY
     })
   );
 
@@ -892,7 +893,17 @@ async function simulateDisneyDiscovery(context = {}) {
     deadlineMs,
     deadlineAt
   });
-  const rawVoyages = enrichSailingsFromCatalogue(snapshot.expansion.unique_sailings, snapshot.harvest.lossless_catalogue);
+  const stageTimings = [...(snapshot.stage_timings || [])];
+  const markLocal = (stage, fn) => {
+    const started = Date.now();
+    const result = fn();
+    stageTimings.push({ stage, duration_ms: Date.now() - started });
+    return result;
+  };
+
+  const rawVoyages = markLocal("catalogue_enrichment", () =>
+    enrichSailingsFromCatalogue(snapshot.expansion.unique_sailings, snapshot.harvest.lossless_catalogue)
+  );
 
   const identitySet = new Set(rawVoyages.map((r) => r.official_product_key));
   const baselineIdentities = (phase2aBaselineIdentities || []).filter((k) => typeof k === "string" && k.includes("|"));
@@ -901,8 +912,10 @@ async function simulateDisneyDiscovery(context = {}) {
   const removedSince = baselineSet.size ? [...baselineSet].filter((k) => !identitySet.has(k)) : [];
   const commonWith = baselineSet.size ? [...identitySet].filter((k) => baselineSet.has(k)).length : null;
 
-  const normalised = rawVoyages.map((raw) =>
-    normaliseDisneyVoyage(raw, { cruiseLine, ships, shipAliases, destinations, destinationAliases, today })
+  const normalised = markLocal("ship_port_destination_resolver", () =>
+    rawVoyages.map((raw) =>
+      normaliseDisneyVoyage(raw, { cruiseLine, ships, shipAliases, destinations, destinationAliases, today })
+    )
   );
 
   const waterfall = buildEligibilityWaterfall(normalised, today);
@@ -910,14 +923,20 @@ async function simulateDisneyDiscovery(context = {}) {
   const destAnalysis = analyseDestinationResolution(normalised);
 
   let dbRows = existingRows;
+  let dbCalls = 0;
   if (!dbRows.length && supabaseQuery && cruiseLine?.id) {
+    const lookupStarted = Date.now();
     dbRows = await supabaseQuery(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLine.id)}&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,status,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract,created_at,updated_at`
     );
+    dbCalls += 1;
+    stageTimings.push({ stage: "production_lookup", duration_ms: Date.now() - lookupStarted, db_calls: 1 });
   }
 
   const legacyAudit = legacyReconciliation.auditLegacyDisneyRows(dbRows || [], normalised, { ships });
+  const lookupStarted = Date.now();
   const writeManifest = buildProposedWriteManifest(normalised, dbRows || [], cruiseLine, legacyAudit);
+  stageTimings.push({ stage: "candidate_planning", duration_ms: Date.now() - lookupStarted });
   const duplicateSafety = legacyReconciliation.analyseDuplicateSafety(normalised, dbRows || [], writeManifest.manifest, legacyAudit, {
     disneyExternalKey,
     cruiseIdentityKey
@@ -972,6 +991,7 @@ async function simulateDisneyDiscovery(context = {}) {
     firstControlledBatch.size === 20 &&
     writeManifest.summary.insert_active + writeManifest.summary.update_exact_existing + writeManifest.summary.update_exact_legacy_match > 0;
   qualityGate.ready_for_phase3_controlled_apply = qualityGate.ready_for_first_controlled_import;
+  snapshot.stage_timings = stageTimings;
 
   return {
     adapter_id: ADAPTER_ID,
@@ -1019,7 +1039,10 @@ async function simulateDisneyDiscovery(context = {}) {
       blocked_from_booking_excluded_from_auto_publish_only: false,
       has_availability_not_auto_excluded: true
     },
-    api_calls: snapshot.api_calls
+    api_calls: snapshot.api_calls,
+    db_calls: dbCalls,
+    cache_hits: (snapshot.harvest?.cache_hits || 0) + (snapshot.expansion?.cache_hits || 0),
+    stage_timings: stageTimings
   };
 }
 

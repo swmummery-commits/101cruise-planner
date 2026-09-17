@@ -60,8 +60,9 @@ const DEFAULT_REQUEST_DELAY_MS = 120;
 const DEFAULT_MAX_PRODUCT_PAGES = 50;
 const DEFAULT_MAX_API_CALLS = 2000;
 const PHASE2_MAX_API_CALLS = 2500;
-const DISNEY_SOURCE_DEADLINE_MS = 720000;
-const DISNEY_EXPANSION_CONCURRENCY = 4;
+const DISNEY_SOURCE_DEADLINE_MS = 750000;
+const DISNEY_EXPANSION_CONCURRENCY = 8;
+const DISNEY_HARVEST_PLAN_CONCURRENCY = 3;
 
 function assertDisneySourceDeadline(deadlineAt, stage) {
   if (deadlineAt && Date.now() >= Number(deadlineAt)) {
@@ -516,6 +517,7 @@ async function harvestDisneyProductCatalogue(options = {}) {
   const lastWriteWins = new Map();
   const planSummaries = [];
   let apiCalls = 0;
+  let cacheHits = 0;
   let repeatedPages = 0;
   let trueRepeatedPages = 0;
   let zeroProgressPages = 0;
@@ -523,16 +525,20 @@ async function harvestDisneyProductCatalogue(options = {}) {
   let structurallyNewPages = 0;
   let advertisedTotals = [];
   const requestCache = new Map();
+  const harvestConcurrency = options.harvestConcurrency ?? 1;
 
-  for (const plan of plans) {
-    assertDisneySourceDeadline(options.deadlineAt, "product enumeration");
-    if (apiCalls >= maxApiCalls) break;
+  const harvested = await mapLimit(plans, harvestConcurrency, async (plan) => {
+    assertDisneySourceDeadline(options.deadlineAt, "pavas_product_listing");
+    if (apiCalls >= maxApiCalls) return null;
     const cacheKey = `${plan.strategy}|${plan.filters.join(",")}`;
-    if (requestCache.has(cacheKey)) continue;
+    if (requestCache.has(cacheKey)) {
+      cacheHits += 1;
+      return null;
+    }
     requestCache.set(cacheKey, true);
 
     const remainingCalls = Math.max(0, maxApiCalls - apiCalls);
-    if (remainingCalls <= 0) break;
+    if (remainingCalls <= 0) return null;
     const batch = await paginateDisneyProductsForFilters(plan.filters, {
       fetchImpl,
       cookieJar,
@@ -551,8 +557,7 @@ async function harvestDisneyProductCatalogue(options = {}) {
     zeroStructuralProgressPages += batch.zero_structural_progress_pages || 0;
     structurallyNewPages += batch.structurally_new_pages || 0;
     if (batch.last_total_available_cruises) advertisedTotals.push(batch.last_total_available_cruises);
-
-    planSummaries.push({
+    return {
       strategy: plan.strategy,
       filters: plan.filters,
       pages_fetched: batch.pages.length,
@@ -562,7 +567,10 @@ async function harvestDisneyProductCatalogue(options = {}) {
       zero_structural_progress_pages: batch.zero_structural_progress_pages || 0,
       structurally_new_pages: batch.structurally_new_pages || 0,
       total_available_cruises: batch.last_total_available_cruises || 0
-    });
+    };
+  });
+  for (const summary of harvested) {
+    if (summary) planSummaries.push(summary);
   }
 
   const products = losslessCatalogue ? losslessCatalogue.toProductsArray() : [];
@@ -579,6 +587,8 @@ async function harvestDisneyProductCatalogue(options = {}) {
     unique_product_templates: losslessCatalogue ? losslessCatalogue.uniqueProductIds : products.length,
     unique_itinerary_targets: losslessCatalogue ? losslessCatalogue.uniqueItineraryTargets : expandProductTemplates(products).length,
     api_calls: apiCalls,
+    cache_hits: cacheHits,
+    harvest_concurrency: harvestConcurrency,
     repeated_pages: repeatedPages,
     true_repeated_pages: trueRepeatedPages,
     zero_progress_pages: zeroProgressPages,
@@ -704,12 +714,13 @@ async function expandDisneySailingCatalogueLossless(targetsOrCatalogue, options 
   let exactDuplicateRows = 0;
 
   const expansionBatches = await mapLimit(targets, concurrency, async (target) => {
-    assertDisneySourceDeadline(deadlineAt, "per-product/date expansion");
+    assertDisneySourceDeadline(deadlineAt, "dated_sailing_expansion");
     const localRaw = [];
     const localParsed = [];
     let localCalls = 0;
     let localErrors = 0;
-    if (localCalls + apiCalls >= maxApiCalls) return { localRaw, localParsed, localCalls, localErrors };
+    let localCacheHits = 0;
+    if (localCalls + apiCalls >= maxApiCalls) return { localRaw, localParsed, localCalls, localErrors, localCacheHits };
 
     const filterVariants = [[]];
     if (preserveFilterContext && Array.isArray(target.discoveredViaFilters) && target.discoveredViaFilters.length) {
@@ -719,7 +730,10 @@ async function expandDisneySailingCatalogueLossless(targetsOrCatalogue, options 
     const seenVariants = new Set();
     for (const filters of filterVariants) {
       const variantKey = `${target.productId}|${target.itineraryId ?? ""}|${filters.join("\u0000")}`;
-      if (seenVariants.has(variantKey) || requestCache.has(variantKey)) continue;
+      if (seenVariants.has(variantKey) || requestCache.has(variantKey)) {
+        localCacheHits += 1;
+        continue;
+      }
       seenVariants.add(variantKey);
       requestCache.set(variantKey, true);
 
@@ -747,11 +761,13 @@ async function expandDisneySailingCatalogueLossless(targetsOrCatalogue, options 
         else localErrors += 0;
       }
     }
-    return { localRaw, localParsed, localCalls, localErrors };
+    return { localRaw, localParsed, localCalls, localErrors, localCacheHits };
   });
 
+  let cacheHits = 0;
   for (const batch of expansionBatches) {
     apiCalls += batch.localCalls || 0;
+    cacheHits += batch.localCacheHits || 0;
     expansionErrors += batch.localErrors || 0;
     for (const raw of batch.localRaw || []) rawRows.push(raw);
     for (const parsed of batch.localParsed || []) {
@@ -771,6 +787,8 @@ async function expandDisneySailingCatalogueLossless(targetsOrCatalogue, options 
   return {
     itinerary_targets: targets.length,
     api_calls: apiCalls,
+    cache_hits: cacheHits,
+    expansion_concurrency: concurrency,
     raw_rows: rawRows.length,
     malformed_rows: malformedRows,
     exact_duplicate_rows: exactDuplicateRows,
@@ -1340,6 +1358,7 @@ module.exports = {
   PHASE2_MAX_API_CALLS,
   DISNEY_SOURCE_DEADLINE_MS,
   DISNEY_EXPANSION_CONCURRENCY,
+  DISNEY_HARVEST_PLAN_CONCURRENCY,
   assertDisneySourceDeadline,
   normaliseIsoDate,
   officialProductKey,

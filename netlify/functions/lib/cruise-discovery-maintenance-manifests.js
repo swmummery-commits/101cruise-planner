@@ -3,6 +3,11 @@
  */
 
 const MANIFEST_TABLE = "cruise_discovery_maintenance_manifests";
+const MANIFEST_TYPE_DB = Object.freeze({
+  disney_source_freeze: "dry_run",
+  disney_precommit_batch: "rollback",
+  partial_write_recovery: "rollback"
+});
 
 function snapshotRecordForRollback(record) {
   if (!record) return null;
@@ -80,17 +85,22 @@ function buildRollbackManifestFromWriteResult({
 
 async function persistMaintenanceManifest(supabase, { manifestType, manifest }) {
   if (!supabase || !manifest) return null;
+  const dbType = MANIFEST_TYPE_DB[manifestType] || manifestType;
+  const payload = {
+    ...manifest,
+    logical_manifest_type: manifest.logical_manifest_type || manifestType
+  };
   const rows = await supabase(MANIFEST_TABLE, {
     method: "POST",
     headers: { Prefer: "return=representation" },
-    body: {
-      manifest_type: manifestType,
-      run_id: manifest.run_id || null,
-      run_record_id: manifest.run_record_id || null,
-      cruise_line_id: manifest.cruise_line_id || null,
-      cruise_line_slug: manifest.cruise_line_slug || null,
-      manifest
-    }
+    body: JSON.stringify({
+      manifest_type: dbType,
+      run_id: payload.run_id || null,
+      run_record_id: payload.run_record_id || null,
+      cruise_line_id: payload.cruise_line_id || null,
+      cruise_line_slug: payload.cruise_line_slug || null,
+      manifest: payload
+    })
   });
   return rows?.[0] || null;
 }
@@ -109,6 +119,7 @@ async function persistMaintenanceRollbackManifest(supabase, params) {
 
 module.exports = {
   MANIFEST_TABLE,
+  MANIFEST_TYPE_DB,
   snapshotRecordForRollback,
   buildRollbackManifestFromWriteResult,
   persistMaintenanceManifest,

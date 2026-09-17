@@ -115,7 +115,8 @@ async function applyDisneyWeeklyMaintenanceWrites({
   maxMaterialWrites = 30,
   perthToday = null,
   sourceComplete = true,
-  deactivationEnabled = false
+  deactivationEnabled = false,
+  includeSourceTouches = false
 }) {
   const today = perthToday || perthCalendarDate();
   const stats = {
@@ -151,7 +152,10 @@ async function applyDisneyWeeklyMaintenanceWrites({
 
     if (entry.kind === "insert") {
       const normalised = entry.normalised;
-      const candidate = enhanceDisneyCandidate(normalised, cruiseLine, { mode: "weekly_maintenance" });
+      const candidate =
+        entry.candidate?.official_sailing_id
+          ? entry.candidate
+          : enhanceDisneyCandidate(normalised, cruiseLine, { mode: "weekly_maintenance" });
       if (!candidate) {
         stats.skipped += 1;
         continue;
@@ -324,7 +328,7 @@ async function applyDisneyWeeklyMaintenanceWrites({
     }
   }
 
-  for (const touch of manifest.source_current_touches || []) {
+  for (const touch of includeSourceTouches === true ? manifest.source_current_touches || [] : []) {
     if (DISNEY_LEGACY_ROW_IDS.includes(touch.discovered_cruise_id)) continue;
     const row = touch.existing || (await fetchRecordById(supabase, touch.discovered_cruise_id));
     if (!row) continue;

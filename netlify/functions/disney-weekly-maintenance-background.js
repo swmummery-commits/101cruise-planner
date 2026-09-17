@@ -30,7 +30,9 @@ exports.handler = async (event) => {
       dryRun,
       maxWrites,
       triggerType,
-      dispatchId
+      dispatchId,
+      phase: body.phase || null,
+      freezeManifestId: body.freeze_manifest_id || body.freezeManifestId || null
     });
 
     return {

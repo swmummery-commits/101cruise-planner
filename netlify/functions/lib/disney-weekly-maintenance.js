@@ -16,11 +16,8 @@ const {
 const {
   acquireMaintenanceDbLock,
   releaseMaintenanceDbLock,
-  verifyMaintenanceLockOwnership,
   weeklyLockKey
 } = require("./cruise-discovery-maintenance-locks");
-const { runGlobalProtectedMaintenanceWrites } = require("./cruise-discovery-global-write-lock");
-const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
 const {
   partitionByPublicBookingCutoff,
   PUBLIC_BOOKING_CUTOFF_DAYS,
@@ -49,8 +46,7 @@ const {
   isDisneySourceSnapshotComplete
 } = require("./disney-weekly-quality");
 const {
-  buildDisneyWeeklyManifest,
-  applyDisneyWeeklyMaintenanceWrites
+  buildDisneyWeeklyManifest
 } = require("./disney-weekly-apply");
 
 const DISNEY_LINE_SLUG = "disney-cruise-line";
@@ -180,6 +176,8 @@ async function runDisneyWeeklyMaintenance(context = {}) {
 
     let simulation;
     try {
+      const { DISNEY_PHASE_A_DEADLINE_MS } = require("./disney-weekly-phases");
+      const { DISNEY_SOURCE_DEADLINE_MS } = require("./disney-discovery-source");
       simulation = await simulateDisneyDiscovery({
         cruiseLine: line,
         ships,
@@ -188,7 +186,10 @@ async function runDisneyWeeklyMaintenance(context = {}) {
         useCache: false,
         supabaseQuery: sb,
         runEnrichment: false,
-        deadlineMs: context.deadlineMs ?? context.deadline_ms ?? require("./disney-discovery-source").DISNEY_SOURCE_DEADLINE_MS
+        deadlineMs:
+          context.deadlineMs ??
+          context.deadline_ms ??
+          Math.min(DISNEY_SOURCE_DEADLINE_MS, DISNEY_PHASE_A_DEADLINE_MS)
       });
     } catch (error) {
       if (error?.code === "SOURCE_TIMEOUT" || error?.terminal_status === "source_unstable") {
@@ -408,152 +409,105 @@ async function runDisneyWeeklyMaintenance(context = {}) {
     }
 
     if (explicitDryRun || !performWrites) {
+      const { buildDisneyPhaseAPlan } = require("./disney-weekly-phases");
+      const phaseAPlan = buildDisneyPhaseAPlan({
+        inserts: proposedInserts,
+        cruiseLine: line,
+        qualityGate: sourceQualityGate,
+        collapseGuard,
+        eligibleTotal: productionEligible.length,
+        sourceTotal: sourceQualityGate.source_total,
+        stageTimings: simulation.stage_timings || simulation.snapshot?.stage_timings || [],
+        apiCalls: simulation.api_calls || simulation.snapshot?.api_calls || null,
+        snapshotId,
+        review: proposedReview,
+        maxWrites: DISNEY_MAX_WEEKLY_WRITES
+      });
       summary.material_actions_applied = 0;
+      summary.phase = "A";
+      summary.plan_hash = phaseAPlan.plan_hash;
+      summary.stage_timings = phaseAPlan.stage_timings;
+      summary.api_calls = phaseAPlan.api_calls;
       const reviewRequired = proposedReview.length > 0 || proposedInserts.length > maxWrites;
       summary.review_required = reviewRequired;
-      summary.terminal_status = reviewRequired ? "review_required" : "read_only";
+      summary.controlled_catchup_required = proposedInserts.length > DISNEY_MAX_WEEKLY_WRITES;
+      summary.terminal_status = reviewRequired
+        ? "review_required"
+        : summary.controlled_catchup_required
+          ? "controlled_catchup_required"
+          : "read_only";
       summary.review_sailing_ids = (proposedReview || []).map((row) => row.official_sailing_id).filter(Boolean);
       return {
         ok: true,
         dry_run: true,
+        phase: "A",
         review_required: reviewRequired,
+        controlled_catchup_required: summary.controlled_catchup_required === true,
         terminal_status: summary.terminal_status,
         reason: reviewRequired ? "REVIEW_REQUIRED" : "READ_ONLY",
         summary,
         manifest,
+        phase_a_plan: phaseAPlan,
         simulation
       };
     }
 
-    const combinedMaterial = materialActions.material_actions_total;
-    if (combinedMaterial === 0) {
-      const touchManifest = {
-        ...manifest,
-        inserts: [],
-        safe_updates: [],
-        source_absence_hides: [],
-        reactivations: []
-      };
-      const touchResult = await applyDisneyWeeklyMaintenanceWrites({
-        manifest: touchManifest,
-        supabase: sb,
-        cruiseLine: line,
-        performWrites: true,
-        runId,
-        maxMaterialWrites: 0,
-        perthToday: today,
-        sourceComplete,
-        deactivationEnabled
-      });
-      summary.touches = touchResult.stats?.touches || 0;
-      summary.duplicate_skips = unchanged.length;
-      summary.zero_change_apply = true;
-      summary.writes_performed = 0;
-      return { ok: true, dry_run: false, zero_change_apply: true, summary, manifest, simulation, write_result: touchResult };
-    }
-
-    const lockOwnership = await verifyMaintenanceLockOwnership(sb, {
-      lockKey: weeklyLockKey(lineSlug),
-      ownerId: runId
+    const {
+      buildDisneyPhaseAPlan,
+      persistDisneySourceFreeze
+    } = require("./disney-weekly-phases");
+    const phaseAPlan = buildDisneyPhaseAPlan({
+      inserts: proposedInserts,
+      cruiseLine: line,
+      qualityGate: sourceQualityGate,
+      collapseGuard,
+      eligibleTotal: productionEligible.length,
+      sourceTotal: sourceQualityGate.source_total,
+      stageTimings: simulation.snapshot?.stage_timings || simulation.stage_timings || [],
+      apiCalls: simulation.snapshot?.api_calls || simulation.api_calls || null,
+      snapshotId,
+      review: proposedReview,
+      maxWrites
     });
-    if (!lockOwnership.ok) {
-      return {
-        ok: false,
-        blocked: true,
-        reason: lockOwnership.reason || "maintenance_lock_lost_before_write",
-        worker_state: "already_running",
-        line_slug: lineSlug,
-        summary
-      };
-    }
-
-    const applyManifest = {
-      ...manifest,
-      inserts: proposedInserts.slice(0, maxWrites),
-      safe_updates: [],
-      source_absence_hides: [],
-      reactivations: []
-    };
-    let remaining = maxWrites - applyManifest.inserts.length;
-    applyManifest.safe_updates = proposedSafeUpdates.slice(0, Math.max(0, remaining));
-    remaining -= applyManifest.safe_updates.length;
-    if (deactivationEnabled && sourceComplete) {
-      applyManifest.source_absence_hides = (manifest.source_absence_hides || []).slice(0, Math.max(0, remaining));
-    }
-
-    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
-      runId,
-      runRecordId,
-      lineSlug,
-      operation: "disney_weekly_maintenance",
-      underLockRecheck: async () => {
-        const activeNow = await loadActiveOfficialCount(sb, line.id);
-        if (activeNow !== summary.active_production_total) {
-          return { ok: false, reason: "under_lock_active_count_changed" };
-        }
-        return { ok: true };
-      },
-      writeFn: async () =>
-        applyDisneyWeeklyMaintenanceWrites({
-          manifest: applyManifest,
-          supabase: sb,
-          cruiseLine: line,
-          performWrites: true,
-          runId,
-          maxMaterialWrites: maxWrites,
-          perthToday: today,
-          sourceComplete,
-          deactivationEnabled
-        })
-    });
-
-    if (protectedWrites.blocked) {
-      summary.global_lock = protectedWrites.global_lock;
-      return { ok: false, blocked: true, reason: protectedWrites.reason, summary, manifest };
-    }
-
-    const writeResult = protectedWrites.writeResult;
-    summary.global_lock = protectedWrites.global_lock;
-
-    const rollback = await persistMaintenanceRollbackManifest(sb, {
+    const freezePersist = await persistDisneySourceFreeze(sb, {
       runId,
       runRecordId,
       cruiseLineId: line.id,
-      lineSlug,
-      triggerType: context.triggerType || context.trigger_type,
-      writeResult
+      plan: phaseAPlan,
+      triggerType: context.triggerType || context.trigger_type || "scheduled"
     });
-
-    summary.inserts = writeResult.stats?.inserted || 0;
-    summary.updates = writeResult.stats?.updated || 0;
-    summary.source_absence_actions = writeResult.stats?.source_absence_hidden || 0;
-    summary.reactivations = writeResult.stats?.reactivated || 0;
-    summary.touches = writeResult.stats?.touches || 0;
-    summary.failed_writes = writeResult.stats?.failed || 0;
-    summary.material_actions_applied = writeResult.stats?.material_actions_applied || 0;
-    summary.material_actions_deferred = writeResult.stats?.material_actions_deferred || 0;
-    summary.legacy_rows_touched = 0;
-    summary.accepted_source_baseline_total = collapseGuard.accepted_baseline_updated;
-    summary.inventory_changed =
-      (summary.inserts || 0) +
-        (summary.updates || 0) +
-        (summary.source_absence_actions || 0) +
-        (summary.reactivations || 0) >
-      0;
-    summary.writes_performed = summary.inventory_changed
-      ? summary.inserts + summary.updates + summary.source_absence_actions + summary.reactivations
-      : 0;
-    summary.rollback_manifest_id = rollback?.manifest_record_id || null;
-    summary.line_lock = { acquired: true, released: false };
-    summary.hard_deletes = 0;
+    summary.phase = "A";
+    summary.plan_hash = phaseAPlan.plan_hash;
+    summary.source_freeze_manifest_id = freezePersist.manifest_record_id || null;
+    summary.stage_timings = phaseAPlan.stage_timings;
+    summary.api_calls = phaseAPlan.api_calls;
+    summary.material_actions_applied = 0;
+    summary.inserts = 0;
+    summary.writes_performed = 0;
+    summary.inventory_changed = false;
+    summary.needs_phase_b = performWrites && proposedInserts.length > 0 && proposedInserts.length <= maxWrites;
+    summary.controlled_catchup_required = proposedInserts.length > maxWrites;
+    summary.terminal_status = proposedReview.length
+      ? "review_required"
+      : proposedInserts.length > maxWrites
+        ? "controlled_catchup_required"
+        : proposedInserts.length
+          ? "source_frozen"
+          : "completed";
 
     return {
-      ok: writeResult.stats?.failed === 0,
+      ok: true,
+      phase: "A",
+      needs_phase_b: summary.needs_phase_b === true,
+      dry_run: !performWrites,
+      review_required: proposedReview.length > 0,
+      controlled_catchup_required: summary.controlled_catchup_required === true,
+      terminal_status: summary.terminal_status,
+      reason: summary.terminal_status,
       summary,
-      write_result: writeResult,
       manifest,
-      rollback_result: rollback || null,
-      rollback_manifest: rollback?.manifest || null,
+      phase_a_plan: phaseAPlan,
+      freeze_result: freezePersist,
       simulation
     };
   } finally {
