@@ -10,8 +10,8 @@
   "answers": {
     "A_starting_local_sha": "6ebf14eafad1debc4a48223f78e0bde6505becc0",
     "B_6ebf14e_pushed": "YES",
-    "C_p3i_sha": null,
-    "D_production_deployed_sha": null,
+    "C_p3i_sha": "13daa01baedff6f76b4e27c905c0c7c7a890c59d",
+    "D_production_deployed_sha": "pending_push",
     "E_current_union": 3218,
     "F_current_recognised": 2922,
     "G_current_proposed_inserts": 5,
@@ -1081,7 +1081,7 @@
       "test:norwegian-weekly-maintenance": "30/30",
       "test:public-booking-cutoff": "17/17"
     },
-    "AV_git_status": "to be filled after commit"
+    "AV_git_status": "main at 13daa01; leftover local: scripts/run-p3e-manual-recovery-dispatch.mjs plus unrelated untracked reports/scripts"
   },
   "cutoff_accounting": {
     "A_source_sailings_excluded_from_public_eligibility": true,
