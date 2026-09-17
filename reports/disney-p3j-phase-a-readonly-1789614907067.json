@@ -1,0 +1,336 @@
+{
+  "generated_at": "2026-09-17T03:15:07.066Z",
+  "run_id": "disney-cruise-line:p3j-phase-a-2026-W38-1789614596805",
+  "scheduled_lease_created": false,
+  "scheduled_lease_before_held": true,
+  "scheduled_lease_after_owner": "disney-cruise-line-dispatch-2026-09-16T19-00-30-347Z",
+  "terminal_status": "read_only",
+  "source_quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false,
+    "source_total": 975,
+    "source_complete": true,
+    "expansion_errors": 0,
+    "identity_collisions": 0,
+    "endpoint_unresolved_conflicts": 0,
+    "eligibility_arithmetic_pass": true,
+    "destination_resolution_pct": 100,
+    "unresolved_destinations": null
+  },
+  "stage_timings": [
+    {
+      "stage": "bootstrap",
+      "duration_ms": 684
+    },
+    {
+      "stage": "pavas_filter_options",
+      "duration_ms": 311
+    },
+    {
+      "stage": "pavas_product_listing",
+      "duration_ms": 275248
+    },
+    {
+      "stage": "dated_sailing_expansion",
+      "duration_ms": 22802
+    },
+    {
+      "stage": "catalogue_enrichment",
+      "duration_ms": 27
+    },
+    {
+      "stage": "ship_port_destination_resolver",
+      "duration_ms": 1038
+    },
+    {
+      "stage": "production_lookup",
+      "duration_ms": 2590,
+      "db_calls": 1
+    },
+    {
+      "stage": "candidate_planning",
+      "duration_ms": 19
+    }
+  ],
+  "api_calls": 1072,
+  "eligible_total": 944,
+  "proposed_inserts": 0,
+  "proposed_updates": 0,
+  "reviews": 0,
+  "freeze_30_classifications": [
+    {
+      "uuid": "f68fc53f-60d3-4b4e-956e-06ee6976a90c",
+      "official_sailing_id": "DA0194|2027-09-06",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "56ab1f0d-8850-4db5-b1f2-73d3109c9d6a",
+      "official_sailing_id": "DA0196|2027-09-13",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "1b067665-8088-4bd3-afcb-d3d36c6415b8",
+      "official_sailing_id": "DA0198|2027-09-20",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "17d3a869-92ef-41c2-ad9f-c9f5f3d4245d",
+      "official_sailing_id": "DA0200|2027-09-27",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "c8d20534-52d9-4478-aae3-f7115507ae52",
+      "official_sailing_id": "DA0202|2027-10-04",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "edcf15a6-55a6-4849-be97-74178b7d1a53",
+      "official_sailing_id": "DD1608|2027-09-10",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "cde75109-64a5-4399-b966-897531238748",
+      "official_sailing_id": "DD1610|2027-09-17",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "178ae064-d7f4-431d-bf38-c94ce7f095b9",
+      "official_sailing_id": "DD1612|2027-09-24",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "534756ed-d927-4a5b-81bb-3812f80c0b00",
+      "official_sailing_id": "DD1614|2027-10-01",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "1a9379da-25cf-4f06-861b-b943fdc55932",
+      "official_sailing_id": "DD1616|2027-10-08",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "d0b2f775-e244-4e7c-aeb7-398d23d1eafc",
+      "official_sailing_id": "DD1617|2027-10-11",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "fa86501f-882d-42fc-8858-22a6d81ca8a4",
+      "official_sailing_id": "DD1618|2027-10-15",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "a8b35bca-fe63-4e00-a34d-0b155fc379e5",
+      "official_sailing_id": "DD1619|2027-10-18",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "576391e9-d656-4513-a6f6-b5e22cfe7175",
+      "official_sailing_id": "DD1620|2027-10-22",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "db210687-fd21-461b-8a57-c78948ffc447",
+      "official_sailing_id": "DD1621|2027-10-25",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "ba4f0b5b-8ef5-482f-9ed9-4b8419da5cb7",
+      "official_sailing_id": "DD1622|2027-10-29",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "4cc79487-97af-46b7-91a9-2ff52bd3ef53",
+      "official_sailing_id": "DF0909|2027-09-19",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "b1c6da04-454e-4b1e-81a5-f63c7675f660",
+      "official_sailing_id": "DF0910|2027-09-24",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "e68828bc-aa4c-4eed-ae65-891b931e41e7",
+      "official_sailing_id": "DF0912|2027-10-03",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "2c4cd158-251a-4cca-8e60-8640785fa854",
+      "official_sailing_id": "DF0913|2027-10-08",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "7dbe2936-ea3c-4deb-9486-57340c26c76a",
+      "official_sailing_id": "DF0914|2027-10-13",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "83614f60-2e99-4f0c-b894-7e933956cd98",
+      "official_sailing_id": "DF0915|2027-10-17",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "10bf7b28-9960-4394-b205-b3dd3fcec2a1",
+      "official_sailing_id": "DF0916|2027-10-22",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "bcfecab9-3cfc-4c87-be4b-fb7bee25114f",
+      "official_sailing_id": "DF0917|2027-10-27",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "77f51889-f05a-4df3-86be-2bf0d83cc75c",
+      "official_sailing_id": "DF0918|2027-10-31",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "df42c179-de2e-4ef5-8781-aadc9e24a5fb",
+      "official_sailing_id": "WT0146|2027-10-02",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "e7251206-206b-4aed-83a8-274108bf5f58",
+      "official_sailing_id": "WT0147|2027-10-09",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "ccd66c3c-b140-4774-84e7-15f45c1c29df",
+      "official_sailing_id": "WT0148|2027-10-16",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "39bf6251-71a5-4736-9b5d-0d20bd0ed376",
+      "official_sailing_id": "WT0149|2027-10-23",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    },
+    {
+      "uuid": "18a0df79-d4f9-47aa-8067-ceca5075cc92",
+      "official_sailing_id": "WT0150|2027-10-30",
+      "classification": "VALID_INSERT",
+      "source_present": true,
+      "ship_match": true,
+      "dest_ok": true,
+      "same_voyage": true
+    }
+  ],
+  "freeze_30_valid": 30,
+  "freeze_30_reproposed": [],
+  "writes": 0
+}

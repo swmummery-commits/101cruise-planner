@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-09-17T02:50:00.000Z",
+  "incident_run_record_id": "72c1e384-9369-4d70-b690-81db79b9055d",
+  "incident_run_id": "disney-cruise-line-weekly-2026-09-16T19-00-34-516Z",
+  "dispatch_id": "disney-cruise-line-dispatch-2026-09-16T19-00-30-347Z",
+  "origin": {
+    "batch_cap": 30,
+    "constant": "DISNEY_MAX_WEEKLY_MATERIAL_WRITES",
+    "queue_sort": "official_sailing_id localeCompare then slice(0, 30)",
+    "files": [
+      "netlify/functions/lib/disney-weekly-update-policy.js",
+      "netlify/functions/lib/disney-weekly-apply.js",
+      "netlify/functions/lib/disney-weekly-maintenance.js"
+    ],
+    "freeze_first_official_sailing_id": "DA0194|2027-09-06",
+    "freeze_last_official_sailing_id": "WT0150|2027-10-30",
+    "freeze_ids_are_sorted_localecompare": true,
+    "conclusion": "The 30 rows are batch 1 of the scheduled Disney weekly insert queue, not an arbitrary sample of 30."
+  },
+  "timing": {
+    "run_started_at": "2026-09-16T19:00:37.442Z",
+    "first_insert": "2026-09-16T19:12:32.630Z",
+    "last_insert": "2026-09-16T19:13:09.026Z",
+    "source_deadline_ms": 720000,
+    "source_deadline_wall": "2026-09-16T19:12:37.442Z",
+    "write_start_vs_source_deadline_delta_ms": -4812,
+    "netlify_background_limit_ms": 900000,
+    "netlify_sigterm_wall": "2026-09-16T19:15:37.442Z",
+    "legacy_post_insert_work": "599 sequential source_current_touches then persistMaintenanceRollbackManifest AFTER writes"
+  },
+  "termination": {
+    "root_cause": "FUNCTION_RUNTIME_LIMIT",
+    "confidence": "high_from_code_and_clock_not_log_export",
+    "netlify_function_logs_export": "not_retrieved_cli_hangs",
+    "why": "Source enumeration consumed ~12 minutes (matches DISNEY_SOURCE_DEADLINE_MS=720s). First insert began at 19:12:32, 5s before the 720s source deadline. Batch 1 (30) completed in ~37s. Remaining wall-clock to the 900s Netlify background limit was ~2.5 minutes, which is consumed by hundreds of sequential last_seen PATCHes. Rollback manifest and ledger finalize sit after that work, so SIGTERM leaves 30 committed inserts with zero manifests and status=running.",
+    "not": ["UNHANDLED_EXCEPTION_as_primary", "NETWORK_STALL_as_primary", "MEMORY_as_primary"],
+    "locks_at_forensic_time": {
+      "execution_lock_expired": "2026-09-16T19:30:38Z",
+      "background_dispatch_lock_expired": "2026-09-16T21:00:35Z",
+      "w38_schedule_lease_valid_until": "2026-09-24T19:00:33Z",
+      "global_write_lock": "idle",
+      "active_worker": false
+    }
+  },
+  "material_writes": {
+    "inserts": 30,
+    "existing_row_material_changes_attributable_to_disney": 0,
+    "last_seen_touches_not_material": 599,
+    "da0085_expiry_is_daily_expiry_not_disney": true
+  }
+}

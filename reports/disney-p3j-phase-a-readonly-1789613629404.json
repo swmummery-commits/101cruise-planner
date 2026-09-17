@@ -1,0 +1,166 @@
+{
+  "generated_at": "2026-09-17T02:53:49.403Z",
+  "run_id": "disney-cruise-line:p3j-phase-a-2026-W38-1789612907455",
+  "scheduled_lease_created": false,
+  "scheduled_lease_before_held": true,
+  "scheduled_lease_after_owner": "disney-cruise-line-dispatch-2026-09-16T19-00-30-347Z",
+  "terminal_status": "source_unstable",
+  "stage_timings": null,
+  "api_calls": null,
+  "proposed_inserts": 0,
+  "freeze_30_classifications": [
+    {
+      "uuid": "f68fc53f-60d3-4b4e-956e-06ee6976a90c",
+      "official_sailing_id": "DA0194|2027-09-06",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "56ab1f0d-8850-4db5-b1f2-73d3109c9d6a",
+      "official_sailing_id": "DA0196|2027-09-13",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "1b067665-8088-4bd3-afcb-d3d36c6415b8",
+      "official_sailing_id": "DA0198|2027-09-20",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "17d3a869-92ef-41c2-ad9f-c9f5f3d4245d",
+      "official_sailing_id": "DA0200|2027-09-27",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "c8d20534-52d9-4478-aae3-f7115507ae52",
+      "official_sailing_id": "DA0202|2027-10-04",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "edcf15a6-55a6-4849-be97-74178b7d1a53",
+      "official_sailing_id": "DD1608|2027-09-10",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "cde75109-64a5-4399-b966-897531238748",
+      "official_sailing_id": "DD1610|2027-09-17",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "178ae064-d7f4-431d-bf38-c94ce7f095b9",
+      "official_sailing_id": "DD1612|2027-09-24",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "534756ed-d927-4a5b-81bb-3812f80c0b00",
+      "official_sailing_id": "DD1614|2027-10-01",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "1a9379da-25cf-4f06-861b-b943fdc55932",
+      "official_sailing_id": "DD1616|2027-10-08",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "d0b2f775-e244-4e7c-aeb7-398d23d1eafc",
+      "official_sailing_id": "DD1617|2027-10-11",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "fa86501f-882d-42fc-8858-22a6d81ca8a4",
+      "official_sailing_id": "DD1618|2027-10-15",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "a8b35bca-fe63-4e00-a34d-0b155fc379e5",
+      "official_sailing_id": "DD1619|2027-10-18",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "576391e9-d656-4513-a6f6-b5e22cfe7175",
+      "official_sailing_id": "DD1620|2027-10-22",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "db210687-fd21-461b-8a57-c78948ffc447",
+      "official_sailing_id": "DD1621|2027-10-25",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "ba4f0b5b-8ef5-482f-9ed9-4b8419da5cb7",
+      "official_sailing_id": "DD1622|2027-10-29",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "4cc79487-97af-46b7-91a9-2ff52bd3ef53",
+      "official_sailing_id": "DF0909|2027-09-19",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "b1c6da04-454e-4b1e-81a5-f63c7675f660",
+      "official_sailing_id": "DF0910|2027-09-24",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "e68828bc-aa4c-4eed-ae65-891b931e41e7",
+      "official_sailing_id": "DF0912|2027-10-03",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "2c4cd158-251a-4cca-8e60-8640785fa854",
+      "official_sailing_id": "DF0913|2027-10-08",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "7dbe2936-ea3c-4deb-9486-57340c26c76a",
+      "official_sailing_id": "DF0914|2027-10-13",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "83614f60-2e99-4f0c-b894-7e933956cd98",
+      "official_sailing_id": "DF0915|2027-10-17",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "10bf7b28-9960-4394-b205-b3dd3fcec2a1",
+      "official_sailing_id": "DF0916|2027-10-22",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "bcfecab9-3cfc-4c87-be4b-fb7bee25114f",
+      "official_sailing_id": "DF0917|2027-10-27",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "77f51889-f05a-4df3-86be-2bf0d83cc75c",
+      "official_sailing_id": "DF0918|2027-10-31",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "df42c179-de2e-4ef5-8781-aadc9e24a5fb",
+      "official_sailing_id": "WT0146|2027-10-02",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "e7251206-206b-4aed-83a8-274108bf5f58",
+      "official_sailing_id": "WT0147|2027-10-09",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "ccd66c3c-b140-4774-84e7-15f45c1c29df",
+      "official_sailing_id": "WT0148|2027-10-16",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "39bf6251-71a5-4736-9b5d-0d20bd0ed376",
+      "official_sailing_id": "WT0149|2027-10-23",
+      "classification": "SOURCE_MISSING"
+    },
+    {
+      "uuid": "18a0df79-d4f9-47aa-8067-ceca5075cc92",
+      "official_sailing_id": "WT0150|2027-10-30",
+      "classification": "SOURCE_MISSING"
+    }
+  ],
+  "freeze_30_valid": 0,
+  "freeze_30_reproposed": [],
+  "writes": 0
+}

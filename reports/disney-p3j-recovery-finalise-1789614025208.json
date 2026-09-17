@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-09-17T03:00:25.208Z",
+  "recovery_manifest_id": "134b9ee2-25e2-470a-8ea9-b1858e20a561",
+  "run": {
+    "id": "72c1e384-9369-4d70-b690-81db79b9055d",
+    "status": "failed",
+    "started_at": "2026-09-16T19:00:37.442+00:00",
+    "finished_at": "2026-09-17T03:00:24.388+00:00",
+    "trigger_type": "scheduled",
+    "terminal_status": "partial_write_failure",
+    "inserts": 30,
+    "inventory_changed": true,
+    "failed_writes": 0
+  },
+  "locks": {
+    "execution_held": false,
+    "background_held": false,
+    "global_held": false,
+    "w38_schedule_lease_held": true
+  }
+}

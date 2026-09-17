@@ -335,6 +335,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled", s
     perthCalendarDate,
     DAILY_EXPIRY_RUN_TYPE
   } = require("./cruise-discovery-maintenance");
+  const { reconcileAllStaleCruiseMaintenanceRuns } = require("./weekly-maintenance-stale-runs");
 
   if (!dryRun) assertDailyExpiryEnabled();
 
@@ -382,6 +383,8 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled", s
       };
     }
   }
+
+  await reconcileAllStaleCruiseMaintenanceRuns(sb).catch(() => null);
 
   await reconcileAbandonedMaintenanceRuns(sb, {
     lineSlug: null,

@@ -1,0 +1,153 @@
+{
+  "generated_at": "2026-09-17T03:09:34.906Z",
+  "source_runtime_ms": 305131,
+  "stage_timings": [
+    {
+      "stage": "bootstrap",
+      "duration_ms": 760
+    },
+    {
+      "stage": "pavas_filter_options",
+      "duration_ms": 294
+    },
+    {
+      "stage": "pavas_product_listing",
+      "duration_ms": 278426
+    },
+    {
+      "stage": "dated_sailing_expansion",
+      "duration_ms": 21568
+    },
+    {
+      "stage": "catalogue_enrichment",
+      "duration_ms": 24
+    },
+    {
+      "stage": "ship_port_destination_resolver",
+      "duration_ms": 1052
+    },
+    {
+      "stage": "production_lookup",
+      "duration_ms": 3003,
+      "db_calls": 1
+    },
+    {
+      "stage": "candidate_planning",
+      "duration_ms": 4
+    }
+  ],
+  "api_calls": 1072,
+  "eligible": 944,
+  "plan_hash": "25cb44c9eced7f68ab74abaf2daf813da1b75affe681afb3dcf2c958eb96c38a",
+  "freeze_manifest_id": "267e1832-c4f3-4d41-b6c1-155a1a0058d0",
+  "remaining_inserts": 316,
+  "reviews": 0,
+  "quality": {
+    "destination": 100,
+    "passed": true
+  },
+  "batches": [
+    {
+      "batch_number": 1,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "21d3763f-0904-4275-9400-70f4197e2eea",
+      "precommit_manifest_id": "666a7ea7-cd2b-413c-894f-3fa376331ce7"
+    },
+    {
+      "batch_number": 2,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "b6e828c1-ca06-4ca1-ab23-54b8474f3a95",
+      "precommit_manifest_id": "a03f7cf1-7d3e-472b-85a0-8f0bf57ee4b5"
+    },
+    {
+      "batch_number": 3,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "374ef70f-0ded-4d83-a87e-bf97488888e6",
+      "precommit_manifest_id": "d4cfa823-9064-49e6-8406-f5f23ff3449f"
+    },
+    {
+      "batch_number": 4,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "8ed32dd5-98ea-4fb1-a58d-5aac07742970",
+      "precommit_manifest_id": "6aaa1a37-3472-4e8a-9831-bb791a46aec8"
+    },
+    {
+      "batch_number": 5,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "ecfcaf36-5c4b-407f-a35b-929e510b2878",
+      "precommit_manifest_id": "7cf6f477-1834-4bcb-ad05-8d634ecae69e"
+    },
+    {
+      "batch_number": 6,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "226fbac3-f1c7-4dbe-a51f-ffc59067ff73",
+      "precommit_manifest_id": "c278e703-2819-40fe-96d3-0709ab92fd8d"
+    },
+    {
+      "batch_number": 7,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "6d8b4744-5b82-4390-a43f-a841a092c389",
+      "precommit_manifest_id": "5e68124c-e45f-44c7-9e97-5df57ffc3f07"
+    },
+    {
+      "batch_number": 8,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "5d117214-38f4-446f-b20e-a6dbe83b9eff",
+      "precommit_manifest_id": "3b01eb6c-b19a-4147-abbc-f0ec63ced116"
+    },
+    {
+      "batch_number": 9,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "808a7043-034c-4c98-9c4e-db8dc591f202",
+      "precommit_manifest_id": "1398a298-46e0-48cc-a3c4-787fcb48f9bf"
+    },
+    {
+      "batch_number": 10,
+      "expected": 30,
+      "writes": 30,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "28a7a59c-1574-47f2-b5cd-73eae24aaaef",
+      "precommit_manifest_id": "0074eb21-2d91-4e58-9f87-a47c133e468d"
+    },
+    {
+      "batch_number": 11,
+      "expected": 16,
+      "writes": 16,
+      "ok": true,
+      "reason": null,
+      "run_record_id": "722ec823-5ec0-466d-a1f8-27bd73f92388",
+      "precommit_manifest_id": "98a48bf3-a5e7-4c92-96c2-6d74123bd408"
+    }
+  ],
+  "writes_total": 316,
+  "failures": [],
+  "w38_schedule_lease_held": true
+}

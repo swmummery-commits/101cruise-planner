@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-09-17T03:06:36.480Z",
+  "azamara": {
+    "run_id": "azamara:p3j-friday-preflight-2026-W38-1789613449523",
+    "terminal_status": "source_repair_required",
+    "writes": {
+      "inserted": 0,
+      "updated": 0,
+      "failed": 0,
+      "source_absence_hidden": 0
+    },
+    "reason": "SOURCE_REPAIR_REQUIRED",
+    "scheduled_lease_before_held": false,
+    "scheduled_lease_after_held": false,
+    "scheduled_lease_created": false,
+    "friday_readiness": "SOURCE_REPAIR_BEFORE_FRIDAY"
+  },
+  "silversea": {
+    "run_id": "silversea:p3j-friday-preflight-2026-W38-1789614176135",
+    "terminal_status": "DRY_RUN_COMPLETE",
+    "writes": 0,
+    "scheduled_lease_before_held": false,
+    "scheduled_lease_after_held": false,
+    "scheduled_lease_created": false,
+    "friday_readiness": "READ_ONLY_LEAVE_CRON"
+  }
+}
