@@ -6,9 +6,9 @@
   "title": "WEEKLY MAINTENANCE P3K — AZAMARA ZERO-SOURCE REPAIR + FRIDAY PRODUCTION PROOF",
   "repository": "swmummery-commits/101cruise-planner",
   "starting_sha": "550d11f3fb19924ef688340af6c6295b04bbeccd",
-  "azamara_repair_sha": "pending_commit",
-  "runtime_sha": "same_as_repair",
-  "production_deployed_sha": "pending_push",
+  "azamara_repair_sha": "1963bf99e88994563dbff58cfc7a4db6886d8333",
+  "runtime_sha": "1963bf99e88994563dbff58cfc7a4db6886d8333",
+  "production_deployed_sha": "pending_netlify_publish_of_1963bf9",
   "prior_production": {
     "deploy": "6aab5b8ce08cfe00084ef6cf",
     "commit": "550d11f3fb19924ef688340af6c6295b04bbeccd"
@@ -23,9 +23,9 @@
   "deletes": 0,
   "answers": {
     "A_starting_sha": "550d11f3fb19924ef688340af6c6295b04bbeccd",
-    "B_azamara_repair_sha": "pending_commit",
-    "C_runtime_sha": "same_as_repair",
-    "D_production_deployed_sha": "pending_push",
+    "B_azamara_repair_sha": "1963bf99e88994563dbff58cfc7a4db6886d8333",
+    "C_runtime_sha": "1963bf99e88994563dbff58cfc7a4db6886d8333",
+    "D_production_deployed_sha": "pending_netlify_publish_of_1963bf9",
     "E_sitemap_xml": {
       "requested": "https://www.azamara.com/sitemap.xml",
       "http_status": 200,
@@ -135,7 +135,7 @@
       "test-weekly-maintenance-p3g": "21 passed",
       "test-weekly-maintenance-reliability-p0": "99 passed"
     },
-    "AV_git_status": "pending_commits"
+    "AV_git_status": "main ahead of origin by repair commit 1963bf9 plus this report SHA commit"
   },
   "collapse_forensic": {
     "short_url": {
