@@ -148,11 +148,12 @@ function buildRoyalCaribbeanWeeklyManifestFromDryRun({
     proposed_action: "review_required_update"
   }));
 
-  const cutoffHides = (summary.production_cutoff_candidates || []).map((row) => ({
+  const cutoffObservations = (summary.production_cutoff_candidates || []).map((row) => ({
     id: row.id,
     official_sailing_id: row.official_sailing_id,
     departure_date: row.departure_date || null,
-    proposed_action: "hide_from_public_inventory"
+    classification: "DAILY_EXPIRY_MANAGED",
+    proposed_action: "retain_for_daily_expiry"
   }));
 
   const sourceAbsenceObservations = (sourceAbsencePolicy.source_absent_candidates || []).map((row) => ({
@@ -162,13 +163,14 @@ function buildRoyalCaribbeanWeeklyManifestFromDryRun({
     proposed_action: "retain_active"
   }));
 
-  const sourceAbsenceHides = firstActivationCycle
-    ? []
-    : (sourceAbsencePolicy.source_absent_action_eligible || []).map((row) => ({
-        discovered_cruise_id: row.discovered_cruise_id || null,
-        official_sailing_id: row.official_sailing_id,
-        proposed_action: "hide_source_absent"
-      }));
+  const sourceAbsenceHides =
+    firstActivationCycle || sourceAbsencePolicy.source_absence_actions_allowed !== true
+      ? []
+      : (sourceAbsencePolicy.source_absent_action_eligible || []).map((row) => ({
+          discovered_cruise_id: row.discovered_cruise_id || null,
+          official_sailing_id: row.official_sailing_id,
+          proposed_action: "hide_source_absent"
+        }));
 
   const weeklyManifest = {
     generated_at: new Date().toISOString(),
@@ -180,7 +182,8 @@ function buildRoyalCaribbeanWeeklyManifestFromDryRun({
     run_id: summary.run_id || null,
     inserts,
     updates: safeUpdates,
-    cutoff_hides: cutoffHides,
+    cutoff_hides: [],
+    daily_expiry_managed_cutoff_candidates: cutoffObservations,
     source_absence_observations: sourceAbsenceObservations,
     source_absence_hides: sourceAbsenceHides,
     review_required: reviewRequired,

@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-09-17T01:49:36.171Z",
+  "catchup_run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713",
+  "catchup_run_id": "royal-p3h-controlled-catchup-2026-09-16",
+  "trigger_type": "manual_catchup",
+  "inserts_represented": 107,
+  "manifests_linked": [
+    {
+      "id": "23db0640-383b-4c3a-8767-0976312f9c9d",
+      "previous_run_record_id": null,
+      "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+    },
+    {
+      "id": "1676f548-18ed-4ff4-9438-7ffd0333417a",
+      "previous_run_record_id": null,
+      "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+    },
+    {
+      "id": "405d5356-86a3-4f76-b261-03b4a87cab79",
+      "previous_run_record_id": null,
+      "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+    },
+    {
+      "id": "6cbd189f-2da3-4dd1-b32f-9677b8317f29",
+      "previous_run_record_id": null,
+      "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+    }
+  ],
+  "wednesday_scheduled_run_id": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+  "wednesday_trigger_type_after": "scheduled",
+  "wednesday_unchanged": true
+}

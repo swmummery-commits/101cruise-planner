@@ -1,0 +1,3580 @@
+{
+  "generated_at": "2026-09-17T01:52:48.662Z",
+  "trigger_type": "preflight",
+  "dispatch_id": "royal-caribbean-international:p3h-preflight-2026-W38-1789609819532",
+  "scheduled_period_key": "royal-caribbean-international:2026-W38:scheduled",
+  "scheduled_lease_before": {
+    "held": true,
+    "expired": false,
+    "worker_state": "running",
+    "owner_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_record_id": null,
+    "acquired_at": "2026-09-13T23:00:38.984351+00:00",
+    "created_at": "2026-09-13T23:00:38.984351+00:00",
+    "expires_at": "2026-09-21T23:00:38.984351+00:00"
+  },
+  "scheduled_lease_after": {
+    "held": true,
+    "expired": false,
+    "worker_state": "running",
+    "owner_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_id": "royal-caribbean-dispatch-2026-09-13T23-00-37-382Z",
+    "run_record_id": null,
+    "acquired_at": "2026-09-13T23:00:38.984351+00:00",
+    "created_at": "2026-09-13T23:00:38.984351+00:00",
+    "expires_at": "2026-09-21T23:00:38.984351+00:00"
+  },
+  "scheduled_lease_created_by_preflight": false,
+  "wednesday": {
+    "run_record_id": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+    "union_sailing_identities": 3206,
+    "proposed_inserts": 106,
+    "proposed_insert_ids": [],
+    "identities_persisted": false,
+    "source_snapshot_id": "918844922327452c"
+  },
+  "fresh": {
+    "union_sailing_identities": 3218,
+    "official_source_total": 935,
+    "recognised_existing_eligible": 2922,
+    "proposed_inserts": 5,
+    "proposed_insert_ids": [
+      "AN07A507_2028-05-19",
+      "VY07A538_2028-07-14",
+      "AN04A003_2028-05-07",
+      "SR07A527_2028-07-02",
+      "OV07A525_2028-06-26"
+    ],
+    "proposed_updates": 0,
+    "review_items": 0,
+    "incomplete_skipped": 14,
+    "source_absent_active": 18,
+    "source_absent_action_eligible_count": 11,
+    "cutoff_candidates": 163,
+    "source_snapshot_id": "93bf7e062c3fb283",
+    "weekly_maintenance_healthy": true,
+    "royal_caribbean_source_enumeration_ok": true,
+    "reconciliation_arithmetic_ok": true,
+    "terminal_status": "read_only",
+    "perth_today": "2026-09-17"
+  },
+  "compare": {
+    "wednesday_count": 0,
+    "fresh_count": 5,
+    "intersection_count": 0,
+    "intersection": [],
+    "wednesday_only": [],
+    "fresh_only": [
+      "AN04A003_2028-05-07",
+      "AN07A507_2028-05-19",
+      "OV07A525_2028-06-26",
+      "SR07A527_2028-07-02",
+      "VY07A538_2028-07-14"
+    ],
+    "comparable": false
+  },
+  "reconstructed_cutoff_aging_ids": [
+    "FR09D172_2026-10-08",
+    "HM5BH348_2026-10-08",
+    "MA04W206_2026-10-08",
+    "SC04I849_2026-10-07",
+    "VY08X010_2026-10-08"
+  ],
+  "deltas": {
+    "classified": [
+      {
+        "official_sailing_id": "AN04A003_2028-05-07",
+        "side": "fresh_only",
+        "classification": "NEW_OFFICIAL_PUBLICATION",
+        "departure_date": "2028-05-07"
+      },
+      {
+        "official_sailing_id": "AN07A507_2028-05-19",
+        "side": "fresh_only",
+        "classification": "NEW_OFFICIAL_PUBLICATION",
+        "departure_date": "2028-05-19"
+      },
+      {
+        "official_sailing_id": "OV07A525_2028-06-26",
+        "side": "fresh_only",
+        "classification": "NEW_OFFICIAL_PUBLICATION",
+        "departure_date": "2028-06-26"
+      },
+      {
+        "official_sailing_id": "SR07A527_2028-07-02",
+        "side": "fresh_only",
+        "classification": "NEW_OFFICIAL_PUBLICATION",
+        "departure_date": "2028-07-02"
+      },
+      {
+        "official_sailing_id": "VY07A538_2028-07-14",
+        "side": "fresh_only",
+        "classification": "NEW_OFFICIAL_PUBLICATION",
+        "departure_date": "2028-07-14"
+      }
+    ],
+    "counts": {
+      "NEW_OFFICIAL_PUBLICATION": 5,
+      "SOURCE_REMOVED": 0,
+      "CUT_OFF_DATE_AGING": 0,
+      "IDENTITY_REMAP": 0,
+      "SOURCE_VOLATILITY": 0,
+      "UNEXPLAINED": 0
+    },
+    "unexplained": []
+  },
+  "freeze_gate": {
+    "freeze_authorised": false,
+    "failures": [
+      "unexplained_candidate_disappearance"
+    ],
+    "delta_zero": false,
+    "delta_explained": true,
+    "wednesday_identities_persisted": false,
+    "classification": "READY_FOR_CONTROLLED_CATCHUP"
+  },
+  "master_plan": {
+    "mode": "royal_caribbean_p3g_catchup_master",
+    "frozen_at": "2026-09-17T01:52:48.652Z",
+    "perth_today": "2026-09-17",
+    "source_snapshot_id": "93bf7e062c3fb283",
+    "union_count": 3218,
+    "batch_cap": 30,
+    "safe_backlog": 5,
+    "review_or_ambiguous": 0,
+    "collision_count": 0,
+    "classification_counts": {
+      "TRUE_NEW_COMPLETE": 5,
+      "SAFE_METADATA": 0,
+      "REVIEW_REQUIRED": 0,
+      "COLLISION": 0,
+      "AMBIGUOUS": 0
+    },
+    "batches": [
+      {
+        "batch_number": 1,
+        "max_batch_size": 30,
+        "expected_record_count": 5,
+        "official_sailing_ids": [
+          "AN07A507_2028-05-19",
+          "VY07A538_2028-07-14",
+          "AN04A003_2028-05-07",
+          "SR07A527_2028-07-02",
+          "OV07A525_2028-06-26"
+        ]
+      }
+    ],
+    "classified": [
+      {
+        "official_sailing_id": "AN07A507_2028-05-19",
+        "source_identity": "AN07A507_2028-05-19",
+        "proposed_action": "insert_active",
+        "identity_key": "f0a212f78ddad0fa969066cb0692a0f7780d0f43",
+        "external_key": "f94fc0132be3a38c89e06b3530c753260373b7d6",
+        "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+        "ship_name": null,
+        "departure_date": "2028-05-19",
+        "return_date": "2028-05-26",
+        "nights": 7,
+        "departure_port": "Seward",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_name": null,
+        "source_evidence": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+        "canonical_write_payload": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+          "departure_date": "2028-05-19",
+          "return_date": "2028-05-26",
+          "nights": 7,
+          "departure_port": "Seward",
+          "departure_port_meta": {
+            "rawValue": "Seward",
+            "canonicalPortId": "port-csv-138",
+            "canonicalPortName": "Seward",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Southbound Alaska & Hubbard Glacier",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+          "round_trip": false,
+          "raw_extract": {
+            "itinerary_name": "Southbound Alaska & Hubbard Glacier",
+            "group_id": "AN07SWD-953470841",
+            "sailing_id": "AN07A507_2028-05-19",
+            "package_code": "AN07A476",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "AN",
+            "sailing_status": "OPEN",
+            "round_trip": false,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-05-19",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SWD",
+                    "name": "Seward",
+                    "arrival_time": null,
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "PORT",
+                "date": "2028-05-20",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YAK",
+                    "name": "Hubbard Glacier",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-05-21",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "09:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-05-22",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-05-23",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "PSO",
+                    "name": "Icy Strait Point",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "15:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "PORT",
+                "date": "2028-05-24",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "14:30:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "CRUISING",
+                "date": "2028-05-25",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-05-26",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "04:30:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-05-19",
+                "code": "SWD",
+                "name": "Seward",
+                "arrival_time": null,
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 2,
+                "date": "2028-05-20",
+                "code": "YAK",
+                "name": "Hubbard Glacier",
+                "arrival_time": "13:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-05-21",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "09:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-05-22",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "07:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-05-23",
+                "code": "PSO",
+                "name": "Icy Strait Point",
+                "arrival_time": "07:00:00",
+                "departure_time": "15:00:00"
+              },
+              {
+                "day": 6,
+                "date": "2028-05-24",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "07:00:00",
+                "departure_time": "14:30:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-05-26",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "04:30:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 1,
+            "royal_caribbean_sailing_id": "AN07A507_2028-05-19",
+            "royal_caribbean_group_id": "AN07SWD-953470841",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "f94fc0132be3a38c89e06b3530c753260373b7d6",
+          "identity_key": "f0a212f78ddad0fa969066cb0692a0f7780d0f43",
+          "official_sailing_id": "AN07A507_2028-05-19"
+        },
+        "candidate": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+          "departure_date": "2028-05-19",
+          "return_date": "2028-05-26",
+          "nights": 7,
+          "departure_port": "Seward",
+          "departure_port_meta": {
+            "rawValue": "Seward",
+            "canonicalPortId": "port-csv-138",
+            "canonicalPortName": "Seward",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Southbound Alaska & Hubbard Glacier",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+          "round_trip": false,
+          "raw_extract": {
+            "itinerary_name": "Southbound Alaska & Hubbard Glacier",
+            "group_id": "AN07SWD-953470841",
+            "sailing_id": "AN07A507_2028-05-19",
+            "package_code": "AN07A476",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "AN",
+            "sailing_status": "OPEN",
+            "round_trip": false,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-05-19",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SWD",
+                    "name": "Seward",
+                    "arrival_time": null,
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "PORT",
+                "date": "2028-05-20",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YAK",
+                    "name": "Hubbard Glacier",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-05-21",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "09:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-05-22",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-05-23",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "PSO",
+                    "name": "Icy Strait Point",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "15:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "PORT",
+                "date": "2028-05-24",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "14:30:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "CRUISING",
+                "date": "2028-05-25",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-05-26",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "04:30:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-05-19",
+                "code": "SWD",
+                "name": "Seward",
+                "arrival_time": null,
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 2,
+                "date": "2028-05-20",
+                "code": "YAK",
+                "name": "Hubbard Glacier",
+                "arrival_time": "13:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-05-21",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "09:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-05-22",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "07:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-05-23",
+                "code": "PSO",
+                "name": "Icy Strait Point",
+                "arrival_time": "07:00:00",
+                "departure_time": "15:00:00"
+              },
+              {
+                "day": 6,
+                "date": "2028-05-24",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "07:00:00",
+                "departure_time": "14:30:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-05-26",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "04:30:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 1,
+            "royal_caribbean_sailing_id": "AN07A507_2028-05-19",
+            "royal_caribbean_group_id": "AN07SWD-953470841",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "f94fc0132be3a38c89e06b3530c753260373b7d6",
+          "identity_key": "f0a212f78ddad0fa969066cb0692a0f7780d0f43",
+          "official_sailing_id": "AN07A507_2028-05-19"
+        },
+        "classification": "TRUE_NEW_COMPLETE",
+        "reason": "complete_identity_no_collision"
+      },
+      {
+        "official_sailing_id": "VY07A538_2028-07-14",
+        "source_identity": "VY07A538_2028-07-14",
+        "proposed_action": "insert_active",
+        "identity_key": "03fe994164f2094ff72daea4a66de660633311bb",
+        "external_key": "a0412843c0a42e350fb0438d28ab5399f8a2371b",
+        "ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+        "ship_name": null,
+        "departure_date": "2028-07-14",
+        "return_date": "2028-07-21",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_name": null,
+        "source_evidence": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+        "canonical_write_payload": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+          "departure_date": "2028-07-14",
+          "return_date": "2028-07-21",
+          "nights": 7,
+          "departure_port": "Seattle",
+          "departure_port_meta": {
+            "rawValue": "Seattle",
+            "canonicalPortId": "port-csv-116",
+            "canonicalPortName": "Seattle",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Adventure Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Adventure Cruise",
+            "group_id": "VY07SEA-2189415139",
+            "sailing_id": "VY07A538_2028-07-14",
+            "package_code": "VY07A458",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "VY",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-07-14",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-07-15",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-07-16",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-07-17",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-07-18",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "12:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "CRUISING",
+                "date": "2028-07-19",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-20",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVJ",
+                    "name": "Victoria",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "18:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-21",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": "06:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-07-14",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-07-16",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:00:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-07-17",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "08:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-07-18",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "07:00:00",
+                "departure_time": "12:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-20",
+                "code": "YVJ",
+                "name": "Victoria",
+                "arrival_time": "08:00:00",
+                "departure_time": "18:00:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-07-21",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": "06:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "VY07A538_2028-07-14",
+            "royal_caribbean_group_id": "VY07SEA-2189415139",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "a0412843c0a42e350fb0438d28ab5399f8a2371b",
+          "identity_key": "03fe994164f2094ff72daea4a66de660633311bb",
+          "official_sailing_id": "VY07A538_2028-07-14"
+        },
+        "candidate": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+          "departure_date": "2028-07-14",
+          "return_date": "2028-07-21",
+          "nights": 7,
+          "departure_port": "Seattle",
+          "departure_port_meta": {
+            "rawValue": "Seattle",
+            "canonicalPortId": "port-csv-116",
+            "canonicalPortName": "Seattle",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Adventure Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Adventure Cruise",
+            "group_id": "VY07SEA-2189415139",
+            "sailing_id": "VY07A538_2028-07-14",
+            "package_code": "VY07A458",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "VY",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-07-14",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-07-15",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-07-16",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-07-17",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-07-18",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "12:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "CRUISING",
+                "date": "2028-07-19",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-20",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVJ",
+                    "name": "Victoria",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "18:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-21",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": "06:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-07-14",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-07-16",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:00:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-07-17",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "08:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-07-18",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "07:00:00",
+                "departure_time": "12:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-20",
+                "code": "YVJ",
+                "name": "Victoria",
+                "arrival_time": "08:00:00",
+                "departure_time": "18:00:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-07-21",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": "06:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "VY07A538_2028-07-14",
+            "royal_caribbean_group_id": "VY07SEA-2189415139",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "a0412843c0a42e350fb0438d28ab5399f8a2371b",
+          "identity_key": "03fe994164f2094ff72daea4a66de660633311bb",
+          "official_sailing_id": "VY07A538_2028-07-14"
+        },
+        "classification": "TRUE_NEW_COMPLETE",
+        "reason": "complete_identity_no_collision"
+      },
+      {
+        "official_sailing_id": "AN04A003_2028-05-07",
+        "source_identity": "AN04A003_2028-05-07",
+        "proposed_action": "insert_active",
+        "identity_key": "d01d24fbe639376597480b26546b5239bf0454c7",
+        "external_key": "ceea9e606e3144741cc79cde3d69d18f756056e8",
+        "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+        "ship_name": null,
+        "departure_date": "2028-05-07",
+        "return_date": "2028-05-11",
+        "nights": 4,
+        "departure_port": "Vancouver",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_name": null,
+        "source_evidence": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+        "canonical_write_payload": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+          "departure_date": "2028-05-07",
+          "return_date": "2028-05-11",
+          "nights": 4,
+          "departure_port": "Vancouver",
+          "departure_port_meta": {
+            "rawValue": "Vancouver",
+            "canonicalPortId": "port-csv-114",
+            "canonicalPortName": "Vancouver",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Experience Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Experience Cruise",
+            "group_id": "AN04YVR-259352479",
+            "sailing_id": "AN04A003_2028-05-07",
+            "package_code": "AN04A003",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "AN",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-05-07",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": null,
+                    "departure_time": "18:30:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-05-08",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-05-09",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "CRUISING",
+                "date": "2028-05-10",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-05-11",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "08:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-05-07",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": null,
+                "departure_time": "18:30:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-05-09",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "07:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-05-11",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "08:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "AN04A003_2028-05-07",
+            "royal_caribbean_group_id": "AN04YVR-259352479",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "ceea9e606e3144741cc79cde3d69d18f756056e8",
+          "identity_key": "d01d24fbe639376597480b26546b5239bf0454c7",
+          "official_sailing_id": "AN04A003_2028-05-07"
+        },
+        "candidate": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+          "departure_date": "2028-05-07",
+          "return_date": "2028-05-11",
+          "nights": 4,
+          "departure_port": "Vancouver",
+          "departure_port_meta": {
+            "rawValue": "Vancouver",
+            "canonicalPortId": "port-csv-114",
+            "canonicalPortName": "Vancouver",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Experience Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Experience Cruise",
+            "group_id": "AN04YVR-259352479",
+            "sailing_id": "AN04A003_2028-05-07",
+            "package_code": "AN04A003",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "AN",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-05-07",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": null,
+                    "departure_time": "18:30:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-05-08",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-05-09",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "CRUISING",
+                "date": "2028-05-10",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-05-11",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "08:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-05-07",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": null,
+                "departure_time": "18:30:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-05-09",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "07:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-05-11",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "08:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "AN04A003_2028-05-07",
+            "royal_caribbean_group_id": "AN04YVR-259352479",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "ceea9e606e3144741cc79cde3d69d18f756056e8",
+          "identity_key": "d01d24fbe639376597480b26546b5239bf0454c7",
+          "official_sailing_id": "AN04A003_2028-05-07"
+        },
+        "classification": "TRUE_NEW_COMPLETE",
+        "reason": "complete_identity_no_collision"
+      },
+      {
+        "official_sailing_id": "SR07A527_2028-07-02",
+        "source_identity": "SR07A527_2028-07-02",
+        "proposed_action": "insert_active",
+        "identity_key": "c8a859baaa382cb2fad3cb8a46201f8c13ea5c80",
+        "external_key": "a6616b8a207ef6d6862bdb6b92a794bf19ef1c46",
+        "ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+        "ship_name": null,
+        "departure_date": "2028-07-02",
+        "return_date": "2028-07-09",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_name": null,
+        "source_evidence": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+        "canonical_write_payload": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+          "departure_date": "2028-07-02",
+          "return_date": "2028-07-09",
+          "nights": 7,
+          "departure_port": "Vancouver",
+          "departure_port_meta": {
+            "rawValue": "Vancouver",
+            "canonicalPortId": "port-csv-114",
+            "canonicalPortName": "Vancouver",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Inside Passage Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Inside Passage Cruise",
+            "group_id": "SR07YVR-4060558473",
+            "sailing_id": "SR07A527_2028-07-02",
+            "package_code": "SR07A527",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "SR",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-07-02",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "PORT",
+                "date": "2028-07-03",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ISP",
+                    "name": "Inside Passage",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "MULTI_PORT",
+                "date": "2028-07-04",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "06:30:00",
+                    "departure_time": "10:30:00",
+                    "sea_day": false
+                  },
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:30:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-07-05",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "PSO",
+                    "name": "Icy Strait Point",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "18:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-07-06",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SIT",
+                    "name": "Sitka",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "PORT",
+                "date": "2028-07-07",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-08",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ISP",
+                    "name": "Inside Passage",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-09",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "07:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-07-02",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 2,
+                "date": "2028-07-03",
+                "code": "ISP",
+                "name": "Inside Passage",
+                "arrival_time": null,
+                "departure_time": null
+              },
+              {
+                "day": 3,
+                "date": "2028-07-04",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "06:30:00",
+                "departure_time": "10:30:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-07-04",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:30:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-07-05",
+                "code": "PSO",
+                "name": "Icy Strait Point",
+                "arrival_time": "08:00:00",
+                "departure_time": "18:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-07-06",
+                "code": "SIT",
+                "name": "Sitka",
+                "arrival_time": "07:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 6,
+                "date": "2028-07-07",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "08:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-08",
+                "code": "ISP",
+                "name": "Inside Passage",
+                "arrival_time": null,
+                "departure_time": null
+              },
+              {
+                "day": 8,
+                "date": "2028-07-09",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "07:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 0,
+            "royal_caribbean_sailing_id": "SR07A527_2028-07-02",
+            "royal_caribbean_group_id": "SR07YVR-4060558473",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "a6616b8a207ef6d6862bdb6b92a794bf19ef1c46",
+          "identity_key": "c8a859baaa382cb2fad3cb8a46201f8c13ea5c80",
+          "official_sailing_id": "SR07A527_2028-07-02"
+        },
+        "candidate": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+          "departure_date": "2028-07-02",
+          "return_date": "2028-07-09",
+          "nights": 7,
+          "departure_port": "Vancouver",
+          "departure_port_meta": {
+            "rawValue": "Vancouver",
+            "canonicalPortId": "port-csv-114",
+            "canonicalPortName": "Vancouver",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Inside Passage Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Inside Passage Cruise",
+            "group_id": "SR07YVR-4060558473",
+            "sailing_id": "SR07A527_2028-07-02",
+            "package_code": "SR07A527",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "SR",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-07-02",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "PORT",
+                "date": "2028-07-03",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ISP",
+                    "name": "Inside Passage",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "MULTI_PORT",
+                "date": "2028-07-04",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "06:30:00",
+                    "departure_time": "10:30:00",
+                    "sea_day": false
+                  },
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:30:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-07-05",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "PSO",
+                    "name": "Icy Strait Point",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "18:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "PORT",
+                "date": "2028-07-06",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SIT",
+                    "name": "Sitka",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "PORT",
+                "date": "2028-07-07",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "KTN",
+                    "name": "Ketchikan",
+                    "arrival_time": "08:00:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-08",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ISP",
+                    "name": "Inside Passage",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-09",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVR",
+                    "name": "Vancouver",
+                    "arrival_time": "07:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-07-02",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 2,
+                "date": "2028-07-03",
+                "code": "ISP",
+                "name": "Inside Passage",
+                "arrival_time": null,
+                "departure_time": null
+              },
+              {
+                "day": 3,
+                "date": "2028-07-04",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "06:30:00",
+                "departure_time": "10:30:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-07-04",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:30:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-07-05",
+                "code": "PSO",
+                "name": "Icy Strait Point",
+                "arrival_time": "08:00:00",
+                "departure_time": "18:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-07-06",
+                "code": "SIT",
+                "name": "Sitka",
+                "arrival_time": "07:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 6,
+                "date": "2028-07-07",
+                "code": "KTN",
+                "name": "Ketchikan",
+                "arrival_time": "08:00:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-08",
+                "code": "ISP",
+                "name": "Inside Passage",
+                "arrival_time": null,
+                "departure_time": null
+              },
+              {
+                "day": 8,
+                "date": "2028-07-09",
+                "code": "YVR",
+                "name": "Vancouver",
+                "arrival_time": "07:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 0,
+            "royal_caribbean_sailing_id": "SR07A527_2028-07-02",
+            "royal_caribbean_group_id": "SR07YVR-4060558473",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "a6616b8a207ef6d6862bdb6b92a794bf19ef1c46",
+          "identity_key": "c8a859baaa382cb2fad3cb8a46201f8c13ea5c80",
+          "official_sailing_id": "SR07A527_2028-07-02"
+        },
+        "classification": "TRUE_NEW_COMPLETE",
+        "reason": "complete_identity_no_collision"
+      },
+      {
+        "official_sailing_id": "OV07A525_2028-06-26",
+        "source_identity": "OV07A525_2028-06-26",
+        "proposed_action": "insert_active",
+        "identity_key": "4083a7a5eb5f9240b3e80ed10f9b648ff978d44c",
+        "external_key": "2a695331ed2dea35cbc8cb5f6b1ad1f69f23b30b",
+        "ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+        "ship_name": null,
+        "departure_date": "2028-06-26",
+        "return_date": "2028-07-03",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_name": null,
+        "source_evidence": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+        "canonical_write_payload": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+          "departure_date": "2028-06-26",
+          "return_date": "2028-07-03",
+          "nights": 7,
+          "departure_port": "Seattle",
+          "departure_port_meta": {
+            "rawValue": "Seattle",
+            "canonicalPortId": "port-csv-116",
+            "canonicalPortName": "Seattle",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Adventure Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Adventure Cruise",
+            "group_id": "OV07SEA-2909514180",
+            "sailing_id": "OV07A525_2028-06-26",
+            "package_code": "OV07A525",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "OV",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-06-26",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-06-27",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-06-28",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SIT",
+                    "name": "Sitka",
+                    "arrival_time": "09:30:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-06-29",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "MULTI_PORT",
+                "date": "2028-06-30",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "05:00:00",
+                    "departure_time": "09:30:00",
+                    "sea_day": false
+                  },
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "CRUISING",
+                "date": "2028-07-01",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-02",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVJ",
+                    "name": "Victoria",
+                    "arrival_time": "17:00:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-03",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": "06:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-06-26",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-06-28",
+                "code": "SIT",
+                "name": "Sitka",
+                "arrival_time": "09:30:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-06-29",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "07:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-06-30",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "05:00:00",
+                "departure_time": "09:30:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-06-30",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-02",
+                "code": "YVJ",
+                "name": "Victoria",
+                "arrival_time": "17:00:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-07-03",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": "06:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "OV07A525_2028-06-26",
+            "royal_caribbean_group_id": "OV07SEA-2909514180",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "2a695331ed2dea35cbc8cb5f6b1ad1f69f23b30b",
+          "identity_key": "4083a7a5eb5f9240b3e80ed10f9b648ff978d44c",
+          "official_sailing_id": "OV07A525_2028-06-26"
+        },
+        "candidate": {
+          "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+          "ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+          "departure_date": "2028-06-26",
+          "return_date": "2028-07-03",
+          "nights": 7,
+          "departure_port": "Seattle",
+          "departure_port_meta": {
+            "rawValue": "Seattle",
+            "canonicalPortId": "port-csv-116",
+            "canonicalPortName": "Seattle",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "royal_caribbean_graphql",
+            "adapter_alias": false,
+            "classification": "exact_resolved"
+          },
+          "itinerary": "Alaska Adventure Cruise",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+          "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+          "round_trip": true,
+          "raw_extract": {
+            "itinerary_name": "Alaska Adventure Cruise",
+            "group_id": "OV07SEA-2909514180",
+            "sailing_id": "OV07A525_2028-06-26",
+            "package_code": "OV07A525",
+            "destination_code": "ALCAN",
+            "destination_name": "Alaska",
+            "structured_source": "royal_caribbean_graphql",
+            "voyage_type": "OCEAN",
+            "ship_code": "OV",
+            "sailing_status": "OPEN",
+            "round_trip": true,
+            "itinerary_days": [
+              {
+                "number": 1,
+                "type": "PORT",
+                "date": "2028-06-26",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": null,
+                    "departure_time": "16:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 2,
+                "type": "CRUISING",
+                "date": "2028-06-27",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 3,
+                "type": "PORT",
+                "date": "2028-06-28",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SIT",
+                    "name": "Sitka",
+                    "arrival_time": "09:30:00",
+                    "departure_time": "17:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 4,
+                "type": "PORT",
+                "date": "2028-06-29",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SGY",
+                    "name": "Skagway",
+                    "arrival_time": "07:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 5,
+                "type": "MULTI_PORT",
+                "date": "2028-06-30",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "ENC",
+                    "name": "Endicott Arm & Dawes Glacier",
+                    "arrival_time": "05:00:00",
+                    "departure_time": "09:30:00",
+                    "sea_day": false
+                  },
+                  {
+                    "code": "JNU",
+                    "name": "Juneau",
+                    "arrival_time": "13:00:00",
+                    "departure_time": "20:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 6,
+                "type": "CRUISING",
+                "date": "2028-07-01",
+                "sea_day": true,
+                "ports": [
+                  {
+                    "code": "CRU",
+                    "name": "Cruising",
+                    "arrival_time": null,
+                    "departure_time": null,
+                    "sea_day": true
+                  }
+                ]
+              },
+              {
+                "number": 7,
+                "type": "PORT",
+                "date": "2028-07-02",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "YVJ",
+                    "name": "Victoria",
+                    "arrival_time": "17:00:00",
+                    "departure_time": "22:00:00",
+                    "sea_day": false
+                  }
+                ]
+              },
+              {
+                "number": 8,
+                "type": "PORT",
+                "date": "2028-07-03",
+                "sea_day": false,
+                "ports": [
+                  {
+                    "code": "SEA",
+                    "name": "Seattle",
+                    "arrival_time": "06:00:00",
+                    "departure_time": null,
+                    "sea_day": false
+                  }
+                ]
+              }
+            ],
+            "itinerary_ports": [
+              {
+                "day": 1,
+                "date": "2028-06-26",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": null,
+                "departure_time": "16:00:00"
+              },
+              {
+                "day": 3,
+                "date": "2028-06-28",
+                "code": "SIT",
+                "name": "Sitka",
+                "arrival_time": "09:30:00",
+                "departure_time": "17:00:00"
+              },
+              {
+                "day": 4,
+                "date": "2028-06-29",
+                "code": "SGY",
+                "name": "Skagway",
+                "arrival_time": "07:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-06-30",
+                "code": "ENC",
+                "name": "Endicott Arm & Dawes Glacier",
+                "arrival_time": "05:00:00",
+                "departure_time": "09:30:00"
+              },
+              {
+                "day": 5,
+                "date": "2028-06-30",
+                "code": "JNU",
+                "name": "Juneau",
+                "arrival_time": "13:00:00",
+                "departure_time": "20:00:00"
+              },
+              {
+                "day": 7,
+                "date": "2028-07-02",
+                "code": "YVJ",
+                "name": "Victoria",
+                "arrival_time": "17:00:00",
+                "departure_time": "22:00:00"
+              },
+              {
+                "day": 8,
+                "date": "2028-07-03",
+                "code": "SEA",
+                "name": "Seattle",
+                "arrival_time": "06:00:00",
+                "departure_time": null
+              }
+            ],
+            "overnight_stays": [],
+            "sea_day_count": 2,
+            "royal_caribbean_sailing_id": "OV07A525_2028-06-26",
+            "royal_caribbean_group_id": "OV07SEA-2909514180",
+            "royal_caribbean_product_type": "ocean_cruise",
+            "royal_caribbean_adapter_id": "royal-caribbean",
+            "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+          },
+          "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+          "destination_key": "alaska",
+          "status": "active",
+          "match_confidence": "high",
+          "external_key": "2a695331ed2dea35cbc8cb5f6b1ad1f69f23b30b",
+          "identity_key": "4083a7a5eb5f9240b3e80ed10f9b648ff978d44c",
+          "official_sailing_id": "OV07A525_2028-06-26"
+        },
+        "classification": "TRUE_NEW_COMPLETE",
+        "reason": "complete_identity_no_collision"
+      }
+    ],
+    "plan_hash": "66e6dd028c644fbaa1ba0e9d5593d78f31620b56b1653656fdd91456b2c844ee"
+  },
+  "weekly_manifest_inserts": [
+    {
+      "official_sailing_id": "AN07A507_2028-05-19",
+      "identity_key": "f0a212f78ddad0fa969066cb0692a0f7780d0f43",
+      "external_key": "f94fc0132be3a38c89e06b3530c753260373b7d6",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+        "departure_date": "2028-05-19",
+        "return_date": "2028-05-26",
+        "nights": 7,
+        "departure_port": "Seward",
+        "departure_port_meta": {
+          "rawValue": "Seward",
+          "canonicalPortId": "port-csv-138",
+          "canonicalPortName": "Seward",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Southbound Alaska & Hubbard Glacier",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7n-southbound-alaska-hubbard-glacier-from-seward-on-anthem-AN07A476?sailDate=2028-05-19&packageCode=AN07A507&groupId=AN07SWD-953470841&country=USA",
+        "round_trip": false,
+        "raw_extract": {
+          "itinerary_name": "Southbound Alaska & Hubbard Glacier",
+          "group_id": "AN07SWD-953470841",
+          "sailing_id": "AN07A507_2028-05-19",
+          "package_code": "AN07A476",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "AN",
+          "sailing_status": "OPEN",
+          "round_trip": false,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2028-05-19",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SWD",
+                  "name": "Seward",
+                  "arrival_time": null,
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2028-05-20",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YAK",
+                  "name": "Hubbard Glacier",
+                  "arrival_time": "13:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2028-05-21",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "JNU",
+                  "name": "Juneau",
+                  "arrival_time": "09:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2028-05-22",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SGY",
+                  "name": "Skagway",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2028-05-23",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PSO",
+                  "name": "Icy Strait Point",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "15:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2028-05-24",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "KTN",
+                  "name": "Ketchikan",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "14:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "CRUISING",
+              "date": "2028-05-25",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2028-05-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": "04:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2028-05-19",
+              "code": "SWD",
+              "name": "Seward",
+              "arrival_time": null,
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2028-05-20",
+              "code": "YAK",
+              "name": "Hubbard Glacier",
+              "arrival_time": "13:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2028-05-21",
+              "code": "JNU",
+              "name": "Juneau",
+              "arrival_time": "09:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2028-05-22",
+              "code": "SGY",
+              "name": "Skagway",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-05-23",
+              "code": "PSO",
+              "name": "Icy Strait Point",
+              "arrival_time": "07:00:00",
+              "departure_time": "15:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2028-05-24",
+              "code": "KTN",
+              "name": "Ketchikan",
+              "arrival_time": "07:00:00",
+              "departure_time": "14:30:00"
+            },
+            {
+              "day": 8,
+              "date": "2028-05-26",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": "04:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 1,
+          "royal_caribbean_sailing_id": "AN07A507_2028-05-19",
+          "royal_caribbean_group_id": "AN07SWD-953470841",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f94fc0132be3a38c89e06b3530c753260373b7d6",
+        "identity_key": "f0a212f78ddad0fa969066cb0692a0f7780d0f43",
+        "official_sailing_id": "AN07A507_2028-05-19"
+      }
+    },
+    {
+      "official_sailing_id": "VY07A538_2028-07-14",
+      "identity_key": "03fe994164f2094ff72daea4a66de660633311bb",
+      "external_key": "a0412843c0a42e350fb0438d28ab5399f8a2371b",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+        "departure_date": "2028-07-14",
+        "return_date": "2028-07-21",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Alaska Adventure Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A458?sailDate=2028-07-14&packageCode=VY07A538&groupId=VY07SEA-2189415139&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Alaska Adventure Cruise",
+          "group_id": "VY07SEA-2189415139",
+          "sailing_id": "VY07A538_2028-07-14",
+          "package_code": "VY07A458",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "VY",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2028-07-14",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2028-07-15",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2028-07-16",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "JNU",
+                  "name": "Juneau",
+                  "arrival_time": "13:00:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2028-07-17",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SGY",
+                  "name": "Skagway",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2028-07-18",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ENC",
+                  "name": "Endicott Arm & Dawes Glacier",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "12:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2028-07-19",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2028-07-20",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVJ",
+                  "name": "Victoria",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2028-07-21",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2028-07-14",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2028-07-16",
+              "code": "JNU",
+              "name": "Juneau",
+              "arrival_time": "13:00:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2028-07-17",
+              "code": "SGY",
+              "name": "Skagway",
+              "arrival_time": "08:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-07-18",
+              "code": "ENC",
+              "name": "Endicott Arm & Dawes Glacier",
+              "arrival_time": "07:00:00",
+              "departure_time": "12:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2028-07-20",
+              "code": "YVJ",
+              "name": "Victoria",
+              "arrival_time": "08:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2028-07-21",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "VY07A538_2028-07-14",
+          "royal_caribbean_group_id": "VY07SEA-2189415139",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "a0412843c0a42e350fb0438d28ab5399f8a2371b",
+        "identity_key": "03fe994164f2094ff72daea4a66de660633311bb",
+        "official_sailing_id": "VY07A538_2028-07-14"
+      }
+    },
+    {
+      "official_sailing_id": "AN04A003_2028-05-07",
+      "identity_key": "d01d24fbe639376597480b26546b5239bf0454c7",
+      "external_key": "ceea9e606e3144741cc79cde3d69d18f756056e8",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+        "departure_date": "2028-05-07",
+        "return_date": "2028-05-11",
+        "nights": 4,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Alaska Experience Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/4-night-alaska-experience-cruise-from-vancouver-on-anthem-AN04A003?sailDate=2028-05-07&packageCode=AN04A003&groupId=AN04YVR-259352479&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Alaska Experience Cruise",
+          "group_id": "AN04YVR-259352479",
+          "sailing_id": "AN04A003_2028-05-07",
+          "package_code": "AN04A003",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "AN",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2028-05-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": null,
+                  "departure_time": "18:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2028-05-08",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2028-05-09",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "KTN",
+                  "name": "Ketchikan",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "CRUISING",
+              "date": "2028-05-10",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2028-05-11",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": "08:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2028-05-07",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": null,
+              "departure_time": "18:30:00"
+            },
+            {
+              "day": 3,
+              "date": "2028-05-09",
+              "code": "KTN",
+              "name": "Ketchikan",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-05-11",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": "08:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "AN04A003_2028-05-07",
+          "royal_caribbean_group_id": "AN04YVR-259352479",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "ceea9e606e3144741cc79cde3d69d18f756056e8",
+        "identity_key": "d01d24fbe639376597480b26546b5239bf0454c7",
+        "official_sailing_id": "AN04A003_2028-05-07"
+      }
+    },
+    {
+      "official_sailing_id": "SR07A527_2028-07-02",
+      "identity_key": "c8a859baaa382cb2fad3cb8a46201f8c13ea5c80",
+      "external_key": "a6616b8a207ef6d6862bdb6b92a794bf19ef1c46",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+        "departure_date": "2028-07-02",
+        "return_date": "2028-07-09",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Alaska Inside Passage Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A527?sailDate=2028-07-02&packageCode=SR07A527&groupId=SR07YVR-4060558473&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Alaska Inside Passage Cruise",
+          "group_id": "SR07YVR-4060558473",
+          "sailing_id": "SR07A527_2028-07-02",
+          "package_code": "SR07A527",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "SR",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2028-07-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2028-07-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ISP",
+                  "name": "Inside Passage",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "MULTI_PORT",
+              "date": "2028-07-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ENC",
+                  "name": "Endicott Arm & Dawes Glacier",
+                  "arrival_time": "06:30:00",
+                  "departure_time": "10:30:00",
+                  "sea_day": false
+                },
+                {
+                  "code": "JNU",
+                  "name": "Juneau",
+                  "arrival_time": "13:30:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2028-07-05",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PSO",
+                  "name": "Icy Strait Point",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2028-07-06",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SIT",
+                  "name": "Sitka",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2028-07-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "KTN",
+                  "name": "Ketchikan",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2028-07-08",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ISP",
+                  "name": "Inside Passage",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2028-07-09",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2028-07-02",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2028-07-03",
+              "code": "ISP",
+              "name": "Inside Passage",
+              "arrival_time": null,
+              "departure_time": null
+            },
+            {
+              "day": 3,
+              "date": "2028-07-04",
+              "code": "ENC",
+              "name": "Endicott Arm & Dawes Glacier",
+              "arrival_time": "06:30:00",
+              "departure_time": "10:30:00"
+            },
+            {
+              "day": 3,
+              "date": "2028-07-04",
+              "code": "JNU",
+              "name": "Juneau",
+              "arrival_time": "13:30:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2028-07-05",
+              "code": "PSO",
+              "name": "Icy Strait Point",
+              "arrival_time": "08:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-07-06",
+              "code": "SIT",
+              "name": "Sitka",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2028-07-07",
+              "code": "KTN",
+              "name": "Ketchikan",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2028-07-08",
+              "code": "ISP",
+              "name": "Inside Passage",
+              "arrival_time": null,
+              "departure_time": null
+            },
+            {
+              "day": 8,
+              "date": "2028-07-09",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 0,
+          "royal_caribbean_sailing_id": "SR07A527_2028-07-02",
+          "royal_caribbean_group_id": "SR07YVR-4060558473",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "a6616b8a207ef6d6862bdb6b92a794bf19ef1c46",
+        "identity_key": "c8a859baaa382cb2fad3cb8a46201f8c13ea5c80",
+        "official_sailing_id": "SR07A527_2028-07-02"
+      }
+    },
+    {
+      "official_sailing_id": "OV07A525_2028-06-26",
+      "identity_key": "4083a7a5eb5f9240b3e80ed10f9b648ff978d44c",
+      "external_key": "2a695331ed2dea35cbc8cb5f6b1ad1f69f23b30b",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+        "departure_date": "2028-06-26",
+        "return_date": "2028-07-03",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Alaska Adventure Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-ovation-OV07A525?sailDate=2028-06-26&packageCode=OV07A525&groupId=OV07SEA-2909514180&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Alaska Adventure Cruise",
+          "group_id": "OV07SEA-2909514180",
+          "sailing_id": "OV07A525_2028-06-26",
+          "package_code": "OV07A525",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "OV",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2028-06-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2028-06-27",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2028-06-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SIT",
+                  "name": "Sitka",
+                  "arrival_time": "09:30:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2028-06-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SGY",
+                  "name": "Skagway",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "MULTI_PORT",
+              "date": "2028-06-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ENC",
+                  "name": "Endicott Arm & Dawes Glacier",
+                  "arrival_time": "05:00:00",
+                  "departure_time": "09:30:00",
+                  "sea_day": false
+                },
+                {
+                  "code": "JNU",
+                  "name": "Juneau",
+                  "arrival_time": "13:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2028-07-01",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2028-07-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVJ",
+                  "name": "Victoria",
+                  "arrival_time": "17:00:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2028-07-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2028-06-26",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2028-06-28",
+              "code": "SIT",
+              "name": "Sitka",
+              "arrival_time": "09:30:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2028-06-29",
+              "code": "SGY",
+              "name": "Skagway",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-06-30",
+              "code": "ENC",
+              "name": "Endicott Arm & Dawes Glacier",
+              "arrival_time": "05:00:00",
+              "departure_time": "09:30:00"
+            },
+            {
+              "day": 5,
+              "date": "2028-06-30",
+              "code": "JNU",
+              "name": "Juneau",
+              "arrival_time": "13:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2028-07-02",
+              "code": "YVJ",
+              "name": "Victoria",
+              "arrival_time": "17:00:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2028-07-03",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "OV07A525_2028-06-26",
+          "royal_caribbean_group_id": "OV07SEA-2909514180",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "2a695331ed2dea35cbc8cb5f6b1ad1f69f23b30b",
+        "identity_key": "4083a7a5eb5f9240b3e80ed10f9b648ff978d44c",
+        "official_sailing_id": "OV07A525_2028-06-26"
+      }
+    }
+  ],
+  "writes": 0
+}

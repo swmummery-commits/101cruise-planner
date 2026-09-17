@@ -88,8 +88,7 @@ function resolveDryRun(body = {}, event = null, env = process.env) {
   if (event && isScheduledInvocation(event)) {
     if (!isWeeklyReconciliationEnabled(env)) return true;
     if (isNetlifyNonProductionContext(env)) return true;
-    if (isNetlifyPlatformScheduledInvocation(event) && isNetlifyProductionContext(env)) return false;
-    return true;
+    return false;
   }
 
   return true;
@@ -122,8 +121,8 @@ function resolveMaxWritesPolicy(body = {}, event = null, env = process.env, { dr
 
   if (
     event &&
-    isNetlifyPlatformScheduledInvocation(event) &&
-    isNetlifyProductionContext(env) &&
+    isScheduledInvocation(event) &&
+    !isNetlifyNonProductionContext(env) &&
     isWeeklyReconciliationEnabled(env)
   ) {
     return { maxWrites: ceiling, blocked: false, reason: null };

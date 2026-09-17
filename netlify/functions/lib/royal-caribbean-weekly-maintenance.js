@@ -351,11 +351,19 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
       official_sailing_id: row.official_sailing_id,
       departure_date: row.departure_date,
       days_until_departure: daysUntilDeparture(row.departure_date, today),
-      proposed_action: "hide_from_public_inventory",
+      classification: "DAILY_EXPIRY_MANAGED",
+      proposed_action: "retain_for_daily_expiry",
       delete: false
     })),
     public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
     public_booking_cutoff_date: cutoffDate,
+    cutoff_candidate_owner: "daily_expiry",
+    planned_rcl_material_writes:
+      proposedInserts.length +
+      proposedUpdates.length +
+      (sourceAbsencePolicy.source_absence_actions_allowed === true
+        ? sourceAbsencePolicy.source_absent_action_eligible_count || 0
+        : 0),
     enumeration_health: enumerationHealth,
     detail_lookup_audit: detailLookupResults,
     royal_caribbean_source_enumeration_ok: enumerationHealth.royal_caribbean_source_enumeration_ok === true,

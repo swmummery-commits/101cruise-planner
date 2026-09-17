@@ -1,0 +1,1219 @@
+{
+  "generated_at": "2026-09-17T01:56:31.040Z",
+  "perth_date": "2026-09-16",
+  "executed_at_perth": "2026-09-17",
+  "title": "WEEKLY MAINTENANCE P3I — RCL NORMAL-APPLY COMMISSIONING + NCL STAGED-ROW CLEANUP",
+  "repository": "swmummery-commits/101cruise-planner",
+  "starting_local_sha": "6ebf14eafad1debc4a48223f78e0bde6505becc0",
+  "p3h_commit": "6ebf14eafad1debc4a48223f78e0bde6505becc0",
+  "p3h_pushed": true,
+  "answers": {
+    "A_starting_local_sha": "6ebf14eafad1debc4a48223f78e0bde6505becc0",
+    "B_6ebf14e_pushed": "YES",
+    "C_p3i_sha": null,
+    "D_production_deployed_sha": null,
+    "E_current_union": 3218,
+    "F_current_recognised": 2922,
+    "G_current_proposed_inserts": 5,
+    "H_current_proposed_updates": 0,
+    "I_current_reviews": 0,
+    "J_cutoff_candidates": 163,
+    "K_cutoff_candidates_material_rcl_writes": "NO",
+    "L_source_absence_current": {
+      "source_absent_active": 18,
+      "source_absent_action_eligible_count": 11
+    },
+    "M_source_absence_write_policy": "consecutive_healthy_authoritative_absence; hide_allowed hardcoded false; two consecutive healthy absences required; same-run hide never automatic",
+    "N_wednesday_dry_run_reason": "resolveDryRun required isNetlifyPlatformScheduledInvocation(event) && isNetlifyProductionContext(env) before returning false. Wednesday provenance had CONTEXT=null and netlify_event=null, so scheduled production stayed dry_run=true. Independently, proposed_inserts=106 exceeded max_proposed_inserts=100 so terminal_status=controlled_catchup_required.",
+    "O_normal_insert_simulation": "PASS",
+    "P_normal_update_simulation": "PASS",
+    "Q_157_cutoff_plus_small_insert_simulation": "PASS",
+    "R_source_health_blocking": "PASS",
+    "S_large_backlog_blocking": "PASS",
+    "T_rcl_normal_scheduled_apply_commissioned": "YES",
+    "U_any_flag_changed": "No Netlify env flag changed. Code-only: scheduled resolveDryRun/resolveMaxWritesPolicy no longer require CONTEXT=production and platform next_run. Cutoff candidates classified DAILY_EXPIRY_MANAGED and excluded from RCL material writes. Caps unchanged. ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED already true; ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED not flipped.",
+    "V_final_rcl_classification": "weekly_maintenance_healthy; 5 TRUE_NEW_COMPLETE proposed inserts; 0 reviews; 163 DAILY_EXPIRY_MANAGED cutoff candidates; source absence conservative; next scheduled APPLY authorised for small safe deltas under existing caps",
+    "W_catchup_ledger_run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713",
+    "X_107_writes_represented": true,
+    "Y_four_manifests_linked": true,
+    "Z_historical_scheduled_run_left_unchanged": true,
+    "AA_match_required_starting_count": 48,
+    "AB_11_new_staged_rows": [
+      {
+        "uuid": "0a82a3b3-1245-484f-a04e-2390c07edd99",
+        "official_sailing_id": "ENCORE1VANSEA|2028-04-15",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "ship": "ENCORE",
+        "departure": "2028-04-15",
+        "return": "2028-04-16",
+        "nights": 1,
+        "departure_port": "Vancouver",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "identity_key": "992f77e228f6965735f42e4ab1a213cbb705ac59",
+        "external_key": "a446b093e997ac87503cc483741208587afc8384",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "3be7ec0c-b6d9-4642-9014-0ffe7005da03",
+        "official_sailing_id": "ENCORE6VANSFOLAX|2027-10-18",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "ship": "ENCORE",
+        "departure": "2027-10-18",
+        "return": "2027-10-24",
+        "nights": 6,
+        "departure_port": "Vancouver",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "identity_key": "b4de4d6ea76418c619e79412043330bf117e2190",
+        "external_key": "3a759f526bcb3c4038f5f34a5354dcd0fa9b08aa",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "55b4442c-521c-4345-8cf5-0ac675428813",
+        "official_sailing_id": "EPIC8PCVPOPSTTPHITOVNPIPCV|2028-03-09",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "ship": "EPIC",
+        "departure": "2028-03-09",
+        "return": "2028-03-17",
+        "nights": 8,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "44b4284ab9e5eb656de635dd7cfd4defbea84d9b",
+        "external_key": "fc85ae21c5db4fe24637a2589dceace22be6af8d",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "5c93d5ab-b659-44d9-bc60-4be7200fe0fa",
+        "official_sailing_id": "PRIMA3CIVPMIBCN|2027-05-04",
+        "ship_id": "8f81fee3-8338-4c27-be32-2114f7754391",
+        "ship": "PRIMA",
+        "departure": "2027-05-04",
+        "return": "2027-05-07",
+        "nights": 3,
+        "departure_port": "Civitavecchia",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "685c26b2e5d29765bc447d9ce3ccf4ff23d9d9d4",
+        "external_key": "b0641fbebfad79a6ae75c019a7e4404d3ba22da0",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "853b168d-211c-455a-96c1-cb97df1d8d89",
+        "official_sailing_id": "EPIC6PCVPOPSJUNPIPCV|2028-03-03",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "ship": "EPIC",
+        "departure": "2028-03-03",
+        "return": "2028-03-09",
+        "nights": 6,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "ef5f56b4ddd686c97f59da7e07b35f3b247338a8",
+        "external_key": "8f812636cc8cdcc57fdc018846988835bdc39d2c",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "8895202a-ea1d-4436-89f6-5e866cca05ef",
+        "official_sailing_id": "ENCORE7SEAJNUSGYKTNVICSEA|2027-10-10",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "ship": "ENCORE",
+        "departure": "2027-10-10",
+        "return": "2027-10-17",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": "de4e646e41f1e739d1f13acc8e90b1fe61399b80",
+        "external_key": "635989db0e77574c999a55aab614ec13de0c84b0",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "8a80cf9d-747c-4d8f-8d62-5e07dc7b3346",
+        "official_sailing_id": "DAWN14JAXNPIPDLFNCBCN|2028-04-17",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "ship": "DAWN",
+        "departure": "2028-04-17",
+        "return": "2028-05-01",
+        "nights": 14,
+        "departure_port": "Jacksonville",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "0e877397a2cbfc6ca1d271be04f3d707ac52672a",
+        "external_key": "dfe9f1d058dda5dd2cc56192071f052694f797a9",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "b78d9945-f08b-48f0-8e88-9256b929fb16",
+        "official_sailing_id": "ENCORE7SEAJNUSGYKTNVICSEA|2028-04-16",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "ship": "ENCORE",
+        "departure": "2028-04-16",
+        "return": "2028-04-23",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": "7447816cf99f91ca1d021512c235b667dffa9aff",
+        "external_key": "682a3091b96ad014a8f8b985783a9bbb2af41ca9",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "db16abd9-b316-4e2d-8dc8-3bac26869bd1",
+        "official_sailing_id": "EPIC8PCVPOPSTTPHITOVNPIPCV|2027-11-18",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "ship": "EPIC",
+        "departure": "2027-11-18",
+        "return": "2027-11-26",
+        "nights": 8,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "ef75a7c877f11f00c3f0fc7aa357aef26fe50607",
+        "external_key": "641e61ca34a3312d060537f36342a5cb7f7a50b7",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "e4c5d9f9-c8af-423b-b0f5-24512fecd7bb",
+        "official_sailing_id": "ENCORE6LAXASTVICVAN|2028-04-09",
+        "ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "ship": "ENCORE",
+        "departure": "2028-04-09",
+        "return": "2028-04-15",
+        "nights": 6,
+        "departure_port": "Los Angeles",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "identity_key": "8966ba47b73990a2ab67bc2910228174ec91dc88",
+        "external_key": "9688dc0cf0b0af427c3e8bc29611d34a73d65ae2",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      },
+      {
+        "uuid": "f7b45eca-0d3e-4b9e-b506-8552da9ed3a0",
+        "official_sailing_id": "EPIC6PCVPOPSJUNPIPCV|2027-11-12",
+        "ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "ship": "EPIC",
+        "departure": "2027-11-12",
+        "return": "2027-11-18",
+        "nights": 6,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "0773ac6ab365238a9f80d09e4132079c4331f905",
+        "external_key": "c505faa20feae12d3d81fad0f4112ac172aae7c2",
+        "source_presence": true,
+        "missing_fields": [],
+        "reason_currently_match_required": "source_provides_required_fields",
+        "classification": "READY_TO_PROMOTE"
+      }
+    ],
+    "AC_new_rows_promoted": 11,
+    "AD_new_rows_remaining_match_required": 0,
+    "AE_pre_existing_37": [
+      {
+        "uuid": "0a46c88d-6f35-4170-9e38-cda47ae97b00",
+        "official_sailing_id": "SPIRIT11SYDMELORRTMUWLGTAUAKL|2028-03-21",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2028-03-21",
+        "return": "2028-04-01",
+        "nights": 11,
+        "departure_port": "Sydney",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "ec3da63d1e48ca2c3c2f4762caeb8b80da8c17eb",
+        "external_key": "7d4fe4897b45f90d2488117c0b839f9e8e6882f6",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "0c2086f7-1853-432d-9d9d-8d9957edbd7b",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2028-03-10",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2028-03-10",
+        "return": "2028-03-21",
+        "nights": 11,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "afb4f1616b4447a02b9ad62e3960393503ba1f79",
+        "external_key": "e7123678e6815d3f8ed8c550c726106b21be4c84",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "1a633b6b-ef48-48fe-ac94-7e48eaf49fa4",
+        "official_sailing_id": null,
+        "ship_id": null,
+        "ship": null,
+        "departure": null,
+        "return": null,
+        "nights": null,
+        "departure_port": null,
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": "3e730a4b17a76abfc8ed1b83c24f6324539c9a29",
+        "external_key": "e27ed23fb1cbc20652077996edcbd61e261b9722",
+        "source_presence": false,
+        "missing_fields": [
+          "legacy",
+          "not_genuine",
+          "missing_official_sailing_id",
+          "source_absent",
+          "within_cutoff",
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "legacy,not_genuine,missing_official_sailing_id,source_absent,within_cutoff,incomplete_enrichment,missing_itinerary_ports",
+        "classification": "LEGACY_NO_OFFICIAL_ID"
+      },
+      {
+        "uuid": "296cec2b-a257-4db1-a749-27886f8f5fbf",
+        "official_sailing_id": "SPIRIT11SYDQDNBWTMELORRTMUBYOAKL|2027-02-16",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-02-16",
+        "return": "2027-02-27",
+        "nights": 11,
+        "departure_port": "Sydney",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "c6e21464748262afb98412ff0311e6c9f5bdf664",
+        "external_key": "a71c9a41d4b11909c8649061c5d6caa105c8e04a",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "2bc41220-d46d-49f2-98d2-d4dcb214fbb9",
+        "official_sailing_id": "SPIRIT11SYDQDNBWTMELORRTMUTAUAKL|2027-01-25",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-01-25",
+        "return": "2027-02-05",
+        "nights": 11,
+        "departure_port": "Sydney",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "a3176d22e7a26c6390614357b4093b81cc866804",
+        "external_key": "9639adc9cf0d4952db88745c87a1ecc16ba6342c",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "434db37c-0579-4560-96ae-099671eced10",
+        "official_sailing_id": "SPIRIT11SYDQDNESSMELORRTMUTAUAKL|2027-04-01",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-04-01",
+        "return": "2027-04-12",
+        "nights": 11,
+        "departure_port": "Sydney",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "6b227904e554d1d3e91b23716897573713179c73",
+        "external_key": "d564e7ed410e8036aa0a2b62876249d997b149f4",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "4b47e2da-39c6-4f86-80c1-37dd0158da53",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-02-05",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-02-05",
+        "return": "2027-02-16",
+        "nights": 11,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "23cfa31d8a5d7a79e9b911a4f0b47ccd3aed459c",
+        "external_key": "70aff643477017704d7fe82a132e93f224758a4f",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "543915c5-5bcc-487e-8a9c-bf15ce6dca45",
+        "official_sailing_id": "GETAWAY12MSYOCJWILORJCBRNPINYC|2028-04-16",
+        "ship_id": "659c34b9-634c-414c-87fb-66e4633f9c43",
+        "ship": "GETAWAY",
+        "departure": "2028-04-16",
+        "return": "2028-04-28",
+        "nights": 12,
+        "departure_port": "New Orleans",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "e707b6c4a423507642d9d757b2d7886c6fb338e3",
+        "external_key": "79027dc00434bc169e09e10038c60025bc943465",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "58b5dac3-85b5-47e9-b6cc-118357822d3a",
+        "official_sailing_id": "GEM11MIANPICTGPCGCLNLIOOCJGECMIA|2027-11-30",
+        "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+        "ship": "GEM",
+        "departure": "2027-11-30",
+        "return": "2027-12-11",
+        "nights": 11,
+        "departure_port": "Miami",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "identity_key": "81b316d8c8f6ff01803186fec0e5c8d66dc7d02a",
+        "external_key": "3cd79c6ccd8c3e5db31a20ccbdddc73bdee7e700",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "5dc2b6f1-e413-4b36-b9c8-b000ab6aec61",
+        "official_sailing_id": null,
+        "ship_id": null,
+        "ship": null,
+        "departure": null,
+        "return": null,
+        "nights": null,
+        "departure_port": null,
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": "89e86ebb7260f084ca28c8fd89385d9797665ea9",
+        "external_key": "d2bdf988cc7084edbbcb454cdf36f49ab3c5acae",
+        "source_presence": false,
+        "missing_fields": [
+          "legacy",
+          "not_genuine",
+          "missing_official_sailing_id",
+          "source_absent",
+          "within_cutoff",
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "legacy,not_genuine,missing_official_sailing_id,source_absent,within_cutoff,incomplete_enrichment,missing_itinerary_ports",
+        "classification": "LEGACY_NO_OFFICIAL_ID"
+      },
+      {
+        "uuid": "5e9a8f1d-86c3-4eeb-8c43-6690c7345b96",
+        "official_sailing_id": "VIVA9ISTKUSPIRJMKJTRKAKMLACTASALCIV|2027-06-23",
+        "ship_id": "ca2b823d-3c9c-4219-b265-e1d9445f4333",
+        "ship": "VIVA",
+        "departure": "2027-06-23",
+        "return": "2027-07-02",
+        "nights": 9,
+        "departure_port": "Istanbul",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "cee5525cdb45be3cc5b29778b64addc153c1102a",
+        "external_key": "0340c59e3debe621424a423378aca1ba9f5752aa",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "6191c208-1d4c-45fb-a2be-871922b89ca7",
+        "official_sailing_id": "STAR10BCNCADMOTCASACESCTLPALIS|2028-04-11",
+        "ship_id": "d3cb3861-27eb-454e-af79-c6f9faf11209",
+        "ship": "STAR",
+        "departure": "2028-04-11",
+        "return": "2028-04-21",
+        "nights": 10,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "aed080e33fd4c4460ca5c78d1ab5266c5223719e",
+        "external_key": "691e1156ea7fd6f82de3e488790747585ed6793e",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "6475156c-871f-45df-adc1-39273ab2288b",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2028-01-22",
+        "ship_id": "12c40f77-51d6-4a95-9cf5-11ae8f326444",
+        "ship": "AURA",
+        "departure": "2028-01-22",
+        "return": "2028-01-29",
+        "nights": 7,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "891c22b1404c67b0d127a8d5bf3ded6a001b82ee",
+        "external_key": "fe650489bc02d66dc241a8c420a541391dbd8123",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "6741f558-544e-4432-abee-dd3ec27b4923",
+        "official_sailing_id": "PEARL10PHLSJUTOVSTTPHL|2027-01-03",
+        "ship_id": "30518b4b-39a4-4b91-b4eb-1aacdabbcf98",
+        "ship": "PEARL",
+        "departure": "2027-01-03",
+        "return": "2027-01-13",
+        "nights": 10,
+        "departure_port": "Philadelphia",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "8b3d9fbec6d1dfcb98b43719c3dab9a1fbf99ee6",
+        "external_key": "c56b5ad735967bbd0c4018695d0079fcca22df52",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "72cc11bf-b3a7-4ebb-9532-d49dd4fe406f",
+        "official_sailing_id": "JOY9MIANPICBRORJWILOCJMIA|2028-03-08",
+        "ship_id": "514ad6fa-a318-4d06-a50f-db5e40de8e3b",
+        "ship": "JOY",
+        "departure": "2028-03-08",
+        "return": "2028-03-17",
+        "nights": 9,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "dbed2de7f2353bf3eff81d9af1b2651b126a0257",
+        "external_key": "14dab8369b1d12c4df3c8bac7feab81893b6d8d4",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "8918419e-af06-4de8-a435-573cc0ee5d9d",
+        "official_sailing_id": "DAWN7LISTNGMOTCARALCIBZBCN|2027-10-03",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "ship": "DAWN",
+        "departure": "2027-10-03",
+        "return": "2027-10-10",
+        "nights": 7,
+        "departure_port": "Lisbon",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "e6df77f50bea8cecc6cc04c6e61fbb277aebb799",
+        "external_key": "5094d1c8d25cbb3cfe10e649dcdefe5ebf46a716",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "8ad9cdcd-bbdd-45b9-b948-b0fb7e03e4d5",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-04-12",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-04-12",
+        "return": "2027-04-23",
+        "nights": 11,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "c698262d906aa079d18c21da613caa8d1a9e2f05",
+        "external_key": "e6c887e42be32ce90dc3417d093bc2c8d98819a4",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "8eb5050c-8eaf-408b-a0ec-13e01c584d81",
+        "official_sailing_id": "DAWN14BCNCADCASSJUJAX|2027-11-05",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "ship": "DAWN",
+        "departure": "2027-11-05",
+        "return": "2027-11-19",
+        "nights": 14,
+        "departure_port": "Barcelona",
+        "destination_id": "2573425f-e86b-4f0b-8a9f-57b28ca7672b",
+        "identity_key": "198ec9f3e750a0c3b2e8cfce99ad0a5ac9cd10cb",
+        "external_key": "ec38e525ad67d934cafaa7e768b01e517dd6867e",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "8f934f87-a16c-4040-9a11-d804969c1cca",
+        "official_sailing_id": "GEM12MIANPICBRORJWILCTGPCGCLNGECMIA|2027-12-21",
+        "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+        "ship": "GEM",
+        "departure": "2027-12-21",
+        "return": "2028-01-02",
+        "nights": 12,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "b43175661c32acd53c57206a7c4e2173ccc932b2",
+        "external_key": "f2b75d4758e94b4a40b4fb8ef1b9849fc547d96b",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "NEEDS_ENRICHMENT"
+      },
+      {
+        "uuid": "a0ddf501-560d-4799-b7af-b3a18104c0e4",
+        "official_sailing_id": "STAR10SOUNWHKWLDUNBFSLVPRINIPOSOU|2027-09-16",
+        "ship_id": "d3cb3861-27eb-454e-af79-c6f9faf11209",
+        "ship": "STAR",
+        "departure": "2027-09-16",
+        "return": "2027-09-26",
+        "nights": 10,
+        "departure_port": "Southampton",
+        "destination_id": "6c4de675-70d1-41a5-82c2-e0b2f50b20ff",
+        "identity_key": "4c6f8816e61bd031dc77bbfcfe10addf9af950bd",
+        "external_key": "0cb6186ceb9112a9c5c7bb92c6eb9966716d3c0b",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "aa95f250-fa2f-4627-bea7-ec56cd511b84",
+        "official_sailing_id": "ESCAPE5PCVNPIPOPPCV|2027-06-09",
+        "ship_id": "a7ba652c-9765-4431-b645-77ea7890db07",
+        "ship": "ESCAPE",
+        "departure": "2027-06-09",
+        "return": "2027-06-14",
+        "nights": 5,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "5c358a256ccd75db906830ac478c49b6f2d07d19",
+        "external_key": "a6ceeab4ea2b9e422cb482099806cfc251e34b53",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "ab8867f1-b5aa-45ac-811e-f8c625913463",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2027-12-04",
+        "ship_id": "12c40f77-51d6-4a95-9cf5-11ae8f326444",
+        "ship": "AURA",
+        "departure": "2027-12-04",
+        "return": "2027-12-11",
+        "nights": 7,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "0f53590c3225cc2cb938cf3e5bc8d1490da4a255",
+        "external_key": "4526980c4064356033319e348e8fc2fc5e2ec803",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "bc31bd67-582f-4f87-8b97-966d9f2122f0",
+        "official_sailing_id": "DAWN7LISPRMMOTCADGIBIBZPMIBCN|2027-07-25",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "ship": "DAWN",
+        "departure": "2027-07-25",
+        "return": "2027-08-01",
+        "nights": 7,
+        "departure_port": "Lisbon",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "0ca10342be55a426b79ec574f53fc305492e5411",
+        "external_key": "8248eefe95c3004450a93a8f698e94266759e4eb",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "c9a210d2-8d53-4a6f-a194-3c422e701a85",
+        "official_sailing_id": "PEARL11PHLWRFTOVSTTSJUAMBPHL|2027-03-28",
+        "ship_id": "30518b4b-39a4-4b91-b4eb-1aacdabbcf98",
+        "ship": "PEARL",
+        "departure": "2027-03-28",
+        "return": "2027-04-08",
+        "nights": 11,
+        "departure_port": "Philadelphia",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "3097fe2105e612c2cec14fee908c379d3c0e7788",
+        "external_key": "3f258b5379bfa75f5cff674093d6c8cc865cfd10",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "ca8279e7-85aa-4894-ad03-79405ef9d801",
+        "official_sailing_id": "STAR10SOUIPOCOBDUNBFSSTWKWLSOQSOU|2027-06-24",
+        "ship_id": "d3cb3861-27eb-454e-af79-c6f9faf11209",
+        "ship": "STAR",
+        "departure": "2027-06-24",
+        "return": "2027-07-04",
+        "nights": 10,
+        "departure_port": "Southampton",
+        "destination_id": "6c4de675-70d1-41a5-82c2-e0b2f50b20ff",
+        "identity_key": "21b6e3582d2e44446e5ef4ea30d579835211856e",
+        "external_key": "eb1caf44cb958d6ce80c6182ef5a10324c65081c",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "cd4efc43-5161-4ae5-85b7-e5aae5f6edc0",
+        "official_sailing_id": "STAR10BCNMOTCADCASAGAACESCTLPALIS|2027-11-22",
+        "ship_id": "d3cb3861-27eb-454e-af79-c6f9faf11209",
+        "ship": "STAR",
+        "departure": "2027-11-22",
+        "return": "2027-12-02",
+        "nights": 10,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "de1182bc6d3d86a60bfc61d49e3555c4ce707f4b",
+        "external_key": "9755417948a08d7e859e47e56766b860546923bd",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "cec48cd4-4091-447e-8463-34a21b1cb409",
+        "official_sailing_id": null,
+        "ship_id": null,
+        "ship": null,
+        "departure": null,
+        "return": null,
+        "nights": null,
+        "departure_port": null,
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": null,
+        "external_key": "6601b14320950b63b7705c2f9f16584159859ebf",
+        "source_presence": false,
+        "missing_fields": [
+          "legacy",
+          "not_genuine",
+          "missing_official_sailing_id",
+          "source_absent",
+          "within_cutoff",
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "legacy,not_genuine,missing_official_sailing_id,source_absent,within_cutoff,incomplete_enrichment,missing_itinerary_ports",
+        "classification": "LEGACY_NO_OFFICIAL_ID"
+      },
+      {
+        "uuid": "d16e74e7-162e-48e7-88b2-dafb9371dd7c",
+        "official_sailing_id": "SPIRIT8PPTRARBRBMOZRAIPPT|2027-09-22",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-09-22",
+        "return": "2027-09-30",
+        "nights": 8,
+        "departure_port": "Papeete",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "identity_key": "c75ff1d6a476f74e5058ada2ad972b2835d03cdc",
+        "external_key": "d79296dd2db764ab659ac70baff251e7846d0092",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "d9643f80-0f4a-48ff-a0f7-e1481234b45e",
+        "official_sailing_id": "SPIRIT11AKLTAUTMUORRMELBWTQDNSYD|2027-02-27",
+        "ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "ship": "SPIRIT",
+        "departure": "2027-02-27",
+        "return": "2027-03-10",
+        "nights": 11,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "identity_key": "58e53b43aedf843a0966525683dfbe1cc4f2949a",
+        "external_key": "88164ed6c2c2aa71ed0df79d97ab22e44759233b",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "db0ab843-e891-4e01-9119-66f312181942",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2028-02-05",
+        "ship_id": "12c40f77-51d6-4a95-9cf5-11ae8f326444",
+        "ship": "AURA",
+        "departure": "2028-02-05",
+        "return": "2028-02-12",
+        "nights": 7,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "3fc775291313da1ef9aa78a90b05e83c60ab5bd9",
+        "external_key": "d7936e304da779145ec7f41e3066b36f863ecbe6",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "dec07c51-4179-46cd-adbd-1f649adb417a",
+        "official_sailing_id": "DAWN7BCNPMIALCMOTGIBCADPRMLIS|2027-05-23",
+        "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "ship": "DAWN",
+        "departure": "2027-05-23",
+        "return": "2027-05-30",
+        "nights": 7,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "identity_key": "e4bd6fd3bf99d3578a23cd396c6d48de7cb8baae",
+        "external_key": "3b3ed2f59e4d59a3a4ddedbf346e235484129a69",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "e3374f1e-e3ff-4a65-9dcb-d05e24e30a65",
+        "official_sailing_id": "AURA7MIARTBBPICZMNPIMIA|2027-10-30",
+        "ship_id": "12c40f77-51d6-4a95-9cf5-11ae8f326444",
+        "ship": "AURA",
+        "departure": "2027-10-30",
+        "return": "2027-11-06",
+        "nights": 7,
+        "departure_port": "Miami",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "4b3a855a713a3dfdba3a184db745d694f218a196",
+        "external_key": "e70bd41ee00a6ae4a264af7973786b07add73d3d",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "e7684eca-fea1-475b-899d-b00b5477f3fa",
+        "official_sailing_id": null,
+        "ship_id": null,
+        "ship": null,
+        "departure": null,
+        "return": null,
+        "nights": null,
+        "departure_port": null,
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": "6cbbcc07a49f84d0543555be3f381b8e17060f37",
+        "external_key": "45f894bf3c4051200db97bd8a80e0b7f4aa9690f",
+        "source_presence": false,
+        "missing_fields": [
+          "legacy",
+          "not_genuine",
+          "missing_official_sailing_id",
+          "source_absent",
+          "within_cutoff",
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "legacy,not_genuine,missing_official_sailing_id,source_absent,within_cutoff,incomplete_enrichment,missing_itinerary_ports",
+        "classification": "LEGACY_NO_OFFICIAL_ID"
+      },
+      {
+        "uuid": "ea0e587f-6317-4cbf-95c2-a45e6a839784",
+        "official_sailing_id": "ESCAPE4PCVNPINASPCV|2027-05-31",
+        "ship_id": "a7ba652c-9765-4431-b645-77ea7890db07",
+        "ship": "ESCAPE",
+        "departure": "2027-05-31",
+        "return": "2027-06-04",
+        "nights": 4,
+        "departure_port": "Port Canaveral",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "534af501f2c4c09e9369255c614a61d033e8d9e0",
+        "external_key": "4110c7e170acfa317b508080926db908f4d684ee",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "ecc7aba8-7150-4969-93e9-5d87776a8daa",
+        "official_sailing_id": null,
+        "ship_id": null,
+        "ship": null,
+        "departure": null,
+        "return": null,
+        "nights": null,
+        "departure_port": null,
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "identity_key": null,
+        "external_key": "0701f76ad98ef5b72e5e67d8d50fd840a3e1abd3",
+        "source_presence": false,
+        "missing_fields": [
+          "legacy",
+          "not_genuine",
+          "missing_official_sailing_id",
+          "source_absent",
+          "within_cutoff",
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "legacy,not_genuine,missing_official_sailing_id,source_absent,within_cutoff,incomplete_enrichment,missing_itinerary_ports",
+        "classification": "LEGACY_NO_OFFICIAL_ID"
+      },
+      {
+        "uuid": "fa760f63-a411-4e93-813f-67f9e3c49b7c",
+        "official_sailing_id": "PRIMA7SJUTOVSTTSLUORJSJU|2027-03-28",
+        "ship_id": "8f81fee3-8338-4c27-be32-2114f7754391",
+        "ship": "PRIMA",
+        "departure": "2027-03-28",
+        "return": "2027-04-04",
+        "nights": 7,
+        "departure_port": "San Juan",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "identity_key": "b2105210f8b86c96bc162d3be42789d78ee34a46",
+        "external_key": "01f8f62e57c636f0e280a87bd19a34f574204a46",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "DUPLICATE_ACTIVE"
+      },
+      {
+        "uuid": "ff478823-1275-499d-998b-b568cbe03bff",
+        "official_sailing_id": "GEM10MIACTGPCGCLNLIOFMHNPIMIA|2028-01-02",
+        "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+        "ship": "GEM",
+        "departure": "2028-01-02",
+        "return": "2028-01-12",
+        "nights": 10,
+        "departure_port": "Miami",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "identity_key": "7b972563ae8891cbcf928f66efe6e422bceff9bf",
+        "external_key": "2e19d477bb9d8d2b96ff27cca795e684a7edd366",
+        "source_presence": true,
+        "missing_fields": [
+          "incomplete_enrichment",
+          "missing_itinerary_ports"
+        ],
+        "reason_currently_match_required": "incomplete_enrichment,missing_itinerary_ports",
+        "classification": "NEEDS_ENRICHMENT"
+      }
+    ],
+    "AF_pre_existing_rows_promoted": 2,
+    "AG_legacy_no_official_id_remaining": 5,
+    "AH_ambiguous_remaining": 0,
+    "AI_ncl_writes": [
+      {
+        "kind": "enrichment",
+        "attempted": 2,
+        "updated": 2,
+        "failed": 0
+      },
+      {
+        "kind": "promotion",
+        "promoted": 13,
+        "failed": 0,
+        "uuids": [
+          "0a82a3b3-1245-484f-a04e-2390c07edd99",
+          "3be7ec0c-b6d9-4642-9014-0ffe7005da03",
+          "55b4442c-521c-4345-8cf5-0ac675428813",
+          "5c93d5ab-b659-44d9-bc60-4be7200fe0fa",
+          "853b168d-211c-455a-96c1-cb97df1d8d89",
+          "8895202a-ea1d-4436-89f6-5e866cca05ef",
+          "8a80cf9d-747c-4d8f-8d62-5e07dc7b3346",
+          "8f934f87-a16c-4040-9a11-d804969c1cca",
+          "b78d9945-f08b-48f0-8e88-9256b929fb16",
+          "db16abd9-b316-4e2d-8dc8-3bac26869bd1",
+          "e4c5d9f9-c8af-423b-b0f5-24512fecd7bb",
+          "f7b45eca-0d3e-4b9e-b506-8552da9ed3a0",
+          "ff478823-1275-499d-998b-b568cbe03bff"
+        ]
+      }
+    ],
+    "AJ_ncl_rollback_manifests": [
+      "8e7c3b1e-81e9-4bae-962e-fc4534f114c0",
+      "9465b1f4-0e6c-4e9f-90a1-98286c8d5453"
+    ],
+    "AK_final_active_count": 1977,
+    "AL_final_match_required_count": 35,
+    "AM_proposed_inserts_after_reconciliation": 0,
+    "AN_final_ncl_classification": "11 Wednesday staged rows promoted in place; 2 pre-existing SOURCE_NOW_COMPLETE rows enriched then promoted; remaining 35 = 30 DUPLICATE_ACTIVE + 5 LEGACY_NO_OFFICIAL_ID; proposed inserts 0; old 34 SOURCE_FIELD_INCOMPLETE = 0",
+    "AO_carnival_scheduled_result": "completed / not_yet_commissioned / 0 writes / run 126156ef-d984-45f8-88c7-2201885f75cf",
+    "AP_disney_scheduled_result": "STALE RUNNING since 2026-09-16T19:00:37Z / finished_at null / run 72c1e384-9369-4d70-b690-81db79b9055d — captured only, not repaired in P3I",
+    "AQ_21_day_cutoff_unchanged": true,
+    "AR_weekly_timetable_unchanged": true,
+    "AS_every_p3i_discovered_cruises_write": [
+      {
+        "kind": "enrichment",
+        "count": 2,
+        "uuids": [
+          "8f934f87-a16c-4040-9a11-d804969c1cca",
+          "ff478823-1275-499d-998b-b568cbe03bff"
+        ],
+        "uuid_preserved": true
+      },
+      {
+        "kind": "promotion_to_active",
+        "count": 13,
+        "uuids": [
+          "0a82a3b3-1245-484f-a04e-2390c07edd99",
+          "3be7ec0c-b6d9-4642-9014-0ffe7005da03",
+          "55b4442c-521c-4345-8cf5-0ac675428813",
+          "5c93d5ab-b659-44d9-bc60-4be7200fe0fa",
+          "853b168d-211c-455a-96c1-cb97df1d8d89",
+          "8895202a-ea1d-4436-89f6-5e866cca05ef",
+          "8a80cf9d-747c-4d8f-8d62-5e07dc7b3346",
+          "8f934f87-a16c-4040-9a11-d804969c1cca",
+          "b78d9945-f08b-48f0-8e88-9256b929fb16",
+          "db16abd9-b316-4e2d-8dc8-3bac26869bd1",
+          "e4c5d9f9-c8af-423b-b0f5-24512fecd7bb",
+          "f7b45eca-0d3e-4b9e-b506-8552da9ed3a0",
+          "ff478823-1275-499d-998b-b568cbe03bff"
+        ],
+        "uuid_preserved": true
+      }
+    ],
+    "AT_any_partial_write_run": false,
+    "AU_tests": {
+      "test:weekly-maintenance-p3i": "13/13",
+      "test:weekly-maintenance-p3h": "12/12",
+      "test:weekly-maintenance-p3g": "21/21",
+      "test:royal-caribbean-weekly-maintenance": "20/20",
+      "test:royal-caribbean-prompt10-activation": "9/9",
+      "test:royal-caribbean-prompt11a-scheduled-apply": "30/30",
+      "test:norwegian-weekly-maintenance": "30/30",
+      "test:public-booking-cutoff": "17/17"
+    },
+    "AV_git_status": "to be filled after commit"
+  },
+  "cutoff_accounting": {
+    "A_source_sailings_excluded_from_public_eligibility": true,
+    "B_actual_proposed_database_status_changes_before_p3i": true,
+    "B_after_p3i": false,
+    "C_total_change_safety_counted_157_before_p3i": "assertWeeklyCeilings counted cutoff_hides toward the 150 ceiling; evaluateRoyalCaribbeanWeeklyHealth volume did not include cutoff_candidate_count",
+    "D_would_next_wednesday_block_solely_because_cutoff_gt_150": "YES before P3I (157 cutoff_hides would fail total_change_ceiling). NO after P3I because cutoff is DAILY_EXPIRY_MANAGED and cutoff_hides=[]"
+  },
+  "wednesday_dry_run_gate": {
+    "production_sha": "f2fe45c02bad84ad3c41b01d8e9c900070b28585",
+    "function": "resolveDryRun",
+    "file": "netlify/functions/lib/royal-caribbean-weekly-maintenance-dispatch.js",
+    "required_before_p3i": "isScheduledInvocation && weekly enabled && !non-prod && isNetlifyPlatformScheduledInvocation && isNetlifyProductionContext",
+    "wednesday_provenance": {
+      "context": null,
+      "netlify_event": null,
+      "commit_ref": null,
+      "deploy_id": null
+    },
+    "ledger_dry_run": true,
+    "independent_backlog_gate": "106 > max_proposed_inserts 100 => controlled_catchup_required"
+  },
+  "rcl_recon": {
+    "union_sailing_identities": 3218,
+    "official_source_total": 935,
+    "recognised_existing_eligible": 2922,
+    "proposed_inserts": 5,
+    "proposed_insert_ids": [
+      "AN07A507_2028-05-19",
+      "VY07A538_2028-07-14",
+      "AN04A003_2028-05-07",
+      "SR07A527_2028-07-02",
+      "OV07A525_2028-06-26"
+    ],
+    "proposed_updates": 0,
+    "review_items": 0,
+    "incomplete_skipped": 14,
+    "source_absent_active": 18,
+    "source_absent_action_eligible_count": 11,
+    "cutoff_candidates": 163,
+    "source_snapshot_id": "93bf7e062c3fb283",
+    "weekly_maintenance_healthy": true,
+    "royal_caribbean_source_enumeration_ok": true,
+    "reconciliation_arithmetic_ok": true,
+    "terminal_status": "read_only",
+    "perth_today": "2026-09-17"
+  },
+  "rcl_ledger": {
+    "generated_at": "2026-09-17T01:49:36.171Z",
+    "catchup_run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713",
+    "catchup_run_id": "royal-p3h-controlled-catchup-2026-09-16",
+    "trigger_type": "manual_catchup",
+    "inserts_represented": 107,
+    "manifests_linked": [
+      {
+        "id": "23db0640-383b-4c3a-8767-0976312f9c9d",
+        "previous_run_record_id": null,
+        "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+      },
+      {
+        "id": "1676f548-18ed-4ff4-9438-7ffd0333417a",
+        "previous_run_record_id": null,
+        "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+      },
+      {
+        "id": "405d5356-86a3-4f76-b261-03b4a87cab79",
+        "previous_run_record_id": null,
+        "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+      },
+      {
+        "id": "6cbd189f-2da3-4dd1-b32f-9677b8317f29",
+        "previous_run_record_id": null,
+        "run_record_id": "318d20a6-321d-4045-b5c2-4d66a871a713"
+      }
+    ],
+    "wednesday_scheduled_run_id": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+    "wednesday_trigger_type_after": "scheduled",
+    "wednesday_unchanged": true
+  },
+  "ncl": {
+    "starting_counts": {
+      "READY_TO_PROMOTE": 11,
+      "NEEDS_ENRICHMENT": 2,
+      "SOURCE_STILL_INCOMPLETE": 0,
+      "LEGACY_NO_OFFICIAL_ID": 5,
+      "DUPLICATE_ACTIVE": 30,
+      "AMBIGUOUS": 0,
+      "SOURCE_ABSENT": 0
+    },
+    "final_counts": {
+      "active": 1977,
+      "match_required": 35,
+      "expired": 94,
+      "hidden": 3,
+      "validation_failed": 1
+    },
+    "final_staging_counts": {
+      "READY_TO_PROMOTE": 0,
+      "NEEDS_ENRICHMENT": 0,
+      "SOURCE_STILL_INCOMPLETE": 0,
+      "LEGACY_NO_OFFICIAL_ID": 5,
+      "DUPLICATE_ACTIVE": 30,
+      "AMBIGUOUS": 0,
+      "SOURCE_ABSENT": 0
+    },
+    "post_write": {
+      "proposed_inserts": 0,
+      "duplicate_proposals_for_wednesday_11": [],
+      "old_34_incomplete_reviews": 0,
+      "recognised_wednesday": 11
+    },
+    "preexisting_promoted_uuids": [
+      "8f934f87-a16c-4040-9a11-d804969c1cca",
+      "ff478823-1275-499d-998b-b568cbe03bff"
+    ],
+    "preexisting_active_fingerprint_collisions_not_created_by_p3i": 17,
+    "p3i_promotions_in_fingerprint_collisions": 0
+  },
+  "thursday": {
+    "freeze_window_00_30_to_04_30_perth": "already past at execution (09:41+ Perth 2026-09-17)",
+    "carnival": {
+      "id": "126156ef-d984-45f8-88c7-2201885f75cf",
+      "status": "completed",
+      "terminal_status": "not_yet_commissioned",
+      "writes": 0
+    },
+    "disney": {
+      "id": "72c1e384-9369-4d70-b690-81db79b9055d",
+      "status": "running",
+      "started_at": "2026-09-16T19:00:37.442+00:00",
+      "finished_at": null,
+      "note": "stale RUNNING captured only; not mixed into RCL/NCL commissioning"
+    }
+  }
+}

@@ -38,12 +38,17 @@ function evaluateRoyalCaribbeanWeeklyHealth({
   if (Number(actualWrites) !== 0) failures.push("unexpected_writes");
 
   const ceiling = ROYAL_CARIBBEAN_WEEKLY_WRITE_CEILING;
+  const sourceAbsenceWrites =
+    policy.source_absence_actions_allowed === true
+      ? Number(policy.source_absent_action_eligible_count || 0)
+      : 0;
+  const plannedMaterialWrites =
+    Number(newEligibleCount || 0) + Number(proposedUpdateCount || 0) + sourceAbsenceWrites;
   const volumeExceeded =
     newEligibleCount > ceiling.max_proposed_inserts ||
     proposedUpdateCount > ceiling.max_proposed_updates ||
-    (policy.source_absent_action_eligible_count || 0) > ceiling.max_source_absent_actions ||
-    newEligibleCount + proposedUpdateCount + (policy.source_absent_action_eligible_count || 0) >
-      ceiling.max_total_proposed_changes;
+    sourceAbsenceWrites > ceiling.max_source_absent_actions ||
+    plannedMaterialWrites > ceiling.max_total_proposed_changes;
 
   if (performWrites && volumeExceeded) failures.push("weekly_change_volume_exceeds_ceiling");
 
@@ -60,6 +65,10 @@ function evaluateRoyalCaribbeanWeeklyHealth({
     proposed_update_count: proposedUpdateCount,
     source_absent_candidate_count: sourceAbsentCandidateCount,
     cutoff_candidate_count: cutoffCandidateCount,
+    cutoff_candidates_are_rcl_material_writes: false,
+    cutoff_candidate_owner: "daily_expiry",
+    source_absence_writes_counted: sourceAbsenceWrites,
+    planned_rcl_material_writes: plannedMaterialWrites,
     source_absence_actions_allowed: policy.source_absence_actions_allowed === true,
     actual_writes: Number(actualWrites) || 0,
     weekly_change_volume_exceeded: volumeExceeded,
