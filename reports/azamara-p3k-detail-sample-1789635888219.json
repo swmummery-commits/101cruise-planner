@@ -1,0 +1,739 @@
+{
+  "generated_at": "2026-09-17T09:04:48.218Z",
+  "sitemap_packages": 555,
+  "eligible_urls": 440,
+  "sample_size": 19,
+  "html_kind_counts": {
+    "valid_cruise_detail": 19
+  },
+  "gtm_duration_present": 19,
+  "stale_count": 0,
+  "http_not_200": 0,
+  "median_ms": 1166,
+  "serial_projected_ms_for_eligible": 513040,
+  "pages": [
+    {
+      "package_code": "JR261019-010",
+      "departure": "2026-10-19",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr261019-010-canada-new-england-cruise-quebec-city-halifax-portland",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/jr261019-010-canada-new-england-cruise-quebec-city-halifax-portland",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 446646,
+      "duration_ms": 1316,
+      "html_kind": "valid_cruise_detail",
+      "title": "CANADA &amp; NEW ENGLAND CRUISE: QUEBEC CITY, HALIFAX &amp; PORTLAND",
+      "gtm": {
+        "gtm_duration": "10-NIGHT CRUISE",
+        "package_code": "JR261019-010",
+        "nights": 10,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "CANADA &AMP; NEW ENGLAND CRUISE: QUEBEC CITY, HALIFAX &AMP; PORTLAND",
+        "destination": "CANADA"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"CANADA &AMP; NEW ENGLAND CRUISE: QUEBEC CITY, HALIFAX &AMP; PORTLAND\",\n            \"description\": \"\",\n            \"sku\": \"JR261019-010\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https:"
+      ],
+      "next_data_present": false,
+      "sha256": "b973b2c9094acc7cd8fd296bbf052a4a35319d30dd6b3c405946a9c53c03fe71"
+    },
+    {
+      "package_code": "JR271110-011",
+      "departure": "2027-11-10",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr271110-011-azamara-circle-cruise-greece-cyprus-turkey",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/jr271110-011-azamara-circle-cruise-greece-cyprus-turkey",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 458887,
+      "duration_ms": 1248,
+      "html_kind": "valid_cruise_detail",
+      "title": "AZAMARA CIRCLE CRUISE: GREECE, CYPRUS &amp; TURKEY",
+      "gtm": {
+        "gtm_duration": "11-NIGHT CRUISE",
+        "package_code": "JR271110-011",
+        "nights": 11,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "AZAMARA CIRCLE CRUISE: GREECE, CYPRUS &AMP; TURKEY",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"AZAMARA CIRCLE CRUISE: GREECE, CYPRUS &AMP; TURKEY\",\n            \"description\": \"\",\n            \"sku\": \"JR271110-011\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara.com/"
+      ],
+      "next_data_present": false,
+      "sha256": "18ad15eea41bb7a33ad098695a5a813de9cd900dfe2d03bb7f6322574ed8da63"
+    },
+    {
+      "package_code": "JR281028-007",
+      "departure": "2028-10-28",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr281028-007-greece-intensive-cruise-chios-rhodes-santorini",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/jr281028-007-greece-intensive-cruise-chios-rhodes-santorini",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 456746,
+      "duration_ms": 1267,
+      "html_kind": "valid_cruise_detail",
+      "title": "GREECE INTENSIVE CRUISE: CHIOS, RHODES &amp; SANTORINI",
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "JR281028-007",
+        "nights": 7,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "GREECE INTENSIVE CRUISE: CHIOS, RHODES &AMP; SANTORINI",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"GREECE INTENSIVE CRUISE: CHIOS, RHODES &AMP; SANTORINI\",\n            \"description\": \"\",\n            \"sku\": \"JR281028-007\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara."
+      ],
+      "next_data_present": false,
+      "sha256": "df28489750fc89a4ce4f03932f965cea526094a1b4b4b0d5d971071fd987d3a6"
+    },
+    {
+      "package_code": "ON261017-014",
+      "departure": "2026-10-17",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on261017-014-egypt-malta-italy-cruise-alexandria-valletta-amalfi",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/on261017-014-egypt-malta-italy-cruise-alexandria-valletta-amalfi",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 446574,
+      "duration_ms": 978,
+      "html_kind": "valid_cruise_detail",
+      "title": "EGYPT, MALTA &amp; ITALY CRUISE: ALEXANDRIA, VALLETTA &amp; AMALFI",
+      "gtm": {
+        "gtm_duration": "14-NIGHT CRUISE",
+        "package_code": "ON261017-014",
+        "nights": 14,
+        "ship_name": "Azamara Onward",
+        "cruise_name": "EGYPT, MALTA &AMP; ITALY CRUISE: ALEXANDRIA, VALLETTA &AMP; AMALFI",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"EGYPT, MALTA &AMP; ITALY CRUISE: ALEXANDRIA, VALLETTA &AMP; AMALFI\",\n            \"description\": \"\",\n            \"sku\": \"ON261017-014\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://"
+      ],
+      "next_data_present": false,
+      "sha256": "8998c065e5e2a4db011be698f25d8fa6f64db7ffbbe506e1114552f12ffed4c7"
+    },
+    {
+      "package_code": "ON271125-027",
+      "departure": "2027-11-25",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on271125-027-transatlantic-combination-cruise-athens-to-miami",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/on271125-027-transatlantic-combination-cruise-athens-to-miami",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 459562,
+      "duration_ms": 1179,
+      "html_kind": "valid_cruise_detail",
+      "title": "TRANSATLANTIC COMBINATION CRUISE: ATHENS TO MIAMI",
+      "gtm": {
+        "gtm_duration": "27-NIGHT CRUISE",
+        "package_code": "ON271125-027",
+        "nights": 27,
+        "ship_name": "Azamara Onward",
+        "cruise_name": "TRANSATLANTIC COMBINATION CRUISE: ATHENS TO MIAMI",
+        "destination": "COMBO"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_combination",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"TRANSATLANTIC COMBINATION CRUISE: ATHENS TO MIAMI\",\n            \"description\": \"\",\n            \"sku\": \"ON271125-027\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara.com/s"
+      ],
+      "next_data_present": false,
+      "sha256": "7e1e436f6c9194cbb9174691b36f8803e7285fb464a54dcebac11986d3dd0b5e"
+    },
+    {
+      "package_code": "ON281021-014",
+      "departure": "2028-10-21",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on281021-014-egypt-malta-italy-cruise-alexandria-valletta-amalfi",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/on281021-014-egypt-malta-italy-cruise-alexandria-valletta-amalfi",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 455265,
+      "duration_ms": 1174,
+      "html_kind": "valid_cruise_detail",
+      "title": "EGYPT, MALTA &amp; ITALY CRUISE: ALEXANDRIA, VALLETTA &amp; AMALFI",
+      "gtm": {
+        "gtm_duration": "14-NIGHT CRUISE",
+        "package_code": "ON281021-014",
+        "nights": 14,
+        "ship_name": "Azamara Onward",
+        "cruise_name": "EGYPT, MALTA &AMP; ITALY CRUISE: ALEXANDRIA, VALLETTA &AMP; AMALFI",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"EGYPT, MALTA &AMP; ITALY CRUISE: ALEXANDRIA, VALLETTA &AMP; AMALFI\",\n            \"description\": \"\",\n            \"sku\": \"ON281021-014\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://"
+      ],
+      "next_data_present": false,
+      "sha256": "667d9813acd3dd20a0aac71bde44256de80f458a62b0188785b3ce907150b2a7"
+    },
+    {
+      "package_code": "PR261016-007",
+      "departure": "2026-10-16",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr261016-007-china-intensive-cruise-beijing-dalian-and-shanghai",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr261016-007-china-intensive-cruise-beijing-dalian-and-shanghai",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 453571,
+      "duration_ms": 1140,
+      "html_kind": "valid_cruise_detail",
+      "title": "CHINA INTENSIVE CRUISE: BEIJING, DALIAN AND SHANGHAI",
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "PR261016-007",
+        "nights": 7,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "CHINA INTENSIVE CRUISE: BEIJING, DALIAN AND SHANGHAI",
+        "destination": "ASIA"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"CHINA INTENSIVE CRUISE: BEIJING, DALIAN AND SHANGHAI\",\n            \"description\": \"\",\n            \"sku\": \"PR261016-007\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara.co"
+      ],
+      "next_data_present": false,
+      "sha256": "d443c6c970254d4434005591863b5d57468f58fb30991a299b1ebcf13b43dbe7"
+    },
+    {
+      "package_code": "PR271003-013",
+      "departure": "2027-10-03",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr271003-013-vietnam-thailand-cruise-ho-chi-minh-city-bangkok-singapore",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr271003-013-vietnam-thailand-cruise-ho-chi-minh-city-bangkok-singapore",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 459273,
+      "duration_ms": 1438,
+      "html_kind": "valid_cruise_detail",
+      "title": "VIETNAM &amp; THAILAND CRUISE: HO CHI MINH CITY, BANGKOK &amp; SINGAPORE",
+      "gtm": {
+        "gtm_duration": "13-NIGHT CRUISE",
+        "package_code": "PR271003-013",
+        "nights": 13,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "VIETNAM &AMP; THAILAND CRUISE: HO CHI MINH CITY, BANGKOK &AMP; SINGAPORE",
+        "destination": "ASIA"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"VIETNAM &AMP; THAILAND CRUISE: HO CHI MINH CITY, BANGKOK &AMP; SINGAPORE\",\n            \"description\": \"\",\n            \"sku\": \"PR271003-013\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"ht"
+      ],
+      "next_data_present": false,
+      "sha256": "2bfde9a07b767f2ea882319905b32fce768c0ba891202da3f05e325a0381cc4b"
+    },
+    {
+      "package_code": "PR281023-012",
+      "departure": "2028-10-23",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr281023-012-myanmar-malaysia-thailand-cruise-yangon-kuala-lumpur-phuket",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr281023-012-myanmar-malaysia-thailand-cruise-yangon-kuala-lumpur-phuket",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 454520,
+      "duration_ms": 1166,
+      "html_kind": "valid_cruise_detail",
+      "title": "MYANMAR, MALAYSIA &amp; THAILAND CRUISE: YANGON, KUALA LUMPUR &amp; PHUKET",
+      "gtm": {
+        "gtm_duration": "12-NIGHT CRUISE",
+        "package_code": "PR281023-012",
+        "nights": 12,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "MYANMAR, MALAYSIA &AMP; THAILAND CRUISE: YANGON, KUALA LUMPUR &AMP; PHUKET",
+        "destination": "ASIA"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"MYANMAR, MALAYSIA &AMP; THAILAND CRUISE: YANGON, KUALA LUMPUR &AMP; PHUKET\",\n            \"description\": \"\",\n            \"sku\": \"PR281023-012\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \""
+      ],
+      "next_data_present": false,
+      "sha256": "7dbd759ed03eb4f0f0eb911a1812b76817fe137074b3133171b5d77275c6e7f7"
+    },
+    {
+      "package_code": "QS261014-010",
+      "departure": "2026-10-14",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs261014-010-greece-cyprus-turkey-paros-limassol-antalya",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/qs261014-010-greece-cyprus-turkey-paros-limassol-antalya",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 446386,
+      "duration_ms": 1264,
+      "html_kind": "valid_cruise_detail",
+      "title": "GREECE, CYPRUS &amp; TURKEY: PAROS, LIMASSOL &amp; ANTALYA",
+      "gtm": {
+        "gtm_duration": "10-NIGHT CRUISE",
+        "package_code": "QS261014-010",
+        "nights": 10,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "GREECE, CYPRUS &AMP; TURKEY: PAROS, LIMASSOL &AMP; ANTALYA",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"GREECE, CYPRUS &AMP; TURKEY: PAROS, LIMASSOL &AMP; ANTALYA\",\n            \"description\": \"\",\n            \"sku\": \"QS261014-010\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azam"
+      ],
+      "next_data_present": false,
+      "sha256": "4056741a46df16862da1b927089bc7232a66be6a9570fa96854511d5cea32fc6"
+    },
+    {
+      "package_code": "QS271205-007",
+      "departure": "2027-12-05",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs271205-007-southern-caribbean-cruise-puerto-rico-british-virgin-islands-grenada",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/qs271205-007-southern-caribbean-cruise-puerto-rico-british-virgin-islands-grenada",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 492193,
+      "duration_ms": 1368,
+      "html_kind": "valid_cruise_detail",
+      "title": "SOUTHERN CARIBBEAN CRUISE: PUERTO RICO, BRITISH VIRGIN ISLANDS &amp; GRENADA",
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "QS271205-007",
+        "nights": 7,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "SOUTHERN CARIBBEAN CRUISE: PUERTO RICO, BRITISH VIRGIN ISLANDS &AMP; GRENADA",
+        "destination": "CARIBBEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"SOUTHERN CARIBBEAN CRUISE: PUERTO RICO, BRITISH VIRGIN ISLANDS &AMP; GRENADA\",\n            \"description\": \"\",\n            \"sku\": \"QS271205-007\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n              "
+      ],
+      "next_data_present": false,
+      "sha256": "93c590d17ff4d2195e7a07cdc1c29fab498f55e7a69a3998ad38cf11d5617b6f"
+    },
+    {
+      "package_code": "QS281017-012",
+      "departure": "2028-10-17",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs281017-012-croatia-greece-cruise-dubrovnik-corfu-santorini",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/qs281017-012-croatia-greece-cruise-dubrovnik-corfu-santorini",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 489567,
+      "duration_ms": 1102,
+      "html_kind": "valid_cruise_detail",
+      "title": "CROATIA &amp; GREECE CRUISE: DUBROVNIK, CORFU &amp; SANTORINI",
+      "gtm": {
+        "gtm_duration": "12-NIGHT CRUISE",
+        "package_code": "QS281017-012",
+        "nights": 12,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "CROATIA &AMP; GREECE CRUISE: DUBROVNIK, CORFU &AMP; SANTORINI",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"CROATIA &AMP; GREECE CRUISE: DUBROVNIK, CORFU &AMP; SANTORINI\",\n            \"description\": \"\",\n            \"sku\": \"QS281017-012\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.a"
+      ],
+      "next_data_present": false,
+      "sha256": "e68846ad3053883948e6b7c7d0f02db3ee989972fb39e7855ba17b980a1bf4c7"
+    },
+    {
+      "package_code": "JR261107-007",
+      "departure": "2026-11-07",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr261107-007-southern-caribbean-cruise-british-virgin-islands-martinique-grenada",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/jr261107-007-southern-caribbean-cruise-british-virgin-islands-martinique-grenada",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 456584,
+      "duration_ms": 1056,
+      "html_kind": "valid_cruise_detail",
+      "title": "SOUTHERN CARIBBEAN CRUISE: BRITISH VIRGIN ISLANDS, MARTINIQUE &amp; GRENADA",
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "JR261107-007",
+        "nights": 7,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "SOUTHERN CARIBBEAN CRUISE: BRITISH VIRGIN ISLANDS, MARTINIQUE &AMP; GRENADA",
+        "destination": "CARIBBEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"SOUTHERN CARIBBEAN CRUISE: BRITISH VIRGIN ISLANDS, MARTINIQUE &AMP; GRENADA\",\n            \"description\": \"\",\n            \"sku\": \"JR261107-007\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               "
+      ],
+      "next_data_present": false,
+      "sha256": "24a4bcd99af58215773b5d55afdaeebf79e56c3a044dda3ff9cb17f443e291ea"
+    },
+    {
+      "package_code": "PR261204-015",
+      "departure": "2026-12-04",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr261204-015-australia-new-zealand-cruise-hobart-wellington-tauranga",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr261204-015-australia-new-zealand-cruise-hobart-wellington-tauranga",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 456462,
+      "duration_ms": 983,
+      "html_kind": "valid_cruise_detail",
+      "title": "AUSTRALIA &amp; NEW ZEALAND CRUISE: HOBART, WELLINGTON &amp; TAURANGA",
+      "gtm": {
+        "gtm_duration": "15-NIGHT CRUISE",
+        "package_code": "PR261204-015",
+        "nights": 15,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "AUSTRALIA &AMP; NEW ZEALAND CRUISE: HOBART, WELLINGTON &AMP; TAURANGA",
+        "destination": "AUSTRALIA & NEW ZEALAND"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"AUSTRALIA &AMP; NEW ZEALAND CRUISE: HOBART, WELLINGTON &AMP; TAURANGA\",\n            \"description\": \"\",\n            \"sku\": \"PR261204-015\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https"
+      ],
+      "next_data_present": false,
+      "sha256": "e79e5f528fe65a997e571ac534b9a674b9c0c55aa3e9f0e080bc373f49f1f9d1"
+    },
+    {
+      "package_code": "PR270104-016",
+      "departure": "2027-01-04",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr270104-016-australia-new-zealand-cruise-melbourne-sydney-auckland",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr270104-016-australia-new-zealand-cruise-melbourne-sydney-auckland",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 457080,
+      "duration_ms": 1007,
+      "html_kind": "valid_cruise_detail",
+      "title": "AUSTRALIA &amp; NEW ZEALAND CRUISE: MELBOURNE, SYDNEY &amp; AUCKLAND",
+      "gtm": {
+        "gtm_duration": "16-NIGHT CRUISE",
+        "package_code": "PR270104-016",
+        "nights": 16,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "AUSTRALIA &AMP; NEW ZEALAND CRUISE: MELBOURNE, SYDNEY &AMP; AUCKLAND",
+        "destination": "AUSTRALIA & NEW ZEALAND"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"AUSTRALIA &AMP; NEW ZEALAND CRUISE: MELBOURNE, SYDNEY &AMP; AUCKLAND\",\n            \"description\": \"\",\n            \"sku\": \"PR270104-016\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https:"
+      ],
+      "next_data_present": false,
+      "sha256": "1737f29708e1de9a32acedd760b47ba5e4254e4ba27eeb7604c715780572107b"
+    },
+    {
+      "package_code": "PR270205-019",
+      "departure": "2027-02-05",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr270205-019-australia-indonesia-cruise-cairns-darwin-singapore",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/pr270205-019-australia-indonesia-cruise-cairns-darwin-singapore",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 458023,
+      "duration_ms": 912,
+      "html_kind": "valid_cruise_detail",
+      "title": "AUSTRALIA &amp; INDONESIA CRUISE: CAIRNS, DARWIN &amp; SINGAPORE",
+      "gtm": {
+        "gtm_duration": "19-NIGHT CRUISE",
+        "package_code": "PR270205-019",
+        "nights": 19,
+        "ship_name": "Azamara Pursuit",
+        "cruise_name": "AUSTRALIA &AMP; INDONESIA CRUISE: CAIRNS, DARWIN &AMP; SINGAPORE",
+        "destination": "AUSTRALIA & NEW ZEALAND"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"AUSTRALIA &AMP; INDONESIA CRUISE: CAIRNS, DARWIN &AMP; SINGAPORE\",\n            \"description\": \"\",\n            \"sku\": \"PR270205-019\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://ww"
+      ],
+      "next_data_present": false,
+      "sha256": "8110ed67afe73a857b8c3b3a8d70a3283f9778ebbc296a5c09f9170cf81a6580"
+    },
+    {
+      "package_code": "ON270303-010",
+      "departure": "2027-03-03",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on270303-010-italy-spain-cruise-florence-marseille-barcelona",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/on270303-010-italy-spain-cruise-florence-marseille-barcelona",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 458823,
+      "duration_ms": 997,
+      "html_kind": "valid_cruise_detail",
+      "title": "ITALY &amp; SPAIN CRUISE: FLORENCE, MARSEILLE &amp; BARCELONA",
+      "gtm": {
+        "gtm_duration": "10-NIGHT CRUISE",
+        "package_code": "ON270303-010",
+        "nights": 10,
+        "ship_name": "Azamara Onward",
+        "cruise_name": "ITALY &AMP; SPAIN CRUISE: FLORENCE, MARSEILLE &AMP; BARCELONA",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"ITALY &AMP; SPAIN CRUISE: FLORENCE, MARSEILLE &AMP; BARCELONA\",\n            \"description\": \"\",\n            \"sku\": \"ON270303-010\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.a"
+      ],
+      "next_data_present": false,
+      "sha256": "dbe271a1022f8efd08c96dc07c63142b5d25cb30b8ab2f9819b564326fe55332"
+    },
+    {
+      "package_code": "QS270402-014",
+      "departure": "2027-04-02",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs270402-014-east-asia-cruise-hong-kong-shanghai-beijing",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/qs270402-014-east-asia-cruise-hong-kong-shanghai-beijing",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 491435,
+      "duration_ms": 1330,
+      "html_kind": "valid_cruise_detail",
+      "title": "EAST ASIA CRUISE: HONG KONG, SHANGHAI &amp; BEIJING",
+      "gtm": {
+        "gtm_duration": "14-NIGHT CRUISE",
+        "package_code": "QS270402-014",
+        "nights": 14,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "EAST ASIA CRUISE: HONG KONG, SHANGHAI &AMP; BEIJING",
+        "destination": "ASIA"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"EAST ASIA CRUISE: HONG KONG, SHANGHAI &AMP; BEIJING\",\n            \"description\": \"\",\n            \"sku\": \"QS270402-014\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara.com"
+      ],
+      "next_data_present": false,
+      "sha256": "a90c5b76c4cec87248d0ea0116375b3b60c0715a6d8358024aa91ef6b7362672"
+    },
+    {
+      "package_code": "JR270505-010",
+      "departure": "2027-05-05",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr270505-010-italy-intensive-cruise-venice-sicily-amalfi",
+      "status": 200,
+      "final_url": "https://www.azamara.com/cruises/jr270505-010-italy-intensive-cruise-venice-sicily-amalfi",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 454633,
+      "duration_ms": 1070,
+      "html_kind": "valid_cruise_detail",
+      "title": "ITALY INTENSIVE CRUISE: VENICE, SICILY &amp; AMALFI",
+      "gtm": {
+        "gtm_duration": "10-NIGHT CRUISE",
+        "package_code": "JR270505-010",
+        "nights": 10,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "ITALY INTENSIVE CRUISE: VENICE, SICILY &AMP; AMALFI",
+        "destination": "MEDITERRANEAN"
+      },
+      "structured_signals": {
+        "gtm_data_attrs": true,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": null,
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  ",
+        "\n        {\n            \"@context\": \"http://schema.org\",\n            \"@type\": \"Product\",\n            \"name\": \"ITALY INTENSIVE CRUISE: VENICE, SICILY &AMP; AMALFI\",\n            \"description\": \"\",\n            \"sku\": \"JR270505-010\",\n\n            \"brand\": {\n                \"@type\": \"Brand\",\n                \"name\": \"Azamara\"\n            },\n\n             \"image\": [\n               \"https://www.azamara.com"
+      ],
+      "next_data_present": false,
+      "sha256": "c8cb259f17c7eb963bf1a762e2f159a52c68cdf55c57414575bdc1a25b2ef794"
+    }
+  ],
+  "p95_ms": 1438
+}

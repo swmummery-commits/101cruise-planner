@@ -112,6 +112,8 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
   const startedAt = Date.now();
   const fetchImpl = context.fetchImpl || null;
   const maxUrls = context.maxUrls ?? context.max_urls ?? null;
+  const htmlDeadlineMs = context.htmlDeadlineMs ?? context.html_deadline_ms ?? null;
+  const detailConcurrency = context.detailConcurrency ?? context.detail_concurrency ?? null;
 
   const modeGate = resolveAzamaraDiscoveryMode(performWrites ? "weekly_maintenance" : "production_read_only");
   if (performWrites) assertAzamaraWritesAllowed(modeGate);
@@ -142,6 +144,8 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
     today,
     fetchImpl,
     maxUrls,
+    htmlDeadlineMs,
+    detailConcurrency,
     runId
   });
 

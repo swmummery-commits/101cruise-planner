@@ -2,6 +2,7 @@
  * Azamara official sitemap discovery adapter — productionised catch-up logic.
  */
 
+const crypto = require("crypto");
 const discovery = require("./cruise-discovery");
 const { extractSitemapLocs } = require("./cruise-discovery-structured");
 const { parseRoutePortPair } = require("./discovery-departure-port");
@@ -20,11 +21,15 @@ const { cruiseIdentityKey } = require("./cruise-discovery-ops");
 const { publicBookingMinimumDepartureDate } = require("./public-discovered-cruise-inventory");
 
 const ADAPTER_ID = "azamara_official_sitemap";
-const ADAPTER_VERSION = "2026-08-16-weekly";
+const ADAPTER_VERSION = "2026-09-17-p3k-slug";
 const SITEMAP_URL = "https://www.azamara.com/sitemap.xml";
-const PACKAGE_RE = /\/cruises\/((jr|on|pr|qs)(\d{2})(\d{2})(\d{2})-(\d{3})(?:-(ct[ab]\d+))?)/i;
+const PACKAGE_RE = /\/cruises\/((jr|on|pr|qs)(\d{2})(\d{2})(\d{2})-(\d{3})(?:-(ct[ab]\d+))?)(?:-[a-z0-9-]+)*/i;
+const PACKAGE_LOC_RE =
+  /https?:\/\/www\.azamara\.com\/(?:[a-z]{2}\/)?cruises\/((?:jr|on|pr|qs)\d{6}-\d{3}(?:-ct[ab]\d+)?(?:-[a-z0-9-]+)*)/gi;
 const OFFICIAL_SAILING_RE = /^(JR|ON|PR|QS)\d{6}-\d{3}$/i;
 const SHIP_PREFIX = { jr: "Journey", on: "Onward", pr: "Pursuit", qs: "Quest" };
+const AZAMARA_DETAIL_CONCURRENCY = 6;
+const AZAMARA_HTML_DEADLINE_MS = 720000;
 
 const {
   buildCandidateFromSource,
@@ -42,6 +47,7 @@ function defaultFetchText(url, maxBytes = 600000, accept = "text/html,applicatio
     redirect: "follow",
     headers: {
       Accept: accept,
+      "Cache-Control": "no-cache, no-store",
       "User-Agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     },
@@ -54,6 +60,45 @@ function defaultFetchText(url, maxBytes = 600000, accept = "text/html,applicatio
   }));
 }
 
+async function defaultFetchSitemap(url, maxBytes = 5000000, accept = "application/xml,text/xml,*/*;q=0.8") {
+  const chain = [];
+  let current = url;
+  for (let hop = 0; hop < 8; hop += 1) {
+    const res = await fetch(current, {
+      redirect: "manual",
+      headers: {
+        Accept: accept,
+        "Cache-Control": "no-cache, no-store",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      signal: AbortSignal.timeout(45000)
+    });
+    const location = res.headers.get("location");
+    chain.push({
+      url: current,
+      status: res.status,
+      location,
+      content_type: res.headers?.get?.("content-type") || null
+    });
+    if (res.status >= 300 && res.status < 400 && location) {
+      current = new URL(location, current).href;
+      continue;
+    }
+    const text = String(await res.text()).slice(0, maxBytes);
+    return {
+      status: res.status,
+      text,
+      content_type: res.headers?.get?.("content-type") || null,
+      final_url: current,
+      redirect_chain: chain
+    };
+  }
+  const err = new Error("azamara_sitemap_redirect_loop");
+  err.redirect_chain = chain;
+  throw err;
+}
+
 function decodeSitemapLoc(value) {
   return String(value || "")
     .trim()
@@ -61,6 +106,13 @@ function decodeSitemapLoc(value) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"');
+}
+
+function keepRicherPackageUrl(map, parsed) {
+  const existing = map.get(parsed.fullCode);
+  if (!existing || parsed.url.length > existing.url.length) {
+    map.set(parsed.fullCode, parsed);
+  }
 }
 
 function extractAzamaraPackagesFromSitemapXml(xml, baseUrl = SITEMAP_URL) {
@@ -73,17 +125,15 @@ function extractAzamaraPackagesFromSitemapXml(xml, baseUrl = SITEMAP_URL) {
   while ((match = locRe.exec(text)) !== null) {
     consider.add(decodeSitemapLoc(match[1]));
   }
-  const packageRe = new RegExp(PACKAGE_RE.source, "gi");
+  PACKAGE_LOC_RE.lastIndex = 0;
   let rawMatch;
-  while ((rawMatch = packageRe.exec(text)) !== null) {
-    consider.add(`https://www.azamara.com/cruises/${rawMatch[1]}`);
+  while ((rawMatch = PACKAGE_LOC_RE.exec(text)) !== null) {
+    consider.add(rawMatch[0].replace(/\/(fares|shore-excursions)\/?$/i, ""));
   }
   for (const url of consider) {
     const parsed = parsePackageFromUrl(url);
     if (!parsed) continue;
-    if (!parsedByCode.has(parsed.fullCode) || parsed.url.length < parsedByCode.get(parsed.fullCode).url.length) {
-      parsedByCode.set(parsed.fullCode, parsed);
-    }
+    keepRicherPackageUrl(parsedByCode, parsed);
   }
   return {
     locs: locs.length,
@@ -152,8 +202,18 @@ async function mapLimit(items, limit, worker) {
   return results;
 }
 
+function canonicalAzamaraCruiseUrl(url) {
+  return String(url || "")
+    .trim()
+    .replace(/&amp;/g, "&")
+    .replace(/[?#].*$/, "")
+    .replace(/\/(fares|shore-excursions)\/?$/i, "")
+    .replace(/\/+$/, "");
+}
+
 function parsePackageFromUrl(url) {
-  const m = String(url).match(PACKAGE_RE);
+  const cleaned = canonicalAzamaraCruiseUrl(url);
+  const m = cleaned.match(PACKAGE_RE);
   if (!m) return null;
   const prefix = m[2].toLowerCase();
   const fullCode = `${m[2].toUpperCase()}${m[3]}${m[4]}${m[5]}-${m[6]}${m[7] ? `-${m[7].toUpperCase()}` : ""}`;
@@ -162,7 +222,7 @@ function parsePackageFromUrl(url) {
     fullCode,
     departure: `${year}-${m[4]}-${m[5]}`,
     prefix,
-    url: String(url).replace(/\/(fares|shore-excursions)\/?$/, ""),
+    url: cleaned,
     isCruisetour: Boolean(m[7])
   };
 }
@@ -277,9 +337,12 @@ async function simulateAzamaraDiscovery({
   fetchImpl = null,
   progressCallback = null,
   maxUrls = null,
-  runId = null
+  runId = null,
+  htmlDeadlineMs = null,
+  detailConcurrency = null
 } = {}) {
   const fetchText = fetchImpl || defaultFetchText;
+  const fetchSitemap = fetchImpl || defaultFetchSitemap;
   const minDep = publicBookingMinimumDepartureDate(today);
   const outcome_counts = {
     recognised_existing_unchanged: 0,
@@ -291,7 +354,17 @@ async function simulateAzamaraDiscovery({
     validation_failed: 0,
     within_cutoff: 0,
     dest_quality_excluded: 0,
-    matcher_picker_mismatch: 0
+    dest_quality_B: 0,
+    dest_quality_CD: 0,
+    matcher_picker_mismatch: 0,
+    missing_gtm_duration: 0,
+    candidate_build_skipped: 0,
+    validate_cruise_failed: 0,
+    return_date_inconsistency: 0,
+    ship_prefix_mismatch: 0,
+    duplicate_official_id: 0,
+    duplicate_identity: 0,
+    source_timeout_unprocessed: 0
   };
 
   const sitemapCandidates = [
@@ -305,9 +378,9 @@ async function simulateAzamaraDiscovery({
   for (const candidate of sitemapCandidates) {
     try {
       const fetched =
-        fetchText.length >= 3
-          ? await fetchText(candidate.url, 5000000, candidate.accept)
-          : await fetchText(candidate.url, 5000000);
+        fetchSitemap.length >= 3
+          ? await fetchSitemap(candidate.url, 5000000, candidate.accept)
+          : await fetchSitemap(candidate.url, 5000000);
       if (fetched.status !== 200) {
         sitemapError = { status: fetched.status, url: candidate.url };
         continue;
@@ -343,7 +416,7 @@ async function simulateAzamaraDiscovery({
       if (p && p.departure < minDep) outcome_counts.within_cutoff += 1;
       continue;
     }
-    if (!parsedByCode.has(p.fullCode) || p.url.length < parsedByCode.get(p.fullCode).url.length) {
+    if (!parsedByCode.has(p.fullCode) || p.url.length > parsedByCode.get(p.fullCode).url.length) {
       parsedByCode.set(p.fullCode, p);
     }
   }
@@ -360,18 +433,29 @@ async function simulateAzamaraDiscovery({
   let urls_processed = 0;
   let http_failures = 0;
   let stale_dead = 0;
-  const htmlDeadlineAt = Date.now() + 720000;
+  const htmlDeadlineAt = Date.now() + (Number(htmlDeadlineMs) > 0 ? Number(htmlDeadlineMs) : AZAMARA_HTML_DEADLINE_MS);
+  const concurrency = Math.max(1, Number(detailConcurrency) || AZAMARA_DETAIL_CONCURRENCY);
   let sourceTimeout = false;
 
-  for (const item of parsed) {
-    if (Date.now() >= htmlDeadlineAt) {
-      sourceTimeout = true;
-      break;
+  const htmlByUrl = new Map();
+  const toFetch = parsed.filter((item) => !item.isCruisetour);
+  const fetchRows = await mapLimit(toFetch, concurrency, async (item) => {
+    if (Date.now() >= htmlDeadlineAt) return { url: item.url, timeout: true };
+    try {
+      const html = await fetchText(item.url);
+      return { url: item.url, html };
+    } catch {
+      return { url: item.url, error: true };
     }
-    urls_processed += 1;
-    if (progressCallback && urls_processed % 25 === 0) progressCallback({ urls_processed, total: parsed.length });
+  });
+  for (const row of fetchRows) {
+    if (row.timeout) sourceTimeout = true;
+    htmlByUrl.set(row.url, row);
+  }
 
+  for (const item of parsed) {
     if (item.isCruisetour) {
+      urls_processed += 1;
       outcome_counts.policy_excluded_cruisetour += 1;
       products.push({
         official_sailing_id: item.fullCode,
@@ -382,10 +466,15 @@ async function simulateAzamaraDiscovery({
       continue;
     }
 
-    let html;
-    try {
-      html = await fetchText(item.url);
-    } catch {
+    const fetched = htmlByUrl.get(item.url);
+    if (!fetched || fetched.timeout) {
+      sourceTimeout = true;
+      break;
+    }
+    urls_processed += 1;
+    if (progressCallback && urls_processed % 25 === 0) progressCallback({ urls_processed, total: parsed.length });
+
+    if (fetched.error) {
       http_failures += 1;
       outcome_counts.http_source_failure += 1;
       products.push({
@@ -395,6 +484,8 @@ async function simulateAzamaraDiscovery({
       });
       continue;
     }
+
+    const html = fetched.html;
 
     if (html.status !== 200) {
       http_failures += 1;
@@ -421,7 +512,8 @@ async function simulateAzamaraDiscovery({
       html: html.text,
       title,
       structuredVoyage: { package_code: gtmPackage },
-      url: item.url
+      url: item.url,
+      finalUrl: html.final_url || null
     });
     if (stale) {
       stale_dead += 1;
@@ -469,6 +561,7 @@ async function simulateAzamaraDiscovery({
 
     if (!structuredVoyage?.nights) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.missing_gtm_duration += 1;
       products.push({
         official_sailing_id: gtmPackage,
         url: item.url,
@@ -495,6 +588,7 @@ async function simulateAzamaraDiscovery({
 
     if (!built || built.skip) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.candidate_build_skipped += 1;
       products.push({
         official_sailing_id: gtmPackage,
         url: item.url,
@@ -508,6 +602,7 @@ async function simulateAzamaraDiscovery({
     const reasons = validateCruise(candidate);
     if (reasons.length || built.status !== "active") {
       outcome_counts.validation_failed += 1;
+      outcome_counts.validate_cruise_failed += 1;
       products.push({
         official_sailing_id: gtmPackage,
         url: item.url,
@@ -526,6 +621,7 @@ async function simulateAzamaraDiscovery({
     const expectedReturn = addDaysIso(candidate.departure_date, candidate.nights);
     if (expectedReturn !== candidate.return_date) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.return_date_inconsistency += 1;
       products.push({
         official_sailing_id: gtmPackage,
         disposition: "validation_failed",
@@ -538,6 +634,7 @@ async function simulateAzamaraDiscovery({
     const expectedShip = SHIP_PREFIX[item.prefix];
     if (expectedShip && shipName !== expectedShip) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.ship_prefix_mismatch += 1;
       products.push({ official_sailing_id: gtmPackage, disposition: "validation_failed", failure: "ship_prefix_mismatch" });
       continue;
     }
@@ -575,6 +672,7 @@ async function simulateAzamaraDiscovery({
 
     if (quality.quality === "C" || quality.quality === "D") {
       outcome_counts.dest_quality_excluded += 1;
+      outcome_counts.dest_quality_CD += 1;
       products.push({
         official_sailing_id: gtmPackage,
         disposition: "validation_failed",
@@ -585,6 +683,7 @@ async function simulateAzamaraDiscovery({
 
     if (quality.quality === "B") {
       outcome_counts.dest_quality_excluded += 1;
+      outcome_counts.dest_quality_B += 1;
       products.push({
         official_sailing_id: gtmPackage,
         disposition: "validation_failed",
@@ -615,10 +714,24 @@ async function simulateAzamaraDiscovery({
 
     if (batchSailingIds.has(gtmPackage)) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.duplicate_official_id += 1;
+      products.push({
+        official_sailing_id: gtmPackage,
+        url: item.url,
+        disposition: "validation_failed",
+        failure: "duplicate_official_id"
+      });
       continue;
     }
     if (batchIdentityKeys.has(identity_key)) {
       outcome_counts.validation_failed += 1;
+      outcome_counts.duplicate_identity += 1;
+      products.push({
+        official_sailing_id: gtmPackage,
+        url: item.url,
+        disposition: "validation_failed",
+        failure: "duplicate_identity"
+      });
       continue;
     }
     batchSailingIds.add(gtmPackage);
@@ -667,8 +780,27 @@ async function simulateAzamaraDiscovery({
     });
   }
 
+  if (sourceTimeout) {
+    outcome_counts.source_timeout_unprocessed = Math.max(0, parsed.length - products.length);
+  }
+
   const sailingIds = products.filter((p) => p.candidate).map((p) => p.official_sailing_id);
   const identities = products.filter((p) => p.identity_key).map((p) => p.identity_key);
+  const sortedEligible = [...source_eligible_official_ids].sort();
+  const sitemapSha = crypto.createHash("sha256").update(String(sitemapRes.text || "")).digest("hex");
+  const identityHash = crypto.createHash("sha256").update(sortedEligible.join("|")).digest("hex");
+  const oceanEligible = parsed.filter((p) => !p.isCruisetour).length;
+  const terminal =
+    outcome_counts.recognised_existing_unchanged +
+    outcome_counts.recognised_existing_changed +
+    outcome_counts.new_candidate +
+    outcome_counts.policy_excluded_cruisetour +
+    outcome_counts.source_stale_or_unavailable +
+    outcome_counts.http_source_failure +
+    outcome_counts.validation_failed +
+    outcome_counts.dest_quality_excluded +
+    outcome_counts.matcher_picker_mismatch +
+    outcome_counts.source_timeout_unprocessed;
 
   return {
     fetch_result: {
@@ -678,18 +810,29 @@ async function simulateAzamaraDiscovery({
       content_type: sitemapRes.content_type || null,
       bytes: sitemapExtract.bytes || (sitemapRes.text ? Buffer.byteLength(String(sitemapRes.text)) : 0),
       http_status: sitemapRes.status,
+      redirect_chain: sitemapRes.redirect_chain || null,
+      sitemap_sha256: sitemapSha,
       sitemap_locs: locs.length,
       raw_loc_tags: sitemapExtract.raw_loc_tags,
       sitemap_packages: sitemapExtract.packages.length,
       sitemapindex: sitemapExtract.sitemapindex === true,
       urlset: sitemapExtract.urlset === true,
       eligible_urls: parsed.length,
+      ocean_eligible_urls: oceanEligible,
       urls_target: parsed.length,
       urls_processed,
       http_failures,
       stale_dead,
       source_timeout: sourceTimeout,
-      pagination: { exhausted: !sourceTimeout, zero_progress_pages: 0 }
+      pagination: { exhausted: !sourceTimeout, zero_progress_pages: 0 },
+      official_source_identity_hash: identityHash,
+      stage_accounting: {
+        parsed: parsed.length,
+        products: products.length,
+        terminal,
+        reconciled: terminal === parsed.length
+      },
+      detail_concurrency: concurrency
     },
     products,
     outcome_counts,
@@ -707,6 +850,8 @@ module.exports = {
   SITEMAP_URL,
   SHIP_PREFIX,
   OFFICIAL_SAILING_RE,
+  AZAMARA_DETAIL_CONCURRENCY,
+  AZAMARA_HTML_DEADLINE_MS,
   isOfficialAzamaraRecord,
   isLegacyGenericAzamaraRow,
   simulateAzamaraDiscovery,
@@ -716,5 +861,6 @@ module.exports = {
   parsePackageFromUrl,
   extractAzamaraPackagesFromSitemapXml,
   detectAzamaraSourceCollapse,
-  mapLimit
+  mapLimit,
+  defaultFetchSitemap
 };

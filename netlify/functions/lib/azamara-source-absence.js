@@ -77,6 +77,7 @@ function extractPreviousAbsentSailingIds(previousRun) {
 function isAzamaraSourceSnapshotComplete(simulation) {
   const fetch = simulation?.fetch_result || {};
   if (fetch.ok === false || fetch.error) return false;
+  if (fetch.source_timeout === true) return false;
   const pag = fetch.pagination || {};
   if (pag.exhausted === false) return false;
   if (pag.zero_progress_pages > 0) return false;

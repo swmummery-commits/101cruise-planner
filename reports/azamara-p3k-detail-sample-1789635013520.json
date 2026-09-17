@@ -1,0 +1,910 @@
+{
+  "generated_at": "2026-09-17T08:50:13.520Z",
+  "sitemap_packages": 555,
+  "eligible_urls": 440,
+  "sample_size": 19,
+  "html_kind_counts": {
+    "generic_landing": 19
+  },
+  "gtm_duration_present": 0,
+  "stale_count": 19,
+  "http_not_200": 0,
+  "median_ms": 1885,
+  "serial_projected_ms_for_eligible": 829400,
+  "pages": [
+    {
+      "package_code": "JR261019-010",
+      "departure": "2026-10-19",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr261019-010",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 2371,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/jr261019-010",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "JR271110-011",
+      "departure": "2027-11-10",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr271110-011",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1903,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/jr271110-011",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "JR281028-007",
+      "departure": "2028-10-28",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr281028-007",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1693,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/jr281028-007",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "ON261017-014",
+      "departure": "2026-10-17",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on261017-014",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1743,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/on261017-014",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "ON271125-027",
+      "departure": "2027-11-25",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on271125-027",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1823,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/on271125-027",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "ON281021-014",
+      "departure": "2028-10-21",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on281021-014",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1940,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/on281021-014",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR261016-007",
+      "departure": "2026-10-16",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr261016-007",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1793,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr261016-007",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR271003-013",
+      "departure": "2027-10-03",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr271003-013",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1684,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr271003-013",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR281023-012",
+      "departure": "2028-10-23",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr281023-012",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1872,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr281023-012",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "QS261014-010",
+      "departure": "2026-10-14",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs261014-010",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1914,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/qs261014-010",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "QS271205-007",
+      "departure": "2027-12-05",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs271205-007",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1787,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/qs271205-007",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "QS281017-012",
+      "departure": "2028-10-17",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs281017-012",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 2007,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/qs281017-012",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "JR261107-007",
+      "departure": "2026-11-07",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr261107-007",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 2032,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/jr261107-007",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR261204-015",
+      "departure": "2026-12-04",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr261204-015",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 2055,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr261204-015",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR270104-016",
+      "departure": "2027-01-04",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr270104-016",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1885,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr270104-016",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "PR270205-019",
+      "departure": "2027-02-05",
+      "ship_prefix": "pr",
+      "requested_url": "https://www.azamara.com/cruises/pr270205-019",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1894,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/pr270205-019",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "ON270303-010",
+      "departure": "2027-03-03",
+      "ship_prefix": "on",
+      "requested_url": "https://www.azamara.com/cruises/on270303-010",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1936,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/on270303-010",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "QS270402-014",
+      "departure": "2027-04-02",
+      "ship_prefix": "qs",
+      "requested_url": "https://www.azamara.com/cruises/qs270402-014",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1861,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/qs270402-014",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    },
+    {
+      "package_code": "JR270505-010",
+      "departure": "2027-05-05",
+      "ship_prefix": "jr",
+      "requested_url": "https://www.azamara.com/cruises/jr270505-010",
+      "status": 200,
+      "final_url": "https://www.azamara.com/home",
+      "content_type": "text/html;charset=UTF-8",
+      "body_bytes": 383723,
+      "duration_ms": 1856,
+      "html_kind": "generic_landing",
+      "title": "Azamara Cruises | Award-Winning Small Ship Cruise Line",
+      "gtm": {
+        "gtm_duration": null,
+        "package_code": null,
+        "nights": null,
+        "ship_name": null,
+        "cruise_name": null,
+        "destination": null
+      },
+      "structured_signals": {
+        "gtm_data_attrs": false,
+        "json_ld": true,
+        "next_data": false,
+        "data_layer": true,
+        "drupal": false,
+        "react": false
+      },
+      "stale_gate": {
+        "skip": true,
+        "reason": "source_stale_or_unavailable",
+        "signalScore": 0,
+        "diagnostics": {
+          "azamara_source_status": "stale_sitemap_or_homepage",
+          "url": "https://www.azamara.com/cruises/jr270505-010",
+          "page_title": "Azamara Cruises | Award-Winning Small Ship Cruise Line"
+        }
+      },
+      "product_type": "ocean_cruise",
+      "exclusion": null,
+      "json_ld_samples": [
+        "\n            {\n                \"@context\": \"http://schema.org\",\n                \"@type\": \"Organization\",\n                \"name\": \"Azamara\",\n                \"url\": \"https://www.azamara.com\",\n                \"mainEntityOfPage\": \"https://www.azamara.com/?utm_source=schema&utm_medium=organic&utm_campaign=ldjson-organization\",\n                \"description\": \"Experience an immersive luxury cruise with A",
+        "\n        {\n            \"@context\": \"https://schema.org\",\n            \"@type\": \"BreadcrumbList\",\n            \"itemListElement\": [\n\n                        {\n                        \"@type\": \"ListItem\",\n                        \"position\": \"1\",\n                        \"name\": \"Home\",\n                        \"item\": \"https://www.azamara.com/au/\"\n                        },\n\n                        {\n  "
+      ],
+      "next_data_present": false,
+      "sha256": "cc9300ca9514dc35ee165ebf0c56d1f6a32db8f7ef4e30a88f26fa114f5ae43a"
+    }
+  ],
+  "p95_ms": 2371
+}

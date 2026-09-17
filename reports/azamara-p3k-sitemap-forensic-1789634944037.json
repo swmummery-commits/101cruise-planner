@@ -1,0 +1,179 @@
+{
+  "generated_at": "2026-09-17T08:49:04.037Z",
+  "runtime": "node_fetch_redirect_manual_then_body_chrome_ua",
+  "today": "2026-09-17",
+  "min_public_departure": "2026-10-09",
+  "lease_before_held": false,
+  "lease_after_held": false,
+  "lease_created": false,
+  "lease_owner_before": null,
+  "results": [
+    {
+      "requested_url": "https://www.azamara.com/sitemap.xml",
+      "accept": "application/xml,text/xml,*/*;q=0.8",
+      "http_status": 200,
+      "redirect_chain": [
+        {
+          "url": "https://www.azamara.com/sitemap.xml",
+          "status": 302,
+          "location": "https://www.azamara.com/sitemap",
+          "content_type": null,
+          "content_length": "0"
+        },
+        {
+          "url": "https://www.azamara.com/sitemap",
+          "status": 200,
+          "location": null,
+          "content_type": "application/xml;charset=UTF-8",
+          "content_length": null
+        }
+      ],
+      "final_url": "https://www.azamara.com/sitemap",
+      "content_type": "application/xml;charset=UTF-8",
+      "header_content_length": null,
+      "actual_bytes": 387750,
+      "sha256": "7a5e6d2c4c68c5e708898393844d6804b1ecfc135cdfc489f3e335674a90e0f0",
+      "first_500": "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n            <url>\n            <loc>https://www.azamara.com/10savings</loc>\n                <lastmod>2023-04-04T17:17:44.006Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/500obc</loc>\n                <lastmod>2023-03-31T21:27:48.214Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/750obc</loc>\n                <lastm",
+      "body_class": {
+        "contains_urlset": true,
+        "contains_sitemapindex": false,
+        "looks_consent": false,
+        "looks_waf": false,
+        "looks_html_error": false
+      },
+      "contains_urlset": true,
+      "contains_sitemapindex": false,
+      "raw_loc_count": 1825,
+      "extractSitemapLocs_count": 1635,
+      "package_regex_count": 1626,
+      "unique_package_code_count": 555,
+      "extracted_package_count": 555,
+      "cutoff_excluded": 94,
+      "cruisetours": 53,
+      "eligible_package_urls": 440,
+      "sample_package_codes": [
+        "JR260521-005",
+        "JR260526-007",
+        "JR260602-008",
+        "JR260610-006",
+        "JR260626-013",
+        "JR260709-011",
+        "JR260727-012",
+        "JR260727-030",
+        "JR260808-018",
+        "JR260826-016",
+        "JR260911-014",
+        "JR260911-026"
+      ]
+    },
+    {
+      "requested_url": "https://www.azamara.com/sitemap",
+      "accept": "application/xml,text/xml,*/*;q=0.8",
+      "http_status": 200,
+      "redirect_chain": [
+        {
+          "url": "https://www.azamara.com/sitemap",
+          "status": 200,
+          "location": null,
+          "content_type": "application/xml;charset=UTF-8",
+          "content_length": null
+        }
+      ],
+      "final_url": "https://www.azamara.com/sitemap",
+      "content_type": "application/xml;charset=UTF-8",
+      "header_content_length": null,
+      "actual_bytes": 387750,
+      "sha256": "7a5e6d2c4c68c5e708898393844d6804b1ecfc135cdfc489f3e335674a90e0f0",
+      "first_500": "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n            <url>\n            <loc>https://www.azamara.com/10savings</loc>\n                <lastmod>2023-04-04T17:17:44.006Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/500obc</loc>\n                <lastmod>2023-03-31T21:27:48.214Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/750obc</loc>\n                <lastm",
+      "body_class": {
+        "contains_urlset": true,
+        "contains_sitemapindex": false,
+        "looks_consent": false,
+        "looks_waf": false,
+        "looks_html_error": false
+      },
+      "contains_urlset": true,
+      "contains_sitemapindex": false,
+      "raw_loc_count": 1825,
+      "extractSitemapLocs_count": 1635,
+      "package_regex_count": 1626,
+      "unique_package_code_count": 555,
+      "extracted_package_count": 555,
+      "cutoff_excluded": 94,
+      "cruisetours": 53,
+      "eligible_package_urls": 440,
+      "sample_package_codes": [
+        "JR260521-005",
+        "JR260526-007",
+        "JR260602-008",
+        "JR260610-006",
+        "JR260626-013",
+        "JR260709-011",
+        "JR260727-012",
+        "JR260727-030",
+        "JR260808-018",
+        "JR260826-016",
+        "JR260911-014",
+        "JR260911-026"
+      ]
+    },
+    {
+      "requested_url": "https://www.azamara.com/sitemap.xml",
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "http_status": 200,
+      "redirect_chain": [
+        {
+          "url": "https://www.azamara.com/sitemap.xml",
+          "status": 302,
+          "location": "https://www.azamara.com/sitemap",
+          "content_type": null,
+          "content_length": "0"
+        },
+        {
+          "url": "https://www.azamara.com/sitemap",
+          "status": 200,
+          "location": null,
+          "content_type": "application/xml;charset=UTF-8",
+          "content_length": null
+        }
+      ],
+      "final_url": "https://www.azamara.com/sitemap",
+      "content_type": "application/xml;charset=UTF-8",
+      "header_content_length": null,
+      "actual_bytes": 387750,
+      "sha256": "7a5e6d2c4c68c5e708898393844d6804b1ecfc135cdfc489f3e335674a90e0f0",
+      "first_500": "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n            <url>\n            <loc>https://www.azamara.com/10savings</loc>\n                <lastmod>2023-04-04T17:17:44.006Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/500obc</loc>\n                <lastmod>2023-03-31T21:27:48.214Z</lastmod>\n        </url>\n        <url>\n            <loc>https://www.azamara.com/750obc</loc>\n                <lastm",
+      "body_class": {
+        "contains_urlset": true,
+        "contains_sitemapindex": false,
+        "looks_consent": false,
+        "looks_waf": false,
+        "looks_html_error": false
+      },
+      "contains_urlset": true,
+      "contains_sitemapindex": false,
+      "raw_loc_count": 1825,
+      "extractSitemapLocs_count": 1635,
+      "package_regex_count": 1626,
+      "unique_package_code_count": 555,
+      "extracted_package_count": 555,
+      "cutoff_excluded": 94,
+      "cruisetours": 53,
+      "eligible_package_urls": 440,
+      "sample_package_codes": [
+        "JR260521-005",
+        "JR260526-007",
+        "JR260602-008",
+        "JR260610-006",
+        "JR260626-013",
+        "JR260709-011",
+        "JR260727-012",
+        "JR260727-030",
+        "JR260808-018",
+        "JR260826-016",
+        "JR260911-014",
+        "JR260911-026"
+      ]
+    }
+  ]
+}

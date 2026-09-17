@@ -132,7 +132,7 @@ function validateAzamaraOceanDuration(candidate) {
   return reasons;
 }
 
-function azamaraStaleSourceGate({ html, title, structuredVoyage, url } = {}) {
+function azamaraStaleSourceGate({ html, title, structuredVoyage, url, finalUrl } = {}) {
   if (!html) return null;
   const gtm = extractAzamaraGtmFromHtml(html);
   const pageTitle =
@@ -141,15 +141,17 @@ function azamaraStaleSourceGate({ html, title, structuredVoyage, url } = {}) {
     (html.match(/<title>([^<]+)/i) || [])[1] ||
     "";
   const genericHomepage = /Award-Winning Small Ship Cruise Line/i.test(pageTitle);
+  const landedHome = /\/home\/?$/i.test(String(finalUrl || url || "").split("?")[0]);
   const missingSailingSignals = !gtm.package_code && !gtm.nights && !gtm.gtm_duration && !gtm.ship_name;
-  if (genericHomepage && missingSailingSignals) {
+  if ((genericHomepage || landedHome) && missingSailingSignals) {
     return {
       skip: true,
       reason: "source_stale_or_unavailable",
       signalScore: 0,
       diagnostics: {
-        azamara_source_status: "stale_sitemap_or_homepage",
+        azamara_source_status: landedHome ? "detail_redirected_to_homepage" : "stale_sitemap_or_homepage",
         url: url || null,
+        final_url: finalUrl || null,
         page_title: pageTitle.slice(0, 120)
       }
     };
