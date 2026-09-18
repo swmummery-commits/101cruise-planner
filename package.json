@@ -259,6 +259,8 @@
     "test:weekly-maintenance-p3h": "node scripts/test-weekly-maintenance-p3h.mjs",
     "test:weekly-maintenance-p3i": "node scripts/test-weekly-maintenance-p3i.mjs",
     "test:weekly-maintenance-p3j": "node scripts/test-weekly-maintenance-p3j.mjs",
+    "test:weekly-maintenance-p3l": "node scripts/test-weekly-maintenance-p3l.mjs",
+    "maintenance:p3l-silversea-miss-closeout": "node scripts/run-p3l-friday-silversea-miss-closeout.mjs",
     "test:public-booking-cutoff": "node scripts/test-public-booking-cutoff.mjs",
     "test:princess-discovery": "node scripts/test-princess-discovery.mjs",
     "maintenance:historical-manifest": "node scripts/generate-hal-maintenance-historical-manifest.cjs",

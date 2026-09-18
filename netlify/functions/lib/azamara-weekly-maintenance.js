@@ -17,6 +17,7 @@ const { loadClassificationDestinations } = require("./destination-queries");
 const { loadShipAliases, loadDestinationAliases } = require("./cruise-discovery-ops");
 const { withGlobalCruiseWriteLock, executeControlledProductionApply } = require("./cruise-discovery-global-write-lock");
 const { AZAMARA_LINE_ID } = require("./azamara-discovery-source");
+const { persistAzamaraPreApplyRollbackManifest } = require("./azamara-weekly-rollback-manifest");
 
 const AZAMARA_LINE_SLUG = "azamara";
 
@@ -307,7 +308,29 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
 
   let applyResult = null;
   let globalLockReport = null;
+  let rollbackManifestId = null;
   if (performWrites) {
+    const rollbackPersist = await persistAzamaraPreApplyRollbackManifest(sb, {
+      manifest,
+      runId,
+      runRecordId: context.runRecordId || context.run_record_id || null,
+      cruiseLineId: line.id,
+      lineSlug: AZAMARA_LINE_SLUG,
+      triggerType: context.triggerType || context.trigger_type || "scheduled"
+    });
+    if (!rollbackPersist.skipped && rollbackPersist.ok !== true) {
+      return {
+        ok: false,
+        success: false,
+        blocked: true,
+        reason: rollbackPersist.reason || "rollback_manifest_persist_failed",
+        run_id: runId,
+        dry_run: false,
+        manifest
+      };
+    }
+    rollbackManifestId = rollbackPersist.manifest_record_id || null;
+
     const applyWrap = await executeControlledProductionApply(
       sb,
       {
@@ -359,6 +382,9 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
     globalLockReport,
     writeSafety
   });
+  if (rollbackManifestId) {
+    summary.rollback_manifest_id = rollbackManifestId;
+  }
 
   return {
     ok: summary.success,
