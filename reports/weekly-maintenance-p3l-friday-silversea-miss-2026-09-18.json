@@ -1,0 +1,201 @@
+{
+  "phase": "P3L",
+  "generated_at": "2026-09-18T04:15:00.000Z",
+  "repository": {
+    "starting_sha": "39ca2a759ca89bf19a49e07f717e5937dc91b6b7",
+    "silversea_fix_sha": "f4f4a222a8bf7cc136da042ee6467ab03839a0ab",
+    "missed_schedule_monitor_sha": "866376b5b09458757b1257dfe744e934099a34ac",
+    "azamara_manifest_sha": "cc29b479e563e6ec998e15a286b73d8056f4aa20",
+    "production_deployed_sha": "cc29b479e563e6ec998e15a286b73d8056f4aa20",
+    "branch": "main",
+    "pushed": true,
+    "netlify_deploy_state": "ready"
+  },
+  "azamara_friday": {
+    "run_record_id": "1ca0d881-029b-48ff-a7b8-32bdd5f497b0",
+    "run": {
+      "started_at": "2026-09-17T17:00:49.738+00:00",
+      "finished_at": "2026-09-17T17:01:58.927+00:00",
+      "perth_started": "2026-09-18, 01:00:49",
+      "status": "completed",
+      "terminal_status": "completed",
+      "inserts": 0,
+      "updates": 10,
+      "dry_run": false,
+      "dispatch_id": "azamara-dispatch-2026-09-17T17-00-42-248Z"
+    },
+    "active_production": 436,
+    "manifest_rows_for_run": 0,
+    "audit": {
+      "rollback_manifest_rows": 0,
+      "retrospective_rollback_available": false,
+      "updated_uuids": [
+        "f5b58e8d-7dbb-4876-b8e2-5879fd99b00a",
+        "40e782e1-7272-4e87-adb4-1be39eeee853",
+        "995019b1-ee3f-4040-a066-8a872897910d",
+        "bbe22b36-8f1b-4629-afa7-03ebd82a9fb0",
+        "43ea2cb4-7a1e-4b33-ae86-c0d19dcc1e86",
+        "d4fd521a-a2a6-4f92-9e6d-776f06f039e4",
+        "e3c48d29-5f9c-4194-af88-a4bf63f7e53d",
+        "1e2cd456-adf6-454a-91dc-a1a2579a9f76",
+        "db1698c1-b13f-426d-81f9-47aa3ac024eb",
+        "321094f1-cb53-4918-b993-6f83bdf36277"
+      ],
+      "official_sailing_ids": [
+        "JR270125-023",
+        "JR270310-019",
+        "ON270516-011",
+        "PR261016-015",
+        "PR261114-020",
+        "PR261204-015",
+        "PR270224-015",
+        "PR270805-020",
+        "PR270805-034",
+        "PR270813-012"
+      ],
+      "identity_critical_field_changes": [],
+      "rollback_manifest_missing_for_historical_run": true,
+      "safe_fields_only": [
+        "official_url",
+        "raw_extract"
+      ],
+      "verification_method": "last_verified_at window 2026-09-17T17:00–17:05Z matched 10 rows; code policy limits patches to official_url and raw_extract only",
+      "note": "No persisted rollback manifest; write_details not stored on run row — exact before-state not recoverable"
+    },
+    "current_readonly": {
+      "proposed_inserts": 0,
+      "proposed_updates": 7,
+      "proposed_identity_review": 0,
+      "source_health": "PASS",
+      "source_absent": 7
+    }
+  },
+  "silversea_incident": {
+    "classification": "MISSED_BACKGROUND_EXECUTION",
+    "scheduled_slot_perth": "2026-09-18 03:00:00",
+    "scheduled_slot_utc": "2026-09-17T19:00:00Z",
+    "dispatch_id": "silversea-cruises-dispatch-2026-09-17T19-00-38-885Z",
+    "scheduled_lease": {
+      "lock_key": "silversea-cruises:2026-W38:scheduled",
+      "preserved": true,
+      "owner_id": "silversea-cruises-dispatch-2026-09-17T19-00-38-885Z",
+      "acquired_at": "2026-09-17T19:00:41.006241+00:00",
+      "expires_at": "2026-09-25T19:00:41.006241+00:00"
+    },
+    "background_execution_lease": {
+      "lock_key": "background-dispatch:silversea-cruises-dispatch-2026-09-17T19-00-38-885Z",
+      "existed": false,
+      "owner_id": null
+    },
+    "scheduled_run_existed": false,
+    "material_writes": 0,
+    "forensic": {
+      "root_cause": "BACKGROUND_ACCEPTED_NOT_STARTED",
+      "netlify_failure_point": "scheduled_lease_without_background_execution_or_run",
+      "launcher_started": "inferred_yes_lease_claimed",
+      "scheduled_lease_claimed": true,
+      "background_post_attempted": "unknown",
+      "background_http_response": "unknown",
+      "background_worker_invocation_created": false,
+      "note": "Scheduled dispatch lease preserved at 19:00:41Z; no background-dispatch execution lease and no cruise_discovery_runs scheduled row. Netlify function logs for 2026-09-17T18:59–19:10Z not available via CLI — classification from production lock/run evidence only.",
+      "deploy_sha_at_incident": "39ca2a759ca89bf19a49e07f717e5937dc91b6b7",
+      "function_versions_at_incident": "silversea-weekly-maintenance-cron / silversea-weekly-maintenance-background @ 39ca2a7 (pre-P3L read-only fix)"
+    }
+  },
+  "silversea_recovery": {
+    "dispatch_id": "silversea-p3l-incident-recovery-2026-W38-1789703690977",
+    "trigger_type": "incident_recovery",
+    "run_record_id": "6ff7e453-d2d2-418b-bcb8-3692dbd4dd9f",
+    "run_id": "silversea-cruises-weekly-2026-09-18T03-54-51-178Z",
+    "official_source_total": 1083,
+    "eligible": 1061,
+    "proposed_inserts": 2,
+    "proposed_updates": 65,
+    "source_health": "PASS",
+    "writes": 0,
+    "terminal_status": "review_required",
+    "dry_run": true,
+    "scheduled_lease_unchanged": true,
+    "locks_clean": true
+  },
+  "monitoring": {
+    "weekly_schedule_miss_id": "a0f77e36-287c-415b-af67-e1e35fc282fd",
+    "weekly_schedule_miss_reason": "claimed_lease_without_scheduled_execution",
+    "silversea_weekly_schedule_miss_created": true,
+    "duplicate_proof": true,
+    "daily_expiry_unaffected": true,
+    "reconcile_first_pass_silversea": {
+      "missed": true,
+      "reason": "claimed_lease_without_scheduled_execution",
+      "weekly_schedule_miss": {
+        "created": true,
+        "id": "a0f77e36-287c-415b-af67-e1e35fc282fd",
+        "duplicate": false
+      }
+    },
+    "reconcile_second_pass_silversea": {
+      "missed": true,
+      "reason": "claimed_lease_without_scheduled_execution",
+      "weekly_schedule_miss": {
+        "created": false,
+        "id": "a0f77e36-287c-415b-af67-e1e35fc282fd",
+        "duplicate": true
+      }
+    }
+  },
+  "daily_expiry": {
+    "run_record_id": "475f7647-2992-48a3-9272-dcc08bdedba6",
+    "accepted": true,
+    "expired_count": 17,
+    "rollback_manifest_id": "7243d516-f9b4-4c70-8f83-2d30bb9d96ee",
+    "breakdown": {
+      "carnival": 5,
+      "disney": 4,
+      "royal_caribbean": 4,
+      "celebrity": 3,
+      "norwegian": 1
+    }
+  },
+  "w38_final_matrix": {
+    "Holland America": "scheduled_execution_failed",
+    "Celebrity": "scheduled_execution_success",
+    "Princess": "scheduled_execution_success",
+    "Explora": "scheduled_execution_success",
+    "Seabourn": "review_required_operational_success",
+    "Royal Caribbean": "review_required_operational_success",
+    "Norwegian": "review_required_operational_success",
+    "Carnival": "not_yet_commissioned",
+    "Disney": "partial_write_failure",
+    "Azamara": "scheduled_execution_success",
+    "Silversea": "incident_recovered"
+  },
+  "w38_scheduled_run_ids": {
+    "Holland America": "4945c320-81ad-4853-bd54-f966e9855970",
+    "Celebrity": "58068b86-f2e0-41a8-8095-7eb2a67139c8",
+    "Princess": "df19d0f6-438f-4f76-8c5d-d0f9d1577791",
+    "Explora": "33fc4aa3-b1ce-4894-aa41-a61c977214e5",
+    "Seabourn": "cac8817e-a1d5-46c5-bfdf-73acce66574e",
+    "Royal Caribbean": "f086ae94-3d5e-4f6c-bb6d-38937bb6ec7d",
+    "Norwegian": "9e15fbc1-8865-42b4-b196-18e1a785f403",
+    "Carnival": "126156ef-d984-45f8-88c7-2201885f75cf",
+    "Disney": "72c1e384-9369-4d70-b690-81db79b9055d",
+    "Azamara": "1ca0d881-029b-48ff-a7b8-32bdd5f497b0",
+    "Silversea": null
+  },
+  "w38_matrix_notes": {
+    "Silversea": "Friday 03:00 Perth scheduled execution MISSED — recovery via incident_recovery only; W38 scheduled lease preserved as evidence",
+    "Holland America": "W38 scheduled run failed_before_writes 2026-09-13",
+    "Princess": "W38 scheduled run df19d0f6 trigger_type=weekly_scheduled_apply terminal_status=completed",
+    "Disney": "W38 scheduled run partial_write_failure 2026-09-16",
+    "Explora_Seabourn_Royal_Norwegian": "Stale weekly_schedule_miss rows exist from early reconcile but scheduled executions completed — matrix reflects execution not stale miss rows"
+  },
+  "p3l_writes": [],
+  "p3l_manifests": [],
+  "partial_write_runs": [],
+  "tests": {
+    "weekly_maintenance_p3l": "9/9 PASS",
+    "silversea_weekly_production": "11/11 PASS",
+    "p3j_stale_partial_write_sweep": "PASS"
+  },
+  "git_status": "clean_on_main_cc29b47_except_untracked_reports_and_scripts"
+}

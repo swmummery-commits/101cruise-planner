@@ -24,7 +24,8 @@ const {
   scheduledWeeklyDispatchKey,
   backgroundDispatchExecutionKey,
   perthIsoWeek,
-  MISSED_SCHEDULE_RUN_TYPE
+  MISSED_SCHEDULE_RUN_TYPE,
+  isScheduledExecutionTrigger
 } = require(path.join(root, "netlify/functions/lib/weekly-maintenance-schedule-control"));
 const { loadMaintenanceLockStatus } = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-locks"));
 const {
@@ -159,29 +160,68 @@ function classifySilverseaRootCause({ scheduledLease, bgLease, scheduledRun }) {
   };
 }
 
-function w38Status(lineSlug, lineRuns, scheduledLease, missRows) {
-  const scheduled = lineRuns.find(
-    (r) =>
-      r.stats?.trigger_type === "scheduled" &&
-      r.stats?.run_type !== MISSED_SCHEDULE_RUN_TYPE &&
-      (r.stats?.line_slug === lineSlug || String(r.stats?.run_type || "").includes(lineSlug.split("-")[0]))
+function isScheduledWeeklyExecution(run) {
+  if (!run || run.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE) return false;
+  return isScheduledExecutionTrigger(run.stats?.trigger_type || run.trigger_type);
+}
+
+function w38Status(lineSlug, lineRuns, scheduledLease, missRows, runType, isoWeek = "2026-W38") {
+  const weeklyRuns = lineRuns.filter((r) => r.stats?.run_type === runType);
+  const scheduled = weeklyRuns.find(isScheduledWeeklyExecution);
+  const w38Miss = missRows.find(
+    (r) => r.stats?.line_slug === lineSlug && String(r.stats?.period_key || "").includes(isoWeek)
   );
-  const miss = missRows.find((r) => r.stats?.line_slug === lineSlug);
-  const recovery = lineRuns.find(
-    (r) =>
-      r.stats?.line_slug === lineSlug &&
-      ["manual_recovery", "incident_recovery"].includes(r.stats?.trigger_type)
+  const recovery = weeklyRuns.find((r) =>
+    ["manual_recovery", "incident_recovery"].includes(r.stats?.trigger_type)
   );
-  if (lineSlug === "silversea-cruises" && (miss || (scheduledLease?.held && !scheduled))) {
+
+  if (lineSlug === "silversea-cruises" && !scheduled && scheduledLease?.held) {
     return recovery ? "incident_recovered" : "scheduled_dispatch_miss";
   }
-  if (miss) return "scheduled_dispatch_miss";
-  if (recovery && !scheduled) return "incident_recovered";
-  if (scheduled?.stats?.terminal_status === "review_required") return "review_required_operational_success";
-  if (scheduled?.status === "completed" && scheduled.stats?.dry_run !== true) return "scheduled_execution_success";
-  if (lineSlug === "princess-cruises" && !scheduled) return "not_yet_commissioned";
-  if (scheduled) return "scheduled_execution_success";
+
+  if (scheduled) {
+    const terminal = scheduled.stats?.terminal_status;
+    if (terminal === "review_required") return "review_required_operational_success";
+    if (terminal === "not_yet_commissioned") return "not_yet_commissioned";
+    if (terminal === "partial_write_failure") return "partial_write_failure";
+    if (terminal === "failed_before_writes" || scheduled.status === "failed") {
+      return "scheduled_execution_failed";
+    }
+    if (terminal === "controlled_catchup_required" || scheduled.stats?.dry_run === true) {
+      return "review_required_operational_success";
+    }
+    if (terminal === "completed_with_staged_rows") return "review_required_operational_success";
+    if (scheduled.status === "completed" && scheduled.stats?.dry_run !== true) {
+      return "scheduled_execution_success";
+    }
+    return "scheduled_execution_success";
+  }
+
+  if (w38Miss) return "scheduled_dispatch_miss";
+  if (recovery) return "incident_recovered";
   return "pending_or_not_due";
+}
+
+async function buildW38Matrix(sb, isoWeek = "2026-W38") {
+  const matrix = {};
+  const runIds = {};
+  for (const spec of COMMISSIONED_WEEKLY_LINES) {
+    const label = WEEKLY_LINE_SCHEDULE.find((s) => s.slug === spec.slug)?.label || spec.slug;
+    const lineRow = (await sb(`ci_cruise_lines?slug=eq.${encodeURIComponent(spec.slug)}&select=id&limit=1`))?.[0];
+    const lineRuns = lineRow
+      ? await sb(
+          `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(lineRow.id)}&scope=eq.cruise_line&select=id,status,stats,started_at,finished_at,cruise_line_id&order=started_at.desc&limit=20`
+        )
+      : [];
+    const lease = await loadMaintenanceLockStatus(sb, scheduledWeeklyDispatchKey(spec.slug));
+    const misses = (lineRuns || []).filter((r) => r.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE);
+    matrix[label] = w38Status(spec.slug, lineRuns || [], lease, misses, spec.runType, isoWeek);
+    const scheduledRun = (lineRuns || [])
+      .filter((r) => r.stats?.run_type === spec.runType)
+      .find(isScheduledWeeklyExecution);
+    runIds[label] = scheduledRun?.id || null;
+  }
+  return { matrix, runIds };
 }
 
 async function main() {
@@ -189,6 +229,12 @@ async function main() {
   const sb = createMaintenanceSupabase(root);
   const startingSha = gitSha();
   const week = perthIsoWeek(new Date("2026-09-18T00:00:00+08:00"));
+
+  if (process.argv.includes("--matrix-only")) {
+    const { matrix, runIds } = await buildW38Matrix(sb, week);
+    console.log(JSON.stringify({ ok: true, iso_week: week, w38_final_matrix: matrix, scheduled_run_ids: runIds }, null, 2));
+    return;
+  }
 
   const silverseaPeriodKey = scheduledWeeklyDispatchKey("silversea-cruises");
   const scheduledLease = await loadMaintenanceLockStatus(sb, silverseaPeriodKey);
@@ -201,7 +247,7 @@ async function main() {
       )
     : [];
   const scheduledSilverseaRun = (silverseaRuns || []).find(
-    (r) => r.stats?.trigger_type === "scheduled" && r.started_at >= "2026-09-17T18:00:00Z"
+    (r) => isScheduledWeeklyExecution(r) && r.started_at >= "2026-09-17T18:00:00Z"
   );
 
   const forensic = classifySilverseaRootCause({
@@ -239,19 +285,7 @@ async function main() {
     `cruise_discovery_maintenance_manifests?run_record_id=eq.${encodeURIComponent(AZAMARA_FRIDAY_RUN_ID)}&select=id,manifest_type,manifest&limit=5`
   ).catch(() => []);
 
-  const allRuns = await sb(
-    `cruise_discovery_runs?started_at=gte.2026-09-13T16:00:00Z&select=id,status,stats,started_at,finished_at&order=started_at.desc&limit=200`
-  );
-  const w38 = {};
-  for (const spec of COMMISSIONED_WEEKLY_LINES) {
-    const label = WEEKLY_LINE_SCHEDULE.find((s) => s.slug === spec.slug)?.label || spec.slug;
-    const lineRuns = (allRuns || []).filter((r) => r.stats?.line_slug === spec.slug);
-    const lease = await loadMaintenanceLockStatus(sb, scheduledWeeklyDispatchKey(spec.slug));
-    const misses = (allRuns || []).filter(
-      (r) => r.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE && r.stats?.line_slug === spec.slug
-    );
-    w38[label] = w38Status(spec.slug, lineRuns, lease, misses);
-  }
+  const { matrix: w38, runIds: w38RunIds } = await buildW38Matrix(sb, week);
 
   const report = {
     phase: "P3L",
@@ -338,6 +372,7 @@ async function main() {
       expired_count: 17
     },
     w38_final_matrix: w38,
+    w38_scheduled_run_ids: w38RunIds,
     p3l_writes: [],
     p3l_manifests: []
   };
