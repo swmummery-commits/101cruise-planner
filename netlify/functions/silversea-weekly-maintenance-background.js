@@ -22,12 +22,14 @@ exports.handler = async (event) => {
     const dryRun = resolveDryRun(body, process.env);
     const triggerType = String(body.trigger_type || body.triggerType || "background").trim();
     const dispatchId = body.dispatch_id || body.dispatchId || null;
-    const performWrites = body.authorised_scheduled_maintenance === true || dryRun === false;
+    // authorised_scheduled_maintenance = platform schedule provenance only — never overrides write gates.
+    const performWrites = dryRun === false;
 
     const result = await runSilverseaWeeklyBackgroundMaintenance({
-      dryRun: !performWrites,
+      dryRun,
       triggerType,
-      dispatchId
+      dispatchId,
+      platformScheduled: body.authorised_scheduled_maintenance === true
     });
 
     return {

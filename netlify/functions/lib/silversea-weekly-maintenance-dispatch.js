@@ -44,6 +44,11 @@ function resolveDryRun(body = {}, env = process.env) {
   return true;
 }
 
+/** Material writes only when resolveDryRun is false — schedule auth never overrides. */
+function resolvePerformWrites(body = {}, env = process.env) {
+  return resolveDryRun(body, env) === false;
+}
+
 function resolveTriggerType(event, body = {}) {
   if (body.trigger_type || body.triggerType) return String(body.trigger_type || body.triggerType);
   if (isNetlifyPlatformScheduledInvocation(event)) return "scheduled";
@@ -190,6 +195,7 @@ async function runSilverseaWeeklyBackgroundMaintenance({
   dryRun = true,
   triggerType = "background",
   dispatchId = null,
+  platformScheduled = false,
   supabaseClient = supabase
 } = {}) {
   const sb = supabaseClient || supabase;
@@ -212,7 +218,12 @@ async function runSilverseaWeeklyBackgroundMaintenance({
     triggerType,
     dispatchId,
     supabaseClient: sb,
-    statsEnricher: (summary, extra) => ({ ...extra, dispatch_id: dispatchId })
+    statsEnricher: (summary, extra) => ({
+      ...extra,
+      dispatch_id: dispatchId,
+      platform_scheduled: platformScheduled === true,
+      read_only: dryRun !== false
+    })
   });
 
   return {
@@ -222,6 +233,7 @@ async function runSilverseaWeeklyBackgroundMaintenance({
     trigger_type: triggerType,
     dispatch_id: dispatchId,
     dry_run: dryRun !== false,
+    platform_scheduled: platformScheduled === true,
     report: result.summary || null
   };
 }
@@ -230,6 +242,7 @@ module.exports = {
   BACKGROUND_FUNCTION_NAME,
   LAUNCHER_FUNCTION_NAME,
   resolveDryRun,
+  resolvePerformWrites,
   resolveTriggerType,
   dispatchSilverseaWeeklyBackground,
   runSilverseaWeeklyBackgroundMaintenance,
