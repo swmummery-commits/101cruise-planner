@@ -48,7 +48,9 @@ const {
   scheduledWeeklyDispatchKey,
   perthIsoWeek,
   detectClaimedLeaseWithoutExecution,
-  MISSED_SCHEDULE_RUN_TYPE
+  backgroundDispatchExecutionKey,
+  MISSED_SCHEDULE_RUN_TYPE,
+  MISSED_SCHEDULE_GRACE_MS
 } = require("./weekly-maintenance-schedule-control");
 const {
   scheduleForSlug,
@@ -323,7 +325,10 @@ async function persistMissedScheduleEvent(
     lineSlug,
     periodKey,
     isoWeek,
-    reason = "claimed_lease_without_scheduled_execution"
+    reason = "claimed_lease_without_scheduled_execution",
+    dispatchOwner = null,
+    backgroundExecutionLeaseHeld = null,
+    scheduledLease = null
   }
 ) {
   const existing = await supabase(
@@ -332,7 +337,7 @@ async function persistMissedScheduleEvent(
   const already = (existing || []).find(
     (row) => row.stats?.run_type === MISSED_SCHEDULE_RUN_TYPE && row.stats?.period_key === periodKey
   );
-  if (already) return { created: false, id: already.id };
+  if (already) return { created: false, id: already.id, duplicate: true };
 
   const runId = `${lineSlug}-missed-schedule-${isoWeek}`;
   const stats = {
@@ -342,6 +347,10 @@ async function persistMissedScheduleEvent(
     original_missed_scheduled_period: isoWeek,
     terminal_status: "missed_schedule",
     recovery_reason: reason,
+    dispatch_owner: dispatchOwner || scheduledLease?.owner_id || scheduledLease?.run_id || null,
+    background_execution_lease_held: backgroundExecutionLeaseHeld,
+    scheduled_lease_acquired_at:
+      scheduledLease?.acquired_at || scheduledLease?.created_at || scheduledLease?.updated_at || null,
     writes_performed: 0,
     inventory_changed: false
   };
@@ -362,7 +371,94 @@ async function persistMissedScheduleEvent(
     },
     errorMessage: null
   });
-  return { created: true, id: row?.id || null };
+  return { created: true, id: row?.id || null, duplicate: false };
+}
+
+/**
+ * Lightweight daily sweep: scheduled period lease claimed but no scheduled execution row.
+ * Does not call source sites or trigger recovery. Idempotent per line/period.
+ */
+async function reconcileMissedScheduledWeeklyExecutions(
+  supabase,
+  { now = new Date(), graceMs = MISSED_SCHEDULE_GRACE_MS } = {}
+) {
+  const outcomes = [];
+  for (const spec of COMMISSIONED_WEEKLY_LINES) {
+    const schedule = scheduleForSlug(spec.slug);
+    if (!schedule) {
+      outcomes.push({ line_slug: spec.slug, skipped: true, reason: "no_schedule" });
+      continue;
+    }
+    const slotStart = slotStartMs(schedule, now);
+    if (now.getTime() < slotStart) {
+      outcomes.push({ line_slug: spec.slug, skipped: true, reason: "not_due" });
+      continue;
+    }
+
+    const lineRows = await supabase(
+      `ci_cruise_lines?slug=eq.${encodeURIComponent(spec.slug)}&select=id&limit=1`
+    ).catch(() => []);
+    const lineId = lineRows?.[0]?.id;
+    if (!lineId) {
+      outcomes.push({ line_slug: spec.slug, skipped: true, reason: "line_not_found" });
+      continue;
+    }
+
+    const scheduledPeriodKey = scheduledWeeklyDispatchKey(spec.slug, now);
+    const scheduledLease = await loadMaintenanceLockStatus(supabase, scheduledPeriodKey).catch(() => ({
+      held: false
+    }));
+    const runs = await loadLineMaintenanceRuns(supabase, lineId, spec.runType, 30);
+    const missed = detectClaimedLeaseWithoutExecution({
+      lease: scheduledLease,
+      scheduledPeriodKey,
+      weeklyRuns: runs,
+      now,
+      graceMs
+    });
+
+    if (!missed.missed) {
+      outcomes.push({
+        line_slug: spec.slug,
+        missed: false,
+        reason: missed.reason,
+        period_key: scheduledPeriodKey
+      });
+      continue;
+    }
+
+    const dispatchOwner = scheduledLease.owner_id || scheduledLease.run_id || null;
+    let backgroundExecutionLeaseHeld = false;
+    if (dispatchOwner) {
+      const bgLease = await loadMaintenanceLockStatus(
+        supabase,
+        backgroundDispatchExecutionKey(dispatchOwner)
+      ).catch(() => ({ held: false }));
+      backgroundExecutionLeaseHeld = bgLease.held === true;
+    }
+
+    const persist = await persistMissedScheduleEvent(supabase, {
+      cruiseLineId: lineId,
+      lineSlug: spec.slug,
+      periodKey: scheduledPeriodKey,
+      isoWeek: perthIsoWeek(now),
+      reason: missed.reason,
+      dispatchOwner,
+      backgroundExecutionLeaseHeld,
+      scheduledLease
+    }).catch((err) => ({ created: false, error: err.message || String(err) }));
+
+    outcomes.push({
+      line_slug: spec.slug,
+      missed: true,
+      period_key: scheduledPeriodKey,
+      reason: missed.reason,
+      dispatch_owner: dispatchOwner,
+      background_execution_lease_held: backgroundExecutionLeaseHeld,
+      weekly_schedule_miss: persist
+    });
+  }
+  return outcomes;
 }
 
 async function loadLineMaintenanceRuns(supabase, cruiseLineId, runType, limit = 10) {
@@ -454,12 +550,24 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
           scheduler_missing: due.due_state === "SCHEDULER_MISSING"
         };
   if (due.due_state === "MISSED_SCHEDULE" && missedSchedule.missed) {
+    const dispatchOwner = scheduledLease.owner_id || scheduledLease.run_id || null;
+    let backgroundExecutionLeaseHeld = false;
+    if (dispatchOwner) {
+      const bgLease = await loadMaintenanceLockStatus(
+        supabase,
+        backgroundDispatchExecutionKey(dispatchOwner)
+      ).catch(() => ({ held: false }));
+      backgroundExecutionLeaseHeld = bgLease.held === true;
+    }
     await persistMissedScheduleEvent(supabase, {
       cruiseLineId,
       lineSlug,
       periodKey: scheduledPeriodKey,
       isoWeek: perthIsoWeek(),
-      reason: missedSchedule.reason
+      reason: missedSchedule.reason,
+      dispatchOwner,
+      backgroundExecutionLeaseHeld,
+      scheduledLease
     }).catch(() => null);
   }
   const recoveryRuns = runs.filter((r) => r.stats?.trigger_type === "manual_recovery");
@@ -740,6 +848,7 @@ module.exports = {
   loadMaintenanceDashboard,
   isGenuineSuccessfulRefresh,
   persistMissedScheduleEvent,
+  reconcileMissedScheduledWeeklyExecutions,
   COMMISSIONED_WEEKLY_LINES,
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,

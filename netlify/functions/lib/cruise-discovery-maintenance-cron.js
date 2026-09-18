@@ -384,6 +384,9 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled", s
     }
   }
 
+  const { reconcileMissedScheduledWeeklyExecutions } = require("./cruise-discovery-maintenance-tracking");
+  await reconcileMissedScheduledWeeklyExecutions(sb).catch(() => null);
+
   await reconcileAllStaleCruiseMaintenanceRuns(sb).catch(() => null);
 
   await reconcileAbandonedMaintenanceRuns(sb, {
