@@ -8,10 +8,13 @@
     "post_write_verification_sha": "29448a1c56a82d6cd19f269e42ba5fc002a2ac24",
     "final_outcome_sha": "dc219c3db51f6be6be86d98cea9fea8232c8e4e4",
     "rollback_hardening_sha": "3c03289288da746909cd89d1d4740845266c4aba",
-    "final_main_sha": null,
-    "production_deployed_sha": null,
+    "final_main_sha": "47024e533e5ed1bcef5e9e2bb968b437efb726b0",
+    "production_deployed_sha": "47024e533e5ed1bcef5e9e2bb968b437efb726b0",
     "branch": "main",
-    "pushed": false
+    "pushed": true,
+    "netlify_deploy_state": "ready",
+    "netlify_deploy_id": "6ab09c127071af0008a0071c",
+    "netlify_published_at": "2026-09-21T02:54:05.366Z"
   },
   "incident": {
     "github_run_id": "35543319292",
