@@ -73,8 +73,17 @@ jobs:
         env:
           PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true"
           PRINCESS_WEEKLY_TRIGGER_TYPE: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+          PRINCESS_SCHEDULE_CRON: "0 21 * * 0"
         run: |
           npm run princess:weekly-maintenance -- --apply --confirm=PRINCESS-WEEKLY-MAINTENANCE --max-writes=${{ steps.apply_cap.outputs.max_writes }}
+
+      - name: Observe GitHub schedule delay
+        if: always() && github.event_name == 'schedule'
+        run: |
+          echo "Configured cron: 0 21 * * 0 (Monday 05:00 Australia/Perth)"
+          echo "GitHub event: ${{ github.event_name }}"
+          echo "GitHub run id: ${{ github.run_id }}"
+          echo "Schedule delay is WARN-only and must not fail inventory."
 
       - name: Upload apply report artifact
         uses: actions/upload-artifact@v7

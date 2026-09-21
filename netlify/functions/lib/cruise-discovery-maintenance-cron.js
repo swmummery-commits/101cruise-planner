@@ -68,7 +68,8 @@ async function executeWeeklyMaintenance({
   supabaseClient = null,
   statsEnricher = null,
   invocationProvenance = null,
-  dispatchId = null
+  dispatchId = null,
+  postWriteLifecycle = null
 }) {
   const started = Date.now();
   const runId = `${lineSlug}-weekly-${new Date().toISOString().replace(/[:.]/g, "-")}`;
@@ -283,6 +284,64 @@ async function executeWeeklyMaintenance({
       };
     }
 
+    let lifecycle = null;
+    if (!dryRun && typeof postWriteLifecycle === "function") {
+      try {
+        lifecycle = await postWriteLifecycle({
+          supabase: sb,
+          runId,
+          runRecordId: dbRun?.id || null,
+          result,
+          summary,
+          writeResult: result.write_result || null,
+          rollbackManifest: result.rollback_manifest || null,
+          rollbackResult: result.rollback_result || null,
+          cruiseLineId,
+          triggerType
+        });
+      } catch (lifecycleError) {
+        lifecycle = {
+          ok: false,
+          reason: lifecycleError.message || "post_write_lifecycle_failed"
+        };
+      }
+      summary.post_write_lifecycle = lifecycle || null;
+      if (lifecycle && lifecycle.ok === false) {
+        summary.terminal_status = "failed";
+        summary.failure_reason = lifecycle.reason || "post_write_lifecycle_failed";
+        const failedStats = buildMaintenanceRunStats(summary, {
+          ...(statsEnricher ? statsEnricher(summary, baseExtra) : baseExtra),
+          terminal_status: "failed",
+          post_write_ok: false,
+          post_write_finalized: true,
+          manifest_validation: lifecycle.manifest_validation || null,
+          post_write_verification: lifecycle.post_write_verification || null,
+          post_write_reconciliation: lifecycle.post_write_reconciliation || null
+        });
+        await finalizeMaintenanceRun(sb, dbRun?.id, {
+          status: "failed",
+          stats: failedStats,
+          errorMessage: lifecycle.reason || "post_write_lifecycle_failed"
+        });
+        return {
+          success: false,
+          run_id: runId,
+          run_record_id: dbRun?.id,
+          reason: lifecycle.reason || "post_write_lifecycle_failed",
+          summary,
+          write_result: result.write_result || null,
+          rollback_manifest: result.rollback_manifest || null,
+          rollback_result: result.rollback_result || null,
+          manifest_validation: lifecycle.manifest_validation || null,
+          post_write_verification: lifecycle.post_write_verification || null,
+          post_write_reconciliation: lifecycle.post_write_reconciliation || null,
+          post_write_lifecycle: lifecycle,
+          simulation: result.simulation || null,
+          manifest: result.manifest || null
+        };
+      }
+    }
+
     if (dryRun && summary) {
       await persistMaintenanceManifest(sb, {
         manifestType: "dry_run",
@@ -296,9 +355,19 @@ async function executeWeeklyMaintenance({
       }).catch(() => null);
     }
 
+    const completedExtra = {
+      ...(statsEnricher ? statsEnricher(summary, baseExtra) : baseExtra),
+      post_write_ok: lifecycle ? lifecycle.ok !== false : undefined,
+      post_write_finalized: Boolean(lifecycle),
+      manifest_validation: lifecycle?.manifest_validation || null,
+      post_write_verification: lifecycle?.post_write_verification || null,
+      post_write_reconciliation: lifecycle?.post_write_reconciliation || null
+    };
+    const completedStats = buildMaintenanceRunStats(summary, completedExtra);
+
     await finalizeMaintenanceRun(sb, dbRun?.id, {
       status: "completed",
-      stats,
+      stats: completedStats,
       errorMessage: null
     });
 
@@ -311,6 +380,10 @@ async function executeWeeklyMaintenance({
       write_result: result.write_result || null,
       rollback_manifest: result.rollback_manifest || null,
       rollback_result: result.rollback_result || null,
+      manifest_validation: lifecycle?.manifest_validation || null,
+      post_write_verification: lifecycle?.post_write_verification || null,
+      post_write_reconciliation: lifecycle?.post_write_reconciliation || null,
+      post_write_lifecycle: lifecycle,
       simulation: result.simulation || null,
       manifest: result.manifest || null,
       zero_change_apply: result.zero_change_apply === true,

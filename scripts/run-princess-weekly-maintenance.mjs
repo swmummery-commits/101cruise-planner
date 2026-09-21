@@ -58,6 +58,10 @@ const postWriteVerification = require(path.join(
   root,
   "netlify/functions/lib/princess-post-write-verification"
 ));
+const { completePrincessApplyPostWriteLifecycle } = require(path.join(
+  root,
+  "netlify/functions/lib/princess-weekly-post-write-lifecycle"
+));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
 const REPORT_DIR = path.join(root, "reports");
@@ -84,20 +88,6 @@ async function loadPreviousEligibleTotal(sb) {
   } catch {
     return null;
   }
-}
-
-async function runPostWriteVerification(sb, insertedIds) {
-  if (!insertedIds?.length) {
-    return { ok: true, skipped: true, reason: "no_inserts_to_verify" };
-  }
-  const rows = await postWriteVerification.fetchPrincessActiveRows(sb, insertedIds);
-  const verification = postWriteVerification.verifyInsertedRows(rows);
-  return {
-    ok: verification.ok,
-    issues: verification.issues,
-    verified_count: rows.length,
-    min_departure: verification.minDeparture
-  };
 }
 
 async function runPostWriteReconciliationDryRun(sb, runIdPrefix) {
@@ -146,7 +136,7 @@ async function runDryRun({ startedAt, environment, countsBefore, sb, previousEli
   });
 }
 
-async function runApply({ startedAt, environment, countsBefore, sb, previousEligibleTotal, maxWrites, triggerType }) {
+async function runApply({ startedAt, environment, countsBefore, sb, previousEligibleTotal, maxWrites, triggerType, scheduleObservability }) {
   const runnerTriggerType = cli.resolveMaintenanceRunnerTriggerType(triggerType);
   const executeResult = await executeWeeklyMaintenance({
     lineSlug: "princess-cruises",
@@ -162,7 +152,14 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
     dryRun: false,
     maxWrites,
     triggerType: runnerTriggerType,
-    supabaseClient: sb
+    supabaseClient: sb,
+    postWriteLifecycle: (ctx) =>
+      completePrincessApplyPostWriteLifecycle({
+        ...ctx,
+        fetchInsertedRows: (client, ids) => postWriteVerification.fetchPrincessActiveRows(client, ids),
+        runPostWriteReconciliationDryRun: (client, runIdPrefix) =>
+          runPostWriteReconciliationDryRun(client, runIdPrefix)
+      })
   });
 
   const summary = executeResult.summary || {};
@@ -184,50 +181,32 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
     writeCapAssessment.reason = cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP;
   }
 
-  const writeAccounting = cli.extractWriteAccounting(summary, maintenanceResult.write_result?.stats || maintenanceResult.write_result);
-  const manifestValidation = cli.validateRollbackManifestIntegrity({
-    rollbackResult:
-      executeResult.rollback_result ||
-      (maintenanceResult.rollback_manifest
-        ? { manifest: maintenanceResult.rollback_manifest }
-        : { skipped: summary.zero_change_apply === true, reason: "no_writes" }),
-    summary,
-    writeResult: maintenanceResult.write_result,
-    runMeta: {
-      runId: executeResult.run_id,
-      runRecordId: executeResult.run_record_id,
-      cruiseLineId: PRINCESS_LINE_ID,
-      triggerType: runnerTriggerType
-    }
-  });
-
-  let postWriteReconciliation = null;
-  let postWriteVerification = null;
-
-  if (writeAccounting.committed > 0 && executeResult.success !== false) {
-    const insertedIds = (maintenanceResult.write_result?.write_details || [])
-      .filter((d) => d.created || d.result_action === "inserted" || d.recovered_after_fetch_failure)
-      .map((d) => d.discovered_cruise_id)
-      .filter(Boolean);
-
-    postWriteVerification = await runPostWriteVerification(sb, insertedIds);
-
-    const reconciliationRun = await runPostWriteReconciliationDryRun(sb, executeResult.run_id || "weekly-apply");
-    postWriteReconciliation = cli.validatePostWriteReconciliation(reconciliationRun.summary);
-    postWriteReconciliation.raw_summary = reconciliationRun.summary;
-    if (!reconciliationRun.ok) {
-      postWriteReconciliation.ok = false;
-      postWriteReconciliation.reason = reconciliationRun.reason || postWriteReconciliation.reason;
-    }
-    if (!postWriteVerification.ok) {
-      postWriteReconciliation = postWriteReconciliation || {};
-      postWriteReconciliation.ok = false;
-      postWriteReconciliation.reason = postWriteReconciliation.reason || "post_write_record_verification_failed";
-    }
-  } else if (writeAccounting.committed === 0) {
-    postWriteReconciliation = { ok: true, skipped: true, reason: "zero_change_apply" };
-    postWriteVerification = { ok: true, skipped: true, reason: "zero_change_apply" };
-  }
+  const lifecycle = executeResult.post_write_lifecycle || null;
+  const writeAccounting =
+    lifecycle?.write_accounting ||
+    cli.extractWriteAccounting(summary, maintenanceResult.write_result?.stats || maintenanceResult.write_result);
+  const manifestValidation =
+    executeResult.manifest_validation ||
+    lifecycle?.manifest_validation ||
+    cli.validateRollbackManifestIntegrity({
+      rollbackResult:
+        executeResult.rollback_result ||
+        (maintenanceResult.rollback_manifest
+          ? { manifest: maintenanceResult.rollback_manifest }
+          : { skipped: summary.zero_change_apply === true, reason: "no_writes" }),
+      summary,
+      writeResult: maintenanceResult.write_result,
+      runMeta: {
+        runId: executeResult.run_id,
+        runRecordId: executeResult.run_record_id,
+        cruiseLineId: PRINCESS_LINE_ID,
+        triggerType: runnerTriggerType
+      }
+    });
+  const postWriteVerificationResult =
+    executeResult.post_write_verification || lifecycle?.post_write_verification || null;
+  const postWriteReconciliation =
+    executeResult.post_write_reconciliation || lifecycle?.post_write_reconciliation || null;
 
   const countsAfter = { princess: await exactPrincessActive() };
   const endedAt = new Date().toISOString();
@@ -247,7 +226,8 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
     writeAccounting,
     manifestValidation,
     postWriteReconciliation,
-    postWriteVerification
+    postWriteVerification: postWriteVerificationResult,
+    scheduleObservability
   });
 
   const baselineAcceptance = evaluatePrincessBaselineAcceptance({
@@ -298,6 +278,23 @@ async function main() {
   }
 
   const environment = cli.classifyExecutionEnvironment(process.env, { applyMode });
+  const scheduleObservability = cli.evaluatePrincessScheduleObservability({
+    eventName: process.env.GITHUB_EVENT_NAME || triggerType,
+    cron: process.env.PRINCESS_SCHEDULE_CRON || cli.PRINCESS_WEEKLY_SCHEDULE_CRON,
+    actualStartedAt: startedAt,
+    workflowCreatedAt: process.env.PRINCESS_WORKFLOW_CREATED_AT || null
+  });
+  if (scheduleObservability.severity === "warn") {
+    console.warn(
+      JSON.stringify({
+        warning: "github_schedule_delay",
+        inventory_failure: false,
+        delay_minutes: scheduleObservability.delay_minutes,
+        expected_scheduled_slot_utc: scheduleObservability.expected_scheduled_slot_utc,
+        actual_workflow_start_utc: scheduleObservability.actual_workflow_start_utc
+      })
+    );
+  }
   const countsBefore = { princess: await exactPrincessActive() };
   const sb = createMaintenanceSupabase(root);
   const previousEligibleTotal = await loadPreviousEligibleTotal(sb);
@@ -310,7 +307,8 @@ async function main() {
         sb,
         previousEligibleTotal,
         maxWrites: cli.resolveEffectiveWeeklyMaxWrites(args.maxWrites),
-        triggerType
+        triggerType,
+        scheduleObservability
       })
     : await runDryRun({
         startedAt,
