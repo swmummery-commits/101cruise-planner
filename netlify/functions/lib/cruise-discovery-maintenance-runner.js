@@ -85,6 +85,11 @@ const {
 const { runGlobalProtectedMaintenanceWrites } = require("./cruise-discovery-global-write-lock");
 const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
 const {
+  persistPrincessPreApplyRollbackManifest,
+  completePrincessRollbackManifestWithWriteResult,
+  completePersistedPrincessRollbackManifest
+} = require("./princess-weekly-rollback-manifest");
+const {
   partitionByPublicBookingCutoff,
   PUBLIC_BOOKING_CUTOFF_DAYS,
   publicBookingMinimumDepartureDate
@@ -1345,6 +1350,38 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       }
     }
 
+    const plannedWriteEntries = writeProducts.slice(0, effectiveMaxWrites).map((row) => {
+      const official = princessOfficialProductKey(row.raw);
+      const entry = manifest.products.find((p) => p.stable_identity_key === official);
+      const isInsert = !entry || entry.proposed_action === "insert_active";
+      return {
+        official_sailing_id: official,
+        action: isInsert ? "insert" : "update",
+        existing_record_id: entry?.existing_record_match || null,
+        rollback: entry?.rollback || null
+      };
+    });
+
+    const rollbackPersist = await persistPrincessPreApplyRollbackManifest(sb, {
+      plannedWrites: plannedWriteEntries,
+      runId,
+      runRecordId,
+      cruiseLineId: line.id,
+      lineSlug,
+      triggerType: context.triggerType || context.trigger_type || "scheduled"
+    });
+    if (!rollbackPersist.skipped && rollbackPersist.ok !== true) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: rollbackPersist.reason || "rollback_manifest_persist_failed",
+        summary,
+        simulation,
+        manifest
+      };
+    }
+
     const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
       runRecordId,
@@ -1391,14 +1428,17 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     const writeResult = protectedWrites.writeResult;
     summary.global_lock = protectedWrites.global_lock;
 
-    const rollback = await persistMaintenanceRollbackManifest(sb, {
-      runId,
-      runRecordId,
-      cruiseLineId: line.id,
-      lineSlug,
-      triggerType: context.triggerType || context.trigger_type,
+    const completedRollback = completePrincessRollbackManifestWithWriteResult(
+      rollbackPersist.manifest,
       writeResult
-    });
+    );
+    if (rollbackPersist.manifest_record_id) {
+      await completePersistedPrincessRollbackManifest(
+        sb,
+        rollbackPersist.manifest_record_id,
+        completedRollback
+      );
+    }
 
     summary.inserts = writeResult.stats?.inserted || 0;
     summary.updates = writeResult.stats?.updated || 0;
@@ -1411,15 +1451,19 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       (writeResult.stats?.failed || 0) +
       (writeResult.stats?.duplicate_skips || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
-    summary.rollback_manifest_id = rollback?.manifest_record_id || null;
+    summary.rollback_manifest_id = rollbackPersist.manifest_record_id || null;
 
     return {
       ok: writeResult.stats?.failed === 0,
       summary,
       write_result: writeResult,
       manifest,
-      rollback_result: rollback || null,
-      rollback_manifest: rollback?.manifest || null
+      rollback_result: {
+        skipped: rollbackPersist.skipped === true,
+        manifest: completedRollback,
+        manifest_record_id: rollbackPersist.manifest_record_id || null
+      },
+      rollback_manifest: completedRollback
     };
   } finally {
     await releaseMaintenanceLock(sb, lineSlug, runId);

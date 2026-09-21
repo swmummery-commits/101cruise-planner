@@ -246,6 +246,25 @@ await test("rollback manifest captures inserted and updated record IDs", () => {
   if (!manifest.updated[0].before_values) throw new Error("missing before_values");
 });
 
+await test("inserted IDs prefer write_result.stats.write_details", () => {
+  const ids = manifests.collectInsertedRecordIds({
+    writeResult: {
+      write_details: [],
+      stats: {
+        write_details: [
+          {
+            discovered_cruise_id: "princess-insert",
+            princess_sailing_id: "FFA25B|CB|2028-02-24",
+            created: true,
+            result_action: "inserted"
+          }
+        ]
+      }
+    }
+  });
+  if (ids[0] !== "princess-insert") throw new Error(JSON.stringify(ids));
+});
+
 await test("quality gate blocks writes on collapse", () => {
   const gate = evaluateMaintenanceQualityGate({
     lineSlug: "holland-america-line",

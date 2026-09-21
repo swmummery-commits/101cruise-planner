@@ -53,9 +53,9 @@ function healthyExecute(overrides = {}) {
 
 function healthyReport(overrides = {}) {
   return {
-    manifestValidation: { ok: true, skipped: true },
-    postWriteVerification: { ok: true, skipped: true },
-    postWriteReconciliation: { ok: true, skipped: true },
+    manifest_validation: { ok: true, skipped: true },
+    post_write_verification: { ok: true, skipped: true },
+    post_write_reconciliation: { ok: true, skipped: true },
     ...overrides
   };
 }
@@ -114,9 +114,9 @@ test("healthy scheduled successful insert run advances baseline", () => {
     }),
     executeResult: healthyExecute({ zero_change_apply: false }),
     report: healthyReport({
-      manifestValidation: { ok: true },
-      postWriteVerification: { ok: true },
-      postWriteReconciliation: { ok: true }
+      manifest_validation: { ok: true },
+      post_write_verification: { ok: true },
+      post_write_reconciliation: { ok: true }
     }),
     maintenanceResult: { ok: true },
     dryRun: false
@@ -262,7 +262,7 @@ test("rollback failure does not advance", () => {
     triggerType: "weekly_scheduled_apply",
     summary: healthySummary(2070, { inserts: 3, zero_change_apply: false }),
     executeResult: healthyExecute({ zero_change_apply: false }),
-    report: healthyReport({ manifestValidation: { ok: false } }),
+    report: healthyReport({ manifest_validation: { ok: false } }),
     maintenanceResult: { ok: true },
     dryRun: false
   });
@@ -274,7 +274,7 @@ test("post-write verification failure does not advance", () => {
     triggerType: "weekly_scheduled_apply",
     summary: healthySummary(2070, { inserts: 3, zero_change_apply: false }),
     executeResult: healthyExecute({ zero_change_apply: false }),
-    report: healthyReport({ postWriteVerification: { ok: false } }),
+    report: healthyReport({ post_write_verification: { ok: false } }),
     maintenanceResult: { ok: true },
     dryRun: false
   });
@@ -286,7 +286,7 @@ test("post-write reconciliation failure does not advance", () => {
     triggerType: "weekly_scheduled_apply",
     summary: healthySummary(2070, { inserts: 3, zero_change_apply: false }),
     executeResult: healthyExecute({ zero_change_apply: false }),
-    report: healthyReport({ postWriteReconciliation: { ok: false } }),
+    report: healthyReport({ post_write_reconciliation: { ok: false } }),
     maintenanceResult: { ok: true },
     dryRun: false
   });
@@ -401,6 +401,72 @@ test("review_required resolveWeeklyMaintenanceExitCode remains zero", () => {
     countsAfter: { princess: 2062 }
   });
   if (cli.resolveWeeklyMaintenanceExitCode(report) !== 0) throw new Error("review_required must exit 0");
+});
+
+test("baseline acceptance reads snake_case report evidence from the public schema", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-09-20T23:00:36.000Z",
+    endedAt: "2026-09-20T23:00:54.000Z",
+    environment: {},
+    executeResult: {
+      success: true,
+      summary: healthySummary(1958, {
+        inserts: 1,
+        zero_change_apply: false,
+        proposed_inserts: 1,
+        rollback_manifest_id: "773017ba-a894-410e-82ff-971520c8822c",
+        snapshot_id: "c14b4a71d6ab513f885c16947c1b1d4eca8fb3897db85b5455fc662197143ddd"
+      })
+    },
+    maintenanceResult: { ok: true, summary: healthySummary(1958, { inserts: 1, rollback_manifest_id: "773017ba" }) },
+    countsBefore: { princess: 1967 },
+    countsAfter: { princess: 1968 },
+    writeAccounting: { accounting_ok: true, attempted: 1, committed: 1, genuinely_failed: 0, unchanged: 1957, source_absent_active: 10 },
+    manifestValidation: { ok: true, manifest_record_count: 1 },
+    postWriteVerification: { ok: true },
+    postWriteReconciliation: { ok: true }
+  });
+  if (!report.manifest_validation || !report.post_write_verification || !report.post_write_reconciliation) {
+    throw new Error("report must persist snake_case evidence");
+  }
+  const result = lifecycle.evaluatePrincessBaselineAcceptance({
+    triggerType: "weekly_scheduled_apply",
+    summary: healthySummary(1958, {
+      inserts: 1,
+      zero_change_apply: false,
+      rollback_manifest_id: "773017ba-a894-410e-82ff-971520c8822c"
+    }),
+    executeResult: healthyExecute({ zero_change_apply: false }),
+    report,
+    maintenanceResult: { ok: true },
+    dryRun: false
+  });
+  if (!result.accept) throw new Error(JSON.stringify(result.failures));
+});
+
+test("camelCase-only report evidence is not a second truth model", () => {
+  const result = lifecycle.evaluatePrincessBaselineAcceptance({
+    triggerType: "weekly_scheduled_apply",
+    summary: healthySummary(1958, {
+      inserts: 1,
+      zero_change_apply: false,
+      rollback_manifest_id: "manifest"
+    }),
+    executeResult: healthyExecute({ zero_change_apply: false }),
+    report: {
+      manifestValidation: { ok: true },
+      postWriteVerification: { ok: true },
+      postWriteReconciliation: { ok: true }
+    },
+    maintenanceResult: { ok: true },
+    dryRun: false
+  });
+  if (result.accept) throw new Error("camelCase-only evidence must not accept");
+  if (!result.failures.includes("rollback_manifest_failed")) throw new Error("expected rollback_manifest_failed");
+  if (!result.failures.includes("post_write_verification_failed")) throw new Error("expected post_write_verification_failed");
+  if (!result.failures.includes("post_write_reconciliation_failed")) throw new Error("expected post_write_reconciliation_failed");
 });
 
 console.log(`\ntest-princess-accepted-baseline-lifecycle: ${passed} passed`);

@@ -60,6 +60,7 @@
     "test:princess-catch-up-session": "node scripts/test-princess-catch-up-session.mjs",
     "princess:weekly-maintenance": "node scripts/run-princess-weekly-maintenance.mjs",
     "test:princess-weekly-maintenance": "node scripts/test-princess-weekly-maintenance.mjs",
+    "test:princess-p3m": "node scripts/test-princess-p3m-post-write-lifecycle.mjs",
     "test:princess-incident-p3": "node scripts/test-princess-incident-p3.mjs",
     "test:princess-accepted-baseline-lifecycle": "node scripts/test-princess-accepted-baseline-lifecycle.mjs",
     "test:princess-source-failure": "node scripts/test-princess-source-failure.mjs",

@@ -381,6 +381,11 @@ test("25. incorrect workflow confirmation blocks job", () => {
 
 test("26. local/self-hosted apply accepted", () => {
   cli.assertWeeklyApplyEnvironment({ RUNNER_LABELS: "self-hosted,princess-local-mac", GITHUB_ACTIONS: "true" });
+  cli.assertWeeklyApplyEnvironment({
+    GITHUB_ACTIONS: "true",
+    RUNNER_NAME: "princess-local-mac",
+    RUNNER_OS: "macOS"
+  });
   cli.assertWeeklyApplyEnvironment({});
 });
 
@@ -558,7 +563,10 @@ test("40. idempotency anomaly blocks success", () => {
     reconciliation_arithmetic_ok: true,
     all_active_recognised_in_eligible_source: true,
     proposed_inserts: 2,
-    proposed_updates: 0
+    proposed_updates: 0,
+    recognised_existing_eligible: 10,
+    active_production_total: 10,
+    source_absent_active: 0
   });
   if (anomaly.ok) throw new Error("idempotency anomaly must fail");
 });
@@ -652,6 +660,8 @@ test("50. weekly apply entry resolves all runtime modules", () => {
     "netlify/functions/lib/cruise-discovery-maintenance-tracking.js",
     "netlify/functions/lib/princess-weekly-maintenance-cli.js",
     "netlify/functions/lib/princess-post-write-verification.js",
+    "netlify/functions/lib/princess-weekly-post-write-lifecycle.js",
+    "netlify/functions/lib/princess-weekly-rollback-manifest.js",
     "netlify/functions/lib/princess-reconciliation-summary.js",
     "netlify/functions/lib/cruise-discovery-maintenance-manifests.js"
   ];
