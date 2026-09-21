@@ -7,6 +7,7 @@ const { PRINCESS_WEEKLY_WRITE_CAP } = require("./princess-weekly-quality");
 
 const PRINCESS_HEALTHY_SCHEDULED_BASELINE_REASON = "healthy_scheduled_princess_maintenance";
 const PRINCESS_P3_BASELINE_REASON = "incident_p3_controlled_remediation_complete";
+const PRINCESS_POSTHOC_VERIFIED_BASELINE_REASON = "posthoc_verified_after_post_write_validation_fix";
 
 const BASELINE_BLOCKED_TRIGGER_TYPES = new Set([
   "incident_p2_controlled_batch",
@@ -89,6 +90,14 @@ function resolvePrincessAcceptedBaselineLookup(runs = [], runType, legacyFallbac
   };
 }
 
+function readPrincessApplyEvidence(report = {}) {
+  return {
+    manifest_validation: report.manifest_validation ?? null,
+    post_write_verification: report.post_write_verification ?? null,
+    post_write_reconciliation: report.post_write_reconciliation ?? null
+  };
+}
+
 function evaluatePrincessBaselineAcceptance({
   triggerType,
   summary = {},
@@ -144,16 +153,17 @@ function evaluatePrincessBaselineAcceptance({
   }
 
   if (materialWrites > 0) {
+    const evidence = readPrincessApplyEvidence(report);
     const manifestOk =
-      report.manifestValidation?.ok === true || report.manifestValidation?.skipped === true;
+      evidence.manifest_validation?.ok === true || evidence.manifest_validation?.skipped === true;
     const verifyOk =
-      report.postWriteVerification?.ok === true || report.postWriteVerification?.skipped === true;
+      evidence.post_write_verification?.ok === true || evidence.post_write_verification?.skipped === true;
     const reconOk =
-      report.postWriteReconciliation?.ok === true || report.postWriteReconciliation?.skipped === true;
+      evidence.post_write_reconciliation?.ok === true || evidence.post_write_reconciliation?.skipped === true;
     if (!manifestOk) failures.push("rollback_manifest_failed");
     if (!verifyOk) failures.push("post_write_verification_failed");
     if (!reconOk) failures.push("post_write_reconciliation_failed");
-    if (!summary.rollback_manifest_id && report.manifestValidation?.skipped !== true) {
+    if (!summary.rollback_manifest_id && evidence.manifest_validation?.skipped !== true) {
       failures.push("rollback_manifest_missing");
     }
   } else if (materialWrites === 0) {
@@ -193,12 +203,14 @@ async function patchMaintenanceRunAcceptedBaseline(supabase, runRecordId, summar
 module.exports = {
   PRINCESS_HEALTHY_SCHEDULED_BASELINE_REASON,
   PRINCESS_P3_BASELINE_REASON,
+  PRINCESS_POSTHOC_VERIFIED_BASELINE_REASON,
   PRINCESS_WEEKLY_WRITE_CAP,
   BASELINE_BLOCKED_TRIGGER_TYPES,
   BASELINE_ALLOWED_SCHEDULED_TRIGGER_TYPES,
   buildPrincessAcceptedBaselineStats,
   selectLatestPrincessAcceptedBaseline,
   resolvePrincessAcceptedBaselineLookup,
+  readPrincessApplyEvidence,
   evaluatePrincessBaselineAcceptance,
   patchMaintenanceRunAcceptedBaseline
 };

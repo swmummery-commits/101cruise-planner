@@ -27,6 +27,36 @@ function snapshotRecordForRollback(record) {
   };
 }
 
+function collectWriteDetails(writeResult) {
+  if (!writeResult || typeof writeResult !== "object") return [];
+  if (Array.isArray(writeResult.stats?.write_details)) return writeResult.stats.write_details;
+  if (Array.isArray(writeResult.write_details)) return writeResult.write_details;
+  return [];
+}
+
+function isInsertedWriteDetail(detail) {
+  if (!detail || typeof detail !== "object") return false;
+  if (detail.error && !detail.recovered_after_fetch_failure) return false;
+  return Boolean(
+    detail.discovered_cruise_id &&
+      (detail.created || detail.result_action === "inserted" || detail.recovered_after_fetch_failure)
+  );
+}
+
+function uniqueIds(ids = []) {
+  return [...new Set((ids || []).filter(Boolean))];
+}
+
+function collectInsertedRecordIds({ writeResult, rollbackManifest } = {}) {
+  const fromDetails = uniqueIds(
+    collectWriteDetails(writeResult)
+      .filter(isInsertedWriteDetail)
+      .map((detail) => detail.discovered_cruise_id)
+  );
+  if (fromDetails.length) return fromDetails;
+  return uniqueIds(rollbackManifest?.inserted_record_ids);
+}
+
 function buildRollbackManifestFromWriteResult({
   runId,
   runRecordId,
@@ -36,7 +66,7 @@ function buildRollbackManifestFromWriteResult({
   writeResult,
   invocationId = null
 }) {
-  const details = writeResult?.write_details || writeResult?.stats?.write_details || [];
+  const details = collectWriteDetails(writeResult);
   const inserted = [];
   const updated = [];
 
@@ -117,11 +147,25 @@ async function persistMaintenanceRollbackManifest(supabase, params) {
   return { skipped: false, manifest, manifest_record_id: row?.id || null };
 }
 
+async function patchMaintenanceManifest(supabase, manifestId, manifest) {
+  if (!supabase || !manifestId || !manifest) return null;
+  const rows = await supabase(`${MANIFEST_TABLE}?id=eq.${encodeURIComponent(manifestId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ manifest })
+  });
+  return rows?.[0] || null;
+}
+
 module.exports = {
   MANIFEST_TABLE,
   MANIFEST_TYPE_DB,
   snapshotRecordForRollback,
+  collectWriteDetails,
+  isInsertedWriteDetail,
+  collectInsertedRecordIds,
   buildRollbackManifestFromWriteResult,
   persistMaintenanceManifest,
-  persistMaintenanceRollbackManifest
+  persistMaintenanceRollbackManifest,
+  patchMaintenanceManifest
 };

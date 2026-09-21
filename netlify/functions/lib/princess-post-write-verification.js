@@ -27,6 +27,26 @@ async function fetchPrincessActiveRows(supabase, ids = null) {
   );
 }
 
+function evaluateInsertedVerificationTargets({ committedInserts = 0, insertedIds = [] } = {}) {
+  const ids = [...new Set((insertedIds || []).filter(Boolean))];
+  const committed = Number(committedInserts) || 0;
+  if (committed > 0 && ids.length === 0) {
+    return {
+      ok: false,
+      reason: "post_write_verification_targets_missing",
+      inserted_ids: [],
+      committed_inserts: committed
+    };
+  }
+  return {
+    ok: true,
+    reason: committed === 0 && ids.length === 0 ? "no_inserts_to_verify" : null,
+    skipped: committed === 0 && ids.length === 0,
+    inserted_ids: ids,
+    committed_inserts: committed
+  };
+}
+
 function verifyInsertedRows(rows) {
   const minDep = publicBookingMinimumDepartureDate(perthCalendarDate());
   const issues = [];
@@ -56,5 +76,6 @@ module.exports = {
   PRINCESS_LINE_ID,
   PRINCESS_ACTIVE_ROW_SELECT,
   fetchPrincessActiveRows,
+  evaluateInsertedVerificationTargets,
   verifyInsertedRows
 };

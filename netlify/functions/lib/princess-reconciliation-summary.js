@@ -9,6 +9,33 @@
  * - SOURCE_ABSENT_ACTIVE: active production rows absent from current eligible source snapshot
  */
 
+function explainPrincessActiveProduction({
+  activeProductionTotal = 0,
+  recognisedExistingEligible = 0,
+  sourceAbsentActive = 0,
+  dailyExpiryManaged = 0,
+  otherExplainedNonEligibleActive = 0
+} = {}) {
+  const recognised = Number(recognisedExistingEligible) || 0;
+  const sourceAbsent = Number(sourceAbsentActive) || 0;
+  const dailyExpiry = Number(dailyExpiryManaged) || 0;
+  const otherExplained = Number(otherExplainedNonEligibleActive) || 0;
+  const explained = recognised + sourceAbsent + dailyExpiry + otherExplained;
+  const unexplained = (Number(activeProductionTotal) || 0) - explained;
+  return {
+    active_production_total: Number(activeProductionTotal) || 0,
+    explained_active_total: explained,
+    unexplained_active_rows: unexplained,
+    unexplained_active_ok: unexplained === 0,
+    explained_active_buckets: {
+      recognised_existing_eligible: recognised,
+      source_absent_active: sourceAbsent,
+      daily_expiry_managed: dailyExpiry,
+      other_explained_non_eligible_active: otherExplained
+    }
+  };
+}
+
 function buildPrincessReconciliationSummary({
   activeProductionTotal = 0,
   eligibleTotal = 0,
@@ -17,6 +44,8 @@ function buildPrincessReconciliationSummary({
   proposedUpdates = 0,
   proposedIdentityReviewUpdates = 0,
   sourceAbsentActive = 0,
+  dailyExpiryManaged = 0,
+  otherExplainedNonEligibleActive = 0,
   writesExecuted = 0
 } = {}) {
   const reviewUpdates = Number(proposedIdentityReviewUpdates || 0);
@@ -30,6 +59,13 @@ function buildPrincessReconciliationSummary({
     sourceAbsentActive === 0 && reviewUpdates === 0
       ? activeProductionTotal === recognisedExistingEligible
       : null;
+  const activeAccounting = explainPrincessActiveProduction({
+    activeProductionTotal,
+    recognisedExistingEligible,
+    sourceAbsentActive,
+    dailyExpiryManaged,
+    otherExplainedNonEligibleActive
+  });
 
   return {
     active_production_total: activeProductionTotal,
@@ -43,12 +79,18 @@ function buildPrincessReconciliationSummary({
     proposed_updates: proposedUpdates,
     proposed_identity_review_updates: reviewUpdates,
     source_absent_active: sourceAbsentActive,
+    daily_expiry_managed: Number(dailyExpiryManaged) || 0,
     writes_executed: writesExecuted,
     reconciliation_arithmetic_ok: reconciliationArithmeticOk,
-    all_active_recognised_in_eligible_source: allActiveRecognisedInEligibleSource
+    all_active_recognised_in_eligible_source: allActiveRecognisedInEligibleSource,
+    unexplained_active_rows: activeAccounting.unexplained_active_rows,
+    unexplained_active_ok: activeAccounting.unexplained_active_ok,
+    explained_active_total: activeAccounting.explained_active_total,
+    explained_active_buckets: activeAccounting.explained_active_buckets
   };
 }
 
 module.exports = {
+  explainPrincessActiveProduction,
   buildPrincessReconciliationSummary
 };

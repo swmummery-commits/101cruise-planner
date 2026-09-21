@@ -4,7 +4,10 @@
 
 const fs = require("fs");
 const path = require("path");
-const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
+const {
+  buildPrincessReconciliationSummary,
+  explainPrincessActiveProduction
+} = require("./princess-reconciliation-summary");
 const { buildRollbackManifestFromWriteResult } = require("./cruise-discovery-maintenance-manifests");
 
 const PHASE_A_APPLY_BLOCKED = "weekly_apply_not_enabled_in_phase_a";
@@ -50,20 +53,40 @@ function isWeeklyReconciliationFlagEnabled(env = process.env) {
   return String(env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 }
 
+const PRINCESS_WEEKLY_SCHEDULE_CRON = "0 21 * * 0";
+
+function parseRunnerLabels(env = {}) {
+  return String(env.RUNNER_LABELS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function classifyExecutionEnvironment(env = process.env, { applyMode = false } = {}) {
   const isGitHubActions = env.GITHUB_ACTIONS === "true";
   const isCi = Boolean(env.CI);
   const isNetlify = env.NETLIFY === "true" || Boolean(env.AWS_LAMBDA_FUNCTION_NAME);
-  const runnerLabels = String(env.RUNNER_LABELS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const isSelfHosted =
-    runnerLabels.includes("self-hosted") || runnerLabels.includes("princess-local-mac");
-  const isCloudHosted =
-    isGitHubActions &&
-    !isSelfHosted &&
-    /^(ubuntu|windows|macos)-/i.test(String(env.RUNNER_OS || ""));
+  const runnerLabels = parseRunnerLabels(env);
+  const runnerName = String(env.RUNNER_NAME || "").trim();
+  const runnerEnvironment = String(env.RUNNER_ENVIRONMENT || "").trim().toLowerCase();
+  const imageOs = String(env.ImageOS || env.RUNNER_IMAGEOS || "").trim();
+  const labeledPrincessMac =
+    runnerLabels.includes("princess-local-mac") || runnerName === "princess-local-mac";
+  const labeledSelfHosted =
+    runnerLabels.includes("self-hosted") || runnerEnvironment === "self-hosted";
+  const looksLikeGithubHostedRunner =
+    runnerEnvironment === "github-hosted" ||
+    Boolean(imageOs) ||
+    /^GitHub Actions/i.test(runnerName);
+  const hostedOsLabel =
+    /^(ubuntu|windows|macos)-/i.test(String(env.RUNNER_OS || "")) ||
+    runnerLabels.some((label) => /^(ubuntu|windows|macos)-/i.test(label));
+  const isSelfHosted = Boolean(
+    isGitHubActions && !looksLikeGithubHostedRunner && (labeledPrincessMac || labeledSelfHosted)
+  );
+  const isCloudHosted = Boolean(
+    isGitHubActions && !isSelfHosted && (looksLikeGithubHostedRunner || hostedOsLabel)
+  );
 
   let sourceEnvironment = "local_mac";
   if (isNetlify) sourceEnvironment = "netlify";
@@ -81,6 +104,8 @@ function classifyExecutionEnvironment(env = process.env, { applyMode = false } =
     github_run_attempt: env.GITHUB_RUN_ATTEMPT || null,
     github_ref: env.GITHUB_REF || null,
     runner_os: env.RUNNER_OS || null,
+    runner_name: runnerName || null,
+    runner_environment: runnerEnvironment || null,
     runner_labels: runnerLabels,
     self_hosted_expected: true,
     self_hosted_detected: isSelfHosted,
@@ -265,16 +290,61 @@ function validatePostWriteReconciliation(postWriteSummary) {
   if (postWriteSummary.reconciliation_arithmetic_ok !== true) {
     return { ok: false, reason: "post_write_reconciliation_arithmetic_failed" };
   }
-  if (postWriteSummary.all_active_recognised_in_eligible_source !== true) {
-    return { ok: false, reason: "post_write_active_not_recognised" };
+  const outstandingInserts = Number(
+    postWriteSummary.outstanding_eligible_inserts ?? postWriteSummary.proposed_inserts ?? 0
+  );
+  const proposedUpdates = Number(postWriteSummary.proposed_updates ?? 0);
+  const identityReviews = Number(
+    postWriteSummary.proposed_identity_review_updates ??
+      postWriteSummary.proposed_updates_identity_review ??
+      0
+  );
+  if (outstandingInserts !== 0) {
+    return {
+      ok: false,
+      reason: "post_write_outstanding_inserts",
+      outstanding_eligible_inserts: outstandingInserts
+    };
   }
-  const idempotencyWrites =
-    (postWriteSummary.outstanding_eligible_inserts ?? postWriteSummary.proposed_inserts ?? 0) +
-    (postWriteSummary.proposed_updates ?? 0);
-  if (idempotencyWrites !== 0) {
-    return { ok: false, reason: "post_write_idempotency_anomaly", idempotency_writes: idempotencyWrites };
+  if (proposedUpdates !== 0) {
+    return {
+      ok: false,
+      reason: "post_write_unexpected_updates",
+      proposed_updates: proposedUpdates
+    };
   }
-  return { ok: true, idempotency_writes: 0 };
+  if (identityReviews !== 0) {
+    return {
+      ok: false,
+      reason: "post_write_unexpected_identity_reviews",
+      proposed_identity_review_updates: identityReviews
+    };
+  }
+  const activeAccounting = explainPrincessActiveProduction({
+    activeProductionTotal: postWriteSummary.active_production_total,
+    recognisedExistingEligible:
+      postWriteSummary.recognised_existing_eligible ?? postWriteSummary.unchanged,
+    sourceAbsentActive: postWriteSummary.source_absent_active,
+    dailyExpiryManaged: postWriteSummary.daily_expiry_managed,
+    otherExplainedNonEligibleActive: postWriteSummary.other_explained_non_eligible_active
+  });
+  if (!activeAccounting.unexplained_active_ok) {
+    return {
+      ok: false,
+      reason: "post_write_unexplained_active_rows",
+      unexplained_active_rows: activeAccounting.unexplained_active_rows,
+      explained_active_buckets: activeAccounting.explained_active_buckets
+    };
+  }
+  return {
+    ok: true,
+    outstanding_eligible_inserts: 0,
+    proposed_updates: 0,
+    proposed_identity_review_updates: 0,
+    unexplained_active_rows: 0,
+    explained_active_buckets: activeAccounting.explained_active_buckets,
+    source_absent_retained: activeAccounting.explained_active_buckets.source_absent_active
+  };
 }
 
 function buildWeeklyMaintenanceReport({
@@ -292,7 +362,8 @@ function buildWeeklyMaintenanceReport({
   writeAccounting = null,
   manifestValidation = null,
   postWriteReconciliation = null,
-  postWriteVerification = null
+  postWriteVerification = null,
+  scheduleObservability = null
 }) {
   const summary = executeResult?.summary || maintenanceResult?.summary || {};
   const simulation = maintenanceResult?.simulation || executeResult?.simulation || {};
@@ -307,6 +378,8 @@ function buildWeeklyMaintenanceReport({
     proposedIdentityReviewUpdates:
       summary.proposed_updates_identity_review ?? summary.proposed_identity_review_updates ?? 0,
     sourceAbsentActive: summary.source_absent_active ?? 0,
+    dailyExpiryManaged: summary.daily_expiry_managed ?? 0,
+    otherExplainedNonEligibleActive: summary.other_explained_non_eligible_active ?? 0,
     writesExecuted: writeAccounting?.committed ?? (summary.inserts || 0) + (summary.updates || 0)
   });
   const reconciliation = {
@@ -333,6 +406,12 @@ function buildWeeklyMaintenanceReport({
     all_active_recognised_in_eligible_source:
       summary.all_active_recognised_in_eligible_source ??
       reconciliationSummary.all_active_recognised_in_eligible_source,
+    unexplained_active_rows:
+      summary.unexplained_active_rows ?? reconciliationSummary.unexplained_active_rows,
+    unexplained_active_ok:
+      summary.unexplained_active_ok ?? reconciliationSummary.unexplained_active_ok,
+    explained_active_buckets:
+      summary.explained_active_buckets ?? reconciliationSummary.explained_active_buckets,
     ...computeEligibleChangeMetrics(summary.eligible_total ?? reconciliationSummary.eligible_total, previousEligibleTotal)
   };
 
@@ -461,6 +540,10 @@ function buildWeeklyMaintenanceReport({
     report.manifest_validation = manifestValidation || null;
     report.post_write_reconciliation = postWriteReconciliation || null;
     report.post_write_verification = postWriteVerification || null;
+  }
+
+  if (scheduleObservability) {
+    report.schedule_observability = scheduleObservability;
   }
 
   return report;
@@ -680,7 +763,7 @@ function buildGitHubJobSummary(report) {
     report.status === "review_required"
       ? "## Princess Weekly Maintenance — REVIEW REQUIRED"
       : "## Princess Weekly Maintenance";
-  return [
+  const lines = [
     title,
     "",
     report.status === "review_required" ? "**Scheduled review condition — zero production writes performed.**" : null,
@@ -696,15 +779,90 @@ function buildGitHubJobSummary(report) {
     `**Writes performed:** ${report.writes_performed ?? 0}`,
     `**Reconciliation:** ${reconStatus}`,
     `**Status:** ${statusLabel}`
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ];
+  if (report.schedule_observability?.severity === "warn") {
+    lines.push(
+      `**Schedule delay:** ${report.schedule_observability.delay_minutes} minutes (WARN only — not an inventory failure)`
+    );
+  }
+  return lines.filter(Boolean).join("\n");
+}
+
+function parseSimpleWeeklyCron(cron) {
+  const parts = String(cron || "").trim().split(/\s+/);
+  if (parts.length < 5) return null;
+  const minute = Number(parts[0]);
+  const hour = Number(parts[1]);
+  const dow = Number(parts[4]);
+  if (![minute, hour, dow].every((n) => Number.isFinite(n))) return null;
+  return { minute, hour, dow };
+}
+
+function expectedWeeklyCronSlotUtc(cron, actualIso) {
+  const parsed = parseSimpleWeeklyCron(cron);
+  const actual = new Date(actualIso);
+  if (!parsed || Number.isNaN(actual.getTime())) return null;
+  const actualMs = actual.getTime();
+  const deltaDays = (actual.getUTCDay() - parsed.dow + 7) % 7;
+  let slot = Date.UTC(
+    actual.getUTCFullYear(),
+    actual.getUTCMonth(),
+    actual.getUTCDate() - deltaDays,
+    parsed.hour,
+    parsed.minute,
+    0,
+    0
+  );
+  if (slot > actualMs) slot -= 7 * 24 * 60 * 60 * 1000;
+  return new Date(slot).toISOString();
+}
+
+function evaluatePrincessScheduleObservability({
+  eventName = null,
+  cron = PRINCESS_WEEKLY_SCHEDULE_CRON,
+  actualStartedAt = null,
+  workflowCreatedAt = null
+} = {}) {
+  const scheduled = eventName === "schedule" || eventName === "scheduled";
+  if (!scheduled) {
+    return {
+      applicable: false,
+      cron,
+      severity: "info",
+      inventory_failure: false
+    };
+  }
+  const actual = workflowCreatedAt || actualStartedAt;
+  const expected = expectedWeeklyCronSlotUtc(cron, actual);
+  if (!expected) {
+    return {
+      applicable: true,
+      cron,
+      severity: "warn",
+      inventory_failure: false,
+      reason: "schedule_slot_unparsed"
+    };
+  }
+  const delayMinutes = Math.max(
+    0,
+    Math.round((new Date(actual).getTime() - new Date(expected).getTime()) / 60000)
+  );
+  return {
+    applicable: true,
+    cron,
+    expected_scheduled_slot_utc: expected,
+    actual_workflow_start_utc: actual,
+    delay_minutes: delayMinutes,
+    severity: delayMinutes > 0 ? "warn" : "ok",
+    inventory_failure: false,
+    reason: delayMinutes > 0 ? "github_schedule_delay" : null
+  };
 }
 
 function countPrincessWeeklyCronSchedules(workflowSources = []) {
   let count = 0;
   for (const src of workflowSources) {
-    if (/^\s*schedule:/m.test(src) && /0 20 \* \* 0/.test(src) && /princess/i.test(src)) {
+    if (/^\s*schedule:/m.test(src) && /0 21 \* \* 0/.test(src) && /princess/i.test(src)) {
       count += 1;
     }
   }
@@ -716,6 +874,7 @@ module.exports = {
   WEEKLY_APPLY_CONFIRMATION_TOKEN,
   MAX_WEEKLY_WRITES,
   WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+  PRINCESS_WEEKLY_SCHEDULE_CRON,
   parseWeeklyMaintenanceArgs,
   assertPhaseAApplyBlocked,
   assertWeeklyApplyAllowed,
@@ -739,5 +898,7 @@ module.exports = {
   resolveWorkflowApplyContext,
   resolveMaintenanceRunnerTriggerType,
   buildGitHubJobSummary,
+  expectedWeeklyCronSlotUtc,
+  evaluatePrincessScheduleObservability,
   countPrincessWeeklyCronSchedules
 };
