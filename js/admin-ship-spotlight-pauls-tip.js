@@ -228,7 +228,10 @@
 
   function paulsTipRow(tip) {
     if (!tip) return "";
-    return `<tr ${EMAIL_MARKER}><td style="padding:18px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF7F3" style="width:100%;border-collapse:collapse;background-color:#EEF7F3;border-left:4px solid #8DD9BF;"><tr><td style="padding:14px 16px;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;line-height:14px;letter-spacing:1.2px;text-transform:uppercase;color:#245C4E;margin:0 0 6px;">PAUL'S TIP</div><div style="font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:400;line-height:1.6;color:#111111;">${emailText(tip)}</div></td></tr></table></td></tr>`;
+    // Newsletter only: Paul's Tip is intentionally presented as another normal
+    // overview paragraph. The labelled/highlighted treatment belongs exclusively
+    // on the dynamic Ship Spotlight page.
+    return `<tr ${EMAIL_MARKER}><td align="center" style="padding:12px 16px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;color:#111111;text-align:center;line-height:1.65;">${emailText(tip)}</td></tr>`;
   }
 
   function transformNewsletterHtml(html) {
