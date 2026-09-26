@@ -8,7 +8,7 @@
   const PUBLIC_BASE = "https://101cruise.com.au/ships/";
   const EMAIL_ASSET_ENDPOINT = "/.netlify/functions/ship-spotlight-mailchimp-assets";
   const MAX_WIDTH = 600;
-  const PAGE_BG = "#F7F7F7";
+  const PAGE_BG = "#FFFFFF";
   const BRAND_GREEN = "#8DD9BF";
   const BRAND_DARK_GREEN = "#245C4E";
   const BODY = "#111111";
