@@ -245,8 +245,7 @@
       ">ROOM TYPES</div>",
       ">SHIP AT A GLANCE</div>",
       ">ON BOARD</div>",
-      'class="cr101-ss-features"',
-      "border-top:2px dotted"
+      'class="cr101-ss-features"'
     ];
     let insertAt = -1;
     markerTexts.forEach((marker) => {
