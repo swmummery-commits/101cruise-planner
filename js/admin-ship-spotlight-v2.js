@@ -71,6 +71,12 @@
   let overlay = null;
   let previewOpen = false;
   let hostedHtmlCache = "";
+  let hostedHtmlSource = "";
+
+  function invalidateHostedHtmlCache() {
+    hostedHtmlCache = "";
+    hostedHtmlSource = "";
+  }
 
   const esc = (value) => String(value == null ? "" : value)
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
@@ -269,6 +275,7 @@
 
   async function ensureLoaded(force = false) {
     if (loaded && !force) return;
+    if (force) invalidateHostedHtmlCache();
     busy = true; message = "Loading Ship Spotlights…"; messageTone = ""; render();
     const db = client();
     const [shipRes, lineRes, spotlightRes, mediaRes, researchRes] = await Promise.all([
@@ -303,7 +310,7 @@
   }
 
   async function selectShip(id) {
-    capture(); selectedShipId = id || ""; hostedHtmlCache = ""; previewOpen = false;
+    capture(); selectedShipId = id || ""; invalidateHostedHtmlCache(); previewOpen = false;
     draft = selectedShipId ? freshDraft(currentShip()) : null;
     message = ""; messageTone = ""; render();
   }
@@ -449,7 +456,7 @@ ${cta}
     if (result.error) { busy = false; message = result.error.message; messageTone = "error"; render(); return false; }
     draft = { ...draft, ...result.data, stat_keys: technicalStats(ship).map((item) => item.key) };
     spotlights = spotlights.filter((r) => r.ship_id !== ship.id).concat(result.data);
-    busy = false; if (!quiet) { message = "Ship Spotlight saved."; messageTone = "success"; } render(); return true;
+    busy = false; if (!quiet) { invalidateHostedHtmlCache(); message = "Ship Spotlight saved. Newsletter code will be rebuilt on the next copy."; messageTone = "success"; } render(); return true;
   }
 
   function emailAssetsForCurrentShip() {
@@ -488,6 +495,7 @@ ${cta}
   async function prepareHostedHtml() {
     const saved = await save({ quiet: true }); if (!saved) return "";
     let html = emailHtml();
+    hostedHtmlSource = html;
     const assets = emailAssetsForCurrentShip();
     if (!assets.length) return html;
     message = `Preparing Ship Spotlight images 1 of ${assets.length}…`; messageTone = ""; busy = true; render();
@@ -523,11 +531,16 @@ ${cta}
         await navigator.clipboard.writeText(hostedHtmlCache);
       }
       busy = false; message = "Newsletter block copied. Paste it into a normal newsletter code block wherever you want it."; messageTone = "success"; render();
-    } catch (error) { busy = false; message = error.message || "Could not prepare the newsletter block."; messageTone = "error"; render(); }
+    } catch (error) { invalidateHostedHtmlCache(); busy = false; message = error.message || "Could not prepare the newsletter block."; messageTone = "error"; render(); }
   }
 
   async function copyAgainIfReady() {
     if (!hostedHtmlCache) return copyNewsletterBlock();
+    const currentSource = emailHtml();
+    if (!currentSource || currentSource !== hostedHtmlSource) {
+      invalidateHostedHtmlCache();
+      return copyNewsletterBlock();
+    }
     try {
       const result = global.NewsletterMailchimpAssets?.copyHostedHtml ? await global.NewsletterMailchimpAssets.copyHostedHtml(hostedHtmlCache) : (await navigator.clipboard.writeText(hostedHtmlCache), { ok: true });
       if (!result.ok) throw new Error(result.error || "Could not copy HTML.");
