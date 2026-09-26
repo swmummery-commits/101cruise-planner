@@ -8159,3 +8159,68 @@ body.admin-loading-active {
     width: auto;
   }
 }
+
+/* Newsletter HTML copy feedback */
+.newsletter-copy-button {
+  transition:
+    transform 90ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.newsletter-copy-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+.newsletter-copy-button.is-copying {
+  background: #fff4e5 !important;
+  border-color: #f2c078 !important;
+  color: #7a4b00 !important;
+  cursor: wait;
+}
+
+.newsletter-copy-button.is-copied {
+  background: #e8f7f1 !important;
+  border-color: #8dd9bf !important;
+  color: #245c4e !important;
+}
+
+.newsletter-copy-button.needs-copy-retry {
+  background: #fff8e1 !important;
+  border-color: #d8a900 !important;
+  color: #6b5200 !important;
+  font-weight: 600 !important;
+}
+
+.newsletter-copy-feedback {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-top: 10px;
+  padding: 7px 11px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.newsletter-copy-feedback.is-running {
+  background: #fff4e5;
+  border-color: #f2c078;
+  color: #7a4b00;
+}
+
+.newsletter-copy-feedback.is-success {
+  background: #e8f7f1;
+  border-color: #8dd9bf;
+  color: #245c4e;
+}
+
+.newsletter-copy-feedback.is-retry {
+  background: #fff8e1;
+  border-color: #d8a900;
+  color: #6b5200;
+}
+

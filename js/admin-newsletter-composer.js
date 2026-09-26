@@ -35,6 +35,7 @@
     label: ""
   };
   let hostedExport = { airline: "", general: "", filename: "", label: "" };
+  let copyFeedback = { airline_staff: "idle", general: "idle" };
   let issueCache = { key: "", airline: null, general: null };
   let addPickerOpen = false;
   let addPickerSelected = new Set();
@@ -89,6 +90,7 @@
       label: ""
     };
     hostedExport = { airline: "", general: "", filename: "", label: "" };
+    copyFeedback = { airline_staff: "idle", general: "idle" };
   }
 
   function loadTemplateMap() {
@@ -1489,28 +1491,93 @@
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 
-  async function copyPreparedHtml(html, reusedNote) {
+  function copyModeLabel(outputMode) {
+    return outputMode === "airline_staff" ? "Airline" : "General";
+  }
+
+  function setCopyFeedback(outputMode, status) {
+    copyFeedback = {
+      airline_staff: outputMode === "airline_staff" ? status : "idle",
+      general: outputMode === "general" ? status : "idle"
+    };
+  }
+
+  function copyButtonState(outputMode) {
+    const label = copyModeLabel(outputMode);
+    const status = copyFeedback[outputMode] || "idle";
+    if (status === "copying") {
+      return { status, className: "is-copying", text: `Copying ${label} HTML…` };
+    }
+    if (status === "copied") {
+      return { status, className: "is-copied", text: `✓ ${label} HTML Copied` };
+    }
+    if (status === "retry") {
+      return { status, className: "needs-copy-retry", text: `Click again to copy ${label} HTML` };
+    }
+    return { status: "idle", className: "", text: `Copy ${label} HTML` };
+  }
+
+  function renderCopyFeedback() {
+    const outputMode =
+      copyFeedback.airline_staff !== "idle"
+        ? "airline_staff"
+        : copyFeedback.general !== "idle"
+          ? "general"
+          : "";
+    if (!outputMode) return "";
+
+    const status = copyFeedback[outputMode];
+    const label = copyModeLabel(outputMode);
+    const className =
+      status === "copied"
+        ? "is-success"
+        : status === "retry"
+          ? "is-retry"
+          : "is-running";
+    const message =
+      status === "copied"
+        ? `✓ ${label} HTML copied to clipboard.`
+        : status === "retry"
+          ? `${label} HTML is ready. Click the highlighted button again to copy it.`
+          : `Copying ${label} HTML…`;
+
+    return `<div class="newsletter-copy-feedback ${className}" role="status" aria-live="polite">${esc(message)}</div>`;
+  }
+
+  async function copyPreparedHtml(outputMode, html, reusedNote) {
     const copied = await global.NewsletterMailchimpAssets.copyHostedHtml(html);
+    const label = copyModeLabel(outputMode);
     if (copied.ok) {
-      issueMessage = `HTML copied to clipboard.${reusedNote || ""}`;
+      setCopyFeedback(outputMode, "copied");
+      issueMessage = `✓ ${label} HTML copied to clipboard.${reusedNote || ""}`;
       issueMessageTone = "success";
       return true;
     }
-    issueMessage =
-      copied.error ||
-      "The browser blocked clipboard access after preparing the images. Click Copy again, or use Download HTML.";
-    issueMessageTone = "info";
+
+    const blocked = copied.code === "clipboard_blocked";
+    setCopyFeedback(outputMode, blocked ? "retry" : "idle");
+    issueMessage = blocked
+      ? `${label} HTML is ready. Click the highlighted Copy button again to copy it.`
+      : copied.error || `Could not copy ${label} HTML to the clipboard.`;
+    issueMessageTone = blocked ? "info" : "error";
     return false;
   }
 
   async function exportHtml(outputMode, action) {
     if (action === "copy") {
+      setCopyFeedback(outputMode, "copying");
+      issueMessage = `Copying ${copyModeLabel(outputMode)} HTML…`;
+      issueMessageTone = "running";
+      rerender();
+
       const cached = hostedExportHtml(outputMode);
       if (cached) {
-        await copyPreparedHtml(cached, " Reused prepared Mailchimp HTML.");
+        await copyPreparedHtml(outputMode, cached, " Reused prepared Mailchimp HTML.");
         rerender();
         return;
       }
+    } else {
+      copyFeedback = { airline_staff: "idle", general: "idle" };
     }
 
     const run = async () => {
@@ -1570,7 +1637,7 @@
             ? ` Uploaded ${prepared.uploaded} email image${prepared.uploaded === 1 ? "" : "s"} to Mailchimp.`
             : "";
       if (action === "copy") {
-        await copyPreparedHtml(prepared.html, reusedNote);
+        await copyPreparedHtml(outputMode, prepared.html, reusedNote);
       } else {
         downloadHtmlFile(prepared.html, result.filename);
         issueMessage = `HTML downloaded.${reusedNote}`;
@@ -1580,12 +1647,18 @@
       const denied =
         global.NewsletterMailchimpAssets?.isClipboardDenied?.(error) ||
         /not allowed by the user agent/i.test(error.message || "");
+      if (action === "copy") {
+        setCopyFeedback(outputMode, denied && hostedExportHtml(outputMode) ? "retry" : "idle");
+      }
       issueMessage = denied
-        ? "The browser blocked clipboard access after preparing the images. Use Download HTML, or click Copy again."
+        ? `${copyModeLabel(outputMode)} HTML is ready. Click the highlighted Copy button again to copy it.`
         : error.message || "Export failed.";
-      issueMessageTone = "error";
+      issueMessageTone = denied ? "info" : "error";
     } finally {
       issueBusy = false;
+      if (action === "copy" && copyFeedback[outputMode] === "copying") {
+        setCopyFeedback(outputMode, "idle");
+      }
       rerender();
     }
     };
@@ -1863,6 +1936,11 @@
             ? "admin-running"
             : "";
 
+    const airlineCopyButton = copyButtonState("airline_staff");
+    const generalCopyButton = copyButtonState("general");
+    const copyInProgress =
+      airlineCopyButton.status === "copying" || generalCopyButton.status === "copying";
+
     const workspaceBanner = active
       ? `<div class="newsletter-workspace-active">
           <span class="newsletter-workspace-badge">Editing Newsletter ${esc(String(active.newsletter_number))}</span>
@@ -1975,9 +2053,10 @@
         <section class="newsletter-issue-section newsletter-issue-actions">
           <h4>Export</h4>
           <div class="admin-actions-row">
-            <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','copy')" ${issueBusy || !cruises.length ? "disabled" : ""}>Copy Airline HTML</button>
-            <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','copy')" ${issueBusy || !cruises.length ? "disabled" : ""}>Copy General HTML</button>
+            <button type="button" class="admin-button secondary newsletter-copy-button ${airlineCopyButton.className}" onclick="NewsletterIssueComposer.exportHtml('airline_staff','copy')" aria-busy="${airlineCopyButton.status === "copying" ? "true" : "false"}" ${issueBusy || copyInProgress || !cruises.length ? "disabled" : ""}>${esc(airlineCopyButton.text)}</button>
+            <button type="button" class="admin-button secondary newsletter-copy-button ${generalCopyButton.className}" onclick="NewsletterIssueComposer.exportHtml('general','copy')" aria-busy="${generalCopyButton.status === "copying" ? "true" : "false"}" ${issueBusy || copyInProgress || !cruises.length ? "disabled" : ""}>${esc(generalCopyButton.text)}</button>
           </div>
+          ${renderCopyFeedback()}
           <div class="admin-actions-row" style="margin-top:8px">
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download Airline HTML</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download General HTML</button>

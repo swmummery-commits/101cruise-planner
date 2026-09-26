@@ -68,6 +68,9 @@ const staticChecks = [
   ["exportHtml fails closed when Mailchimp upload fails", /if \(!prepared\.ok\)/.test(composerJs) && /copyHostedHtml|copyPreparedHtml/.test(composerJs)],
   ["exportHtml does not copy unhosted compose HTML", !/clipboard\.writeText\(result\.html/.test(composerJs)],
   ["exportHtml recovers when the browser blocks clipboard after image prepare", /clipboard_blocked|blocked clipboard access/.test(composerJs)],
+  ["Copy HTML buttons show immediate copying and copied states", /copyFeedback/.test(composerJs) && /Copying \\${label} HTML/.test(composerJs) && /HTML Copied/.test(composerJs)],
+  ["Copy HTML feedback is rendered beside the export buttons", /newsletter-copy-feedback/.test(composerJs) && /renderCopyFeedback\\(\\)/.test(composerJs)],
+  ["clipboard-blocked copy becomes an explicit click-again state", /needs-copy-retry/.test(composerJs) && /Click again to copy/.test(composerJs)],
   ["Copy buttons do not trigger a file download", (() => {
     const copyFn = composerJs.match(/async function copyPreparedHtml[\s\S]*?^  }/m)?.[0] || "";
     return (
