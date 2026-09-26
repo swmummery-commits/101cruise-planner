@@ -218,11 +218,14 @@
   function buildRoomChartSvg(ship) {
     const breakdown = roomBreakdown(ship);
     if (!breakdown) return null;
+    // The Mailchimp asset pipeline rasterises this SVG. Keep the generated image
+    // deliberately text-free so server font availability can never turn labels
+    // into missing-glyph boxes. All room labels/counts are rendered as HTML below.
     const width = 560;
-    const height = 226;
-    const cx = 94;
-    const cy = 113;
-    const r = 62;
+    const height = 180;
+    const cx = 280;
+    const cy = 90;
+    const r = 60;
     const stroke = 28;
     const circumference = 2 * Math.PI * r;
     let offset = 0;
@@ -232,16 +235,7 @@
       offset += length;
       return svg;
     }).join("");
-    const centre = breakdown.centreTotal != null
-      ? `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="23" font-weight="700" fill="#111111">${escXml(breakdown.centreTotal.toLocaleString("en-AU"))}</text><text x="${cx}" y="${cy + 18}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1" fill="#545454">STATEROOMS</text>`
-      : `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1" fill="#545454">ROOM MIX</text>`;
-    const legend = breakdown.categories.slice(0, 6).map((item, index) => {
-      const y = 43 + (index * 29);
-      const pct = Math.round((item.count / breakdown.total) * 100);
-      const count = item.count.toLocaleString("en-AU");
-      return `<rect x="202" y="${y - 10}" width="10" height="10" rx="2" fill="${item.color}"/><text x="222" y="${y}" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#111111">${escXml(item.label)}</text><text x="526" y="${y}" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#545454">${escXml(count)} · ${pct}%</text>`;
-    }).join("");
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="560" height="226" rx="8" fill="#FFFFFF"/><text x="202" y="21" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1.4" fill="#245C4E">ROOM TYPES</text><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EEF1F0" stroke-width="${stroke}"/>${arcs}<circle cx="${cx}" cy="${cy}" r="44" fill="#FFFFFF"/>${centre}${legend}</svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" data-email-donut-v2="1" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" rx="8" fill="#FFFFFF"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EEF1F0" stroke-width="${stroke}"/>${arcs}<circle cx="${cx}" cy="${cy}" r="44" fill="#FFFFFF"/></svg>`;
     let dataUrl = "";
     try {
       dataUrl = `data:image/svg+xml;base64,${global.btoa(unescape(encodeURIComponent(svg)))}`;
@@ -356,7 +350,15 @@
   function renderRoomTypes(ship) {
     const chart = buildRoomChartSvg(ship);
     if (!chart) return "";
-    return `<tr><td align="center" style="padding:30px 0 0;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:10px;">ROOM TYPES</div><img class="cr101-ss-room-chart" src="${esc(chart.dataUrl)}" alt="${esc(chart.alt)}" width="560" border="0" style="display:block;width:100%;max-width:560px;height:auto;border:0;margin:0 auto;"></td></tr>`;
+    const legendRows = chart.breakdown.categories.map((item) => {
+      const pct = Math.round((item.count / chart.breakdown.total) * 100);
+      const count = item.count.toLocaleString("en-AU");
+      return `<tr><td width="24" valign="middle" style="width:24px;padding:5px 0;vertical-align:middle;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${item.color};"></span></td><td valign="middle" style="padding:5px 8px 5px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;line-height:1.35;color:#111111;vertical-align:middle;">${esc(item.label)}</td><td width="120" align="right" valign="middle" style="width:120px;padding:5px 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:400;line-height:1.35;color:#545454;text-align:right;vertical-align:middle;">${esc(count)} · ${pct}%</td></tr>`;
+    }).join("");
+    const totalRow = chart.breakdown.centreTotal != null
+      ? `<tr><td colspan="3" align="center" style="padding:3px 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;line-height:1.35;color:#545454;text-align:center;">${esc(chart.breakdown.centreTotal.toLocaleString("en-AU"))} STATEROOMS</td></tr>`
+      : "";
+    return `<tr><td align="center" style="padding:30px 0 0;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${BRAND_DARK_GREEN};text-align:center;margin-bottom:10px;">ROOM TYPES</div><img class="cr101-ss-room-chart" src="${esc(chart.dataUrl)}" alt="${esc(chart.alt)}" width="560" border="0" style="display:block;width:100%;max-width:560px;height:auto;border:0;margin:0 auto;"><table role="presentation" class="cr101-ss-room-legend" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:460px;border-collapse:collapse;margin:6px auto 0;background:#FFFFFF;">${totalRow}${legendRows}</table></td></tr>`;
   }
 
   function renderFeatureList(title, items) {
@@ -420,7 +422,6 @@ ${renderTechnicalDetails(details)}
 ${renderOnboardGrid(onboard)}
 ${renderFeatures(ship)}
 ${cta}
-<tr><td align="center" style="padding:28px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr><td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;">&nbsp;</td></tr></table></td></tr>
 </table></td></tr></table></td></tr></table>`;
   }
 
