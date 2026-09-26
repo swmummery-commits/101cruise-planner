@@ -129,6 +129,7 @@
       const doc = new DOMParser().parseFromString(source, "image/svg+xml");
       const svg = doc.documentElement;
       if (!svg || svg.nodeName.toLowerCase() !== "svg") return source;
+      if (svg.getAttribute("data-email-donut-v2") === "1") return source;
 
       const oldCx = 94;
       const oldCy = 113;
