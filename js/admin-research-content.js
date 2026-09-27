@@ -961,9 +961,10 @@
   }
 
   function renderEditorActions(item) {
+    const saveLabel = saving ? `${loadingBoxes({ inline: true })} Saving…` : "Save Draft";
     return `
       <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${saving ? "disabled" : ""}>Cancel</button>
-      <button type="button" class="admin-button" onclick="ResearchContentAdmin.saveDraft()" ${saving ? "disabled" : ""}>Save Draft</button>
+      <button type="button" class="admin-button ${saving ? "admin-loading-button-busy" : ""}" onclick="ResearchContentAdmin.saveDraft()" ${saving ? "disabled" : ""}>${saveLabel}</button>
       <button type="button" class="admin-button" onclick="ResearchContentAdmin.markReviewed()" ${saving ? "disabled" : ""}>Mark Reviewed</button>
       <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving || item.content_status === "failed" ? "disabled" : ""}>Publish</button>
       <button type="button" class="admin-button" onclick="ResearchContentAdmin.refreshResearch()" ${saving || researching ? "disabled" : ""}>Refresh Research</button>
@@ -1520,8 +1521,10 @@
       showRawJson = !showRawJson;
     },
     async saveDraft() {
+      if (saving) return;
       saving = true;
-      message = "";
+      message = "Saving changes…";
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         const result = await api("save_draft", {
@@ -1547,7 +1550,11 @@
       }
     },
     async markReviewed() {
+      if (saving) return;
       saving = true;
+      message = "Saving reviewed status…";
+      messageTone = "running";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         await api("save_draft", {
           id: editingId,
@@ -1583,7 +1590,11 @@
       }
     },
     async publish() {
+      if (saving) return;
       saving = true;
+      message = "Saving and publishing…";
+      messageTone = "running";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         await api("save_draft", {
           id: editingId,
@@ -1607,7 +1618,11 @@
       }
     },
     async archive() {
+      if (saving) return;
       saving = true;
+      message = "Deleting…";
+      messageTone = "running";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         await api("archive", { id: editingId });
         message = "Deleted.";
