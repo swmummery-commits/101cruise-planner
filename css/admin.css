@@ -271,6 +271,67 @@ body.admin-loading-active {
   transition: none !important;
 }
 
+.admin-saving-indicator {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1650;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #dfe6e3;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(17, 24, 22, 0.14);
+  color: #245c4e;
+  font-family: var(--admin-font-family);
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+}
+
+.admin-saving-indicator.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.admin-saving-indicator.is-error {
+  color: #9a2525;
+  border-color: #efc5c5;
+}
+
+.admin-saving-indicator-result {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(141, 217, 191, .28);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.admin-saving-indicator.is-error .admin-saving-indicator-result {
+  background: #fff0f0;
+}
+
+.admin-saving-indicator-text {
+  white-space: nowrap;
+}
+
+.admin-button .brand-loading-boxes--inline {
+  margin-right: 7px;
+  vertical-align: -2px;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   .admin-loading-overlay {
     transition: none;
