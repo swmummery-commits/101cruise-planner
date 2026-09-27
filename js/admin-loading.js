@@ -391,6 +391,132 @@
     });
   }
 
+  var savingIndicatorEl = null;
+  var savingIndicatorCount = 0;
+  var savingIndicatorFailed = false;
+  var savingIndicatorHideTimer = null;
+  var savingFetchObserverInstalled = false;
+
+  function ensureSavingIndicator() {
+    if (savingIndicatorEl && savingIndicatorEl.isConnected) return savingIndicatorEl;
+    if (typeof document === "undefined" || !document.body) return null;
+    savingIndicatorEl = document.createElement("div");
+    savingIndicatorEl.id = "admin-saving-indicator";
+    savingIndicatorEl.className = "admin-saving-indicator";
+    savingIndicatorEl.setAttribute("role", "status");
+    savingIndicatorEl.setAttribute("aria-live", "polite");
+    document.body.appendChild(savingIndicatorEl);
+    return savingIndicatorEl;
+  }
+
+  function renderSavingIndicator(state, message) {
+    var el = ensureSavingIndicator();
+    if (!el) return;
+    clearTimeout(savingIndicatorHideTimer);
+    el.classList.remove("is-saving", "is-success", "is-error");
+    if (state === "saving") {
+      el.classList.add("is-saving", "is-visible");
+      var loader =
+        typeof BrandLoading !== "undefined" && BrandLoading.html
+          ? BrandLoading.html({ inline: true })
+          : '<span class="admin-saving-dot" aria-hidden="true"></span>';
+      el.innerHTML = loader + '<span class="admin-saving-indicator-text">' + (message || "Saving…") + "</span>";
+      if (typeof BrandLoading !== "undefined" && BrandLoading.scan) BrandLoading.scan(el);
+      return;
+    }
+    el.classList.add(state === "error" ? "is-error" : "is-success", "is-visible");
+    el.innerHTML =
+      '<span class="admin-saving-indicator-result" aria-hidden="true">' +
+      (state === "error" ? "!" : "✓") +
+      '</span><span class="admin-saving-indicator-text">' +
+      (message || (state === "error" ? "Save failed" : "Saved")) +
+      "</span>";
+    savingIndicatorHideTimer = setTimeout(function () {
+      if (savingIndicatorCount === 0 && savingIndicatorEl) savingIndicatorEl.classList.remove("is-visible");
+    }, state === "error" ? 2600 : 1500);
+  }
+
+  function beginSavingIndicator(message) {
+    savingIndicatorCount += 1;
+    renderSavingIndicator("saving", message || "Saving…");
+  }
+
+  function endSavingIndicator(success) {
+    if (success === false) savingIndicatorFailed = true;
+    savingIndicatorCount = Math.max(0, savingIndicatorCount - 1);
+    if (savingIndicatorCount > 0) {
+      renderSavingIndicator("saving", "Saving…");
+      return;
+    }
+    var failed = savingIndicatorFailed;
+    savingIndicatorFailed = false;
+    renderSavingIndicator(failed ? "error" : "success", failed ? "Save failed" : "Saved");
+  }
+
+  function requestUrl(input) {
+    if (typeof input === "string") return input;
+    if (input && typeof input.url === "string") return input.url;
+    return "";
+  }
+
+  function requestMethod(input, init) {
+    return String((init && init.method) || (input && input.method) || "GET").toUpperCase();
+  }
+
+  function requestAction(init) {
+    var body = init && init.body;
+    if (typeof body !== "string" || !body.trim().startsWith("{")) return "";
+    try {
+      var parsed = JSON.parse(body);
+      return String(parsed && parsed.action || "").trim();
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function isSaveLikeRequest(input, init) {
+    var method = requestMethod(input, init);
+    if (["POST", "PUT", "PATCH", "DELETE"].indexOf(method) === -1) return false;
+    var url = requestUrl(input);
+    if (!url) return false;
+
+    // Direct Supabase/PostgREST and Storage writes are genuine persisted changes.
+    if (/\/rest\/v1\//i.test(url) || /\/storage\/v1\/object\//i.test(url)) return true;
+
+    if (!/\/\.netlify\/functions\//i.test(url)) return false;
+    var path = url.split("?")[0];
+    if (/(?:^|[-_/])(save|update|publish|archive|delete|upload|assign|apply|create)(?:[-_/]|$)/i.test(path)) return true;
+
+    // Generic admin functions often multiplex reads/writes through an action field.
+    var action = requestAction(init);
+    return /^(save(?:_|$)|update(?:_|$)|publish(?:_|$)|archive(?:_|$)|delete(?:_|$)|upsert(?:_|$)|set_(?:.+)|create(?:_|$)|apply(?:_|$)|assign(?:_|$))/i.test(action);
+  }
+
+  function installSavingFetchObserver() {
+    if (savingFetchObserverInstalled || typeof root.fetch !== "function") return;
+    savingFetchObserverInstalled = true;
+    var originalFetch = root.fetch.bind(root);
+    root.fetch = async function (input, init) {
+      var tracked = false;
+      try {
+        tracked = isSaveLikeRequest(input, init);
+      } catch (_error) {
+        tracked = false;
+      }
+      if (!tracked) return originalFetch(input, init);
+
+      beginSavingIndicator("Saving…");
+      try {
+        var response = await originalFetch(input, init);
+        endSavingIndicator(Boolean(response && response.ok));
+        return response;
+      } catch (error) {
+        endSavingIndicator(false);
+        throw error;
+      }
+    };
+  }
+
   function resetAll() {
     refs.clear();
     activeCount = 0;
@@ -407,6 +533,10 @@
     resetAll: resetAll,
     setMessage: setMessage,
     setSupportMessage: setSupportMessage,
-    SAVING_MESSAGE: SAVING_MESSAGE
+    SAVING_MESSAGE: SAVING_MESSAGE,
+    beginSavingIndicator: beginSavingIndicator,
+    endSavingIndicator: endSavingIndicator
   };
+
+  installSavingFetchObserver();
 })(typeof window !== "undefined" ? window : globalThis);
