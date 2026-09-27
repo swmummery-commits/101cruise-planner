@@ -173,7 +173,7 @@
     const c = contentOf(editorial);
     const personality = proseSection("Personality", c.personality);
     const bestFor = listSection("Best for", c.best_for);
-    const goodToKnow = listSection("Good to know before you book", c.not_ideal_for);
+    const goodToKnow = listSection("NOT IDEAL FOR", c.not_ideal_for);
     const highlights = listSection("Key highlights", c.key_highlights, "ship-editorial-card--wide");
     const dining = proseSection("Dining", c.dining_summary);
     const accommodation = proseSection("Accommodation", c.accommodation_summary);
