@@ -11,6 +11,7 @@
     "passenger_capacity", "stateroom_count", "crew_count", "year_built", "year_refurbished",
     "gross_tonnage", "length_metres", "beam_metres", "cruising_speed_knots", "deck_count"
   ];
+  let saveInFlight = false;
 
   function root() {
     return document.getElementById("shipSpotlightOverlay");
@@ -76,7 +77,41 @@
     };
   }
 
-  async function saveViaServer() {
+  function saveButton(candidate) {
+    if (candidate && candidate.tagName === "BUTTON") return candidate;
+    return Array.from(root()?.querySelectorAll(".ss-actions button") || []).find((button) =>
+      /^Save Spotlight$/i.test(String(button.textContent || "").trim())
+    ) || null;
+  }
+
+  function setSaveButtonState(button, state) {
+    if (!button) return;
+    if (!button.dataset.ssSaveOriginalHtml) button.dataset.ssSaveOriginalHtml = button.innerHTML;
+    if (state === "saving") {
+      button.disabled = true;
+      button.classList.add("admin-loading-button-busy");
+      const loader = global.BrandLoading?.html ? global.BrandLoading.html({ inline: true }) : "";
+      button.innerHTML = `${loader}Saving…`;
+      global.BrandLoading?.scan?.(button);
+      return;
+    }
+    button.classList.remove("admin-loading-button-busy");
+    if (state === "success") {
+      button.innerHTML = "✓ Saved";
+      button.disabled = true;
+      setTimeout(() => {
+        if (!button.isConnected) return;
+        button.innerHTML = button.dataset.ssSaveOriginalHtml || "Save Spotlight";
+        button.disabled = false;
+      }, 1400);
+      return;
+    }
+    button.innerHTML = button.dataset.ssSaveOriginalHtml || "Save Spotlight";
+    button.disabled = false;
+  }
+
+  async function saveViaServer(triggerButton) {
+    if (saveInFlight) return false;
     const body = savePayload();
     if (!body.ship_id) {
       setStatus("Select a ship first.", "error");
@@ -87,7 +122,10 @@
       return false;
     }
 
-    setStatus(body.publication_status === "published" ? "Publishing…" : "Saving…", "");
+    saveInFlight = true;
+    const button = saveButton(triggerButton);
+    setSaveButtonState(button, "saving");
+    setStatus(body.publication_status === "published" ? "Saving and publishing Ship Spotlight…" : "Saving Ship Spotlight…", "");
     try {
       const response = await fetch(SAVE_ENDPOINT, {
         method: "POST",
@@ -98,12 +136,21 @@
       if (!response.ok || data.success === false) {
         throw new Error(data.error || `Save failed (HTTP ${response.status})`);
       }
-      setStatus(body.publication_status === "published" ? "Published successfully." : "Saved successfully.", "success");
+      setStatus(
+        body.publication_status === "published"
+          ? "Saved successfully. Latest changes replaced the previous saved version and the public Ship Spotlight is published."
+          : "Saved successfully. Latest changes replaced the previous saved version.",
+        "success"
+      );
+      setSaveButtonState(button, "success");
       return data.spotlight || true;
     } catch (error) {
       console.error("Ship Spotlight save failed", error);
       setStatus(`Save failed: ${error?.message || String(error)}`, "error");
+      setSaveButtonState(button, "error");
       return false;
+    } finally {
+      saveInFlight = false;
     }
   }
 
@@ -268,7 +315,7 @@
       if (text === "Save Spotlight") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        saveViaServer();
+        saveViaServer(button);
       }
     }, true);
 
