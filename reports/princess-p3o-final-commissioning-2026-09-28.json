@@ -6,9 +6,9 @@
   "repository": {
     "starting_sha": "bd3bf20c1625bbd5e6bd914bf92aabd96cc315e3",
     "idempotency_sha": "7d9580a5fa29ac9a234b3595daa65ea34009246f",
-    "parity_sha": "pending_parity_commit",
+    "parity_sha": "15d48c40582f5bd6bd7bdf7eaa2b5a0c29b7dc22",
     "cutover_sha": null,
-    "final_sha": null,
+    "final_sha": "15d48c40582f5bd6bd7bdf7eaa2b5a0c29b7dc22",
     "production_deploy_sha": "6ab9f9239419130009119f34",
     "production_deploy_commit_at_start": "bd3bf20c1625bbd5e6bd914bf92aabd96cc315e3",
     "branch": "main"
