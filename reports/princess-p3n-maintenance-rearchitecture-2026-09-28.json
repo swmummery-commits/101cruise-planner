@@ -8,7 +8,7 @@
     "accounting_fix_sha": "90bd1b83093942f5919ab3e810fdd82675666a8a",
     "planner_remap_sha": "90bd1b83093942f5919ab3e810fdd82675666a8a",
     "scheduler_control_plane_sha": "ff0b88e5b806dc898e8e71cb96e82f0b68375dad",
-    "final_sha": "pending_report_commit",
+    "final_sha": "fab35e53d197c19087420f51ffa91f797a642555",
     "deployed_sha": null,
     "branch": "main"
   },
