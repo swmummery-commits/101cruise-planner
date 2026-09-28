@@ -590,6 +590,8 @@ async function handleLeasedWeeklyCron(event, {
   const triggerType = resolveTriggerType(event, body);
   const dispatchId =
     extraDispatchArgs.dispatchId ||
+    body.dispatch_id ||
+    body.dispatchId ||
     `${String(lineSlug || "weekly").replace(/[^a-z0-9]+/gi, "-")}-dispatch-${new Date()
       .toISOString()
       .replace(/[:.]/g, "-")}`;
