@@ -1,0 +1,183 @@
+{
+  "phase": "P3N",
+  "title": "Full Princess weekly maintenance re-architecture",
+  "generated_at": "2026-09-28T05:20:00.000Z",
+  "timezone": "Australia/Perth",
+  "repository": {
+    "starting_sha": "a31881f119f8ca9323a18b971727f3ee93b5cebc",
+    "accounting_fix_sha": "90bd1b83093942f5919ab3e810fdd82675666a8a",
+    "planner_remap_sha": "90bd1b83093942f5919ab3e810fdd82675666a8a",
+    "scheduler_control_plane_sha": "ff0b88e5b806dc898e8e71cb96e82f0b68375dad",
+    "final_sha": "pending_report_commit",
+    "deployed_sha": null,
+    "branch": "main"
+  },
+  "incident": {
+    "github_run_id": "36359461835",
+    "job_id": "108733609415",
+    "workflow": "Princess Weekly Maintenance (APPLY)",
+    "event": "schedule",
+    "head_sha": "a31881f119f8ca9323a18b971727f3ee93b5cebc",
+    "github_conclusion": "failure",
+    "maintenance_step": "Run Princess weekly maintenance apply",
+    "maintenance_step_conclusion": "success",
+    "artifact_step": "Upload apply report artifact",
+    "artifact_step_conclusion": "failure",
+    "artifact_error": "Failed to CreateArtifact: 403 Forbidden: job is completed",
+    "maintenance_terminal_state": "review_required",
+    "central_run_id": "347d47ad-387d-44f0-ada8-9ebd55098a7c",
+    "run_id": "princess-cruises-weekly-2026-09-27T23-55-07-887Z",
+    "material_writes": 0,
+    "failed_writes": 0,
+    "inventory_changed": false,
+    "schedule_delay_minutes": 175,
+    "expected_slot": "2026-09-27T21:00:00Z",
+    "actual_maintenance_start": "2026-09-27T23:55:05Z",
+    "old_github_apply_rerun": false
+  },
+  "source_today": {
+    "official_source_groups": 974,
+    "expanded_dated_sailings": 1997,
+    "within_public_cutoff": 56,
+    "eligible": 1941,
+    "source_accounting": "EXACT",
+    "accounting_delta": 0,
+    "ship_resolution": "100%",
+    "departure_port_resolution": "100%",
+    "destination_resolution": "100%",
+    "identity_coverage": "100%",
+    "duplicate_official_identities": 0,
+    "snapshot": "ad35440b1d5cb770064764184c470d09b2a48bb89966bddbf3b238bdbea2f713"
+  },
+  "accounting": {
+    "active_production": 1951,
+    "recognised_eligible_source_skip": 1928,
+    "unique_source_absent_after_dedupe": 13,
+    "source_absent_array_length_before": 16,
+    "duplicate_source_absence_entries": [
+      "SFS33A|MJ|2026-11-19",
+      "SBS15A|MJ|2026-12-07",
+      "SSB15C|MJ|2026-12-22"
+    ],
+    "unexplained_rows_before": 7,
+    "unexplained_uuids_before_explanation": "Count artefact: 1951 - 1928 recognised - 16 double-counted source-absent = 7. The 7 were the 10 safe-update UUIDs minus the 3 extra duplicate source-absent counts. Unique source-absent UUIDs were 13, of which 3 were the remap old IDs.",
+    "unexplained_rows_after": 0,
+    "canonical_accounting": "PASS",
+    "post_apply_counts": {
+      "RECOGNISED_ELIGIBLE": 1941,
+      "DETERMINISTIC_IDENTITY_REMAP": 0,
+      "SOURCE_ABSENT_RETAINED": 10,
+      "DAILY_EXPIRY_MANAGED": 0,
+      "LEGACY_EXPLAINED": 0,
+      "REVIEW_REQUIRED": 0,
+      "UNEXPLAINED": 0
+    }
+  },
+  "identity": {
+    "SF_2026_11_19": {
+      "production": "SFS33A|MJ|2026-11-19",
+      "source": "SFV33A|MJ|2026-11-19",
+      "uuid": "b34d0183-f99e-47c1-b36c-f1171e341dfb",
+      "classification": "DETERMINISTIC_REMAP",
+      "identity_core_equal": true
+    },
+    "SB_2026_12_07": {
+      "production": "SBS15A|MJ|2026-12-07",
+      "source": "SBV15A|MJ|2026-12-07",
+      "uuid": "56e9cd80-d512-40e3-9681-1e45827162ee",
+      "classification": "DETERMINISTIC_REMAP",
+      "identity_core_equal": true
+    },
+    "VB_2026_12_22": {
+      "production": "SSB15C|MJ|2026-12-22",
+      "source": "SVB15A|MJ|2026-12-22",
+      "uuid": "db05e125-e305-4022-aa69-c74077def4fe",
+      "classification": "DETERMINISTIC_REMAP",
+      "identity_core_equal": true
+    },
+    "deterministic_remaps": 3,
+    "ambiguous_remaps": 0
+  },
+  "safe_plan": {
+    "normal_safe_updates": 10,
+    "true_inserts": 0,
+    "safe_remaps": 3,
+    "review_items_before_apply": 3,
+    "safe_lane_can_run_independently": "YES",
+    "safe_updates": [
+      { "uuid": "239ee10d-cbec-46be-9d52-225eefa60f13", "official_id": "ZSA06E|AP|2027-04-02", "field": "itinerary", "before": "Southern Australia Explorer", "after": "Southern Australia Adventure", "classification": "SAFE_METADATA" },
+      { "uuid": "11dc7026-618d-4277-ad19-6807cf9b33f1", "official_id": "ZSA05C|KP|2026-11-04", "field": "itinerary", "before": "Australia Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" },
+      { "uuid": "71552a29-45bb-42a6-856e-8f094fe60b7a", "official_id": "ZSR04E|RP|2026-12-18", "field": "itinerary", "before": "Sapphire Coast Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" },
+      { "uuid": "ce2c7859-07ae-497f-8fcb-9970d50d37ce", "official_id": "ZSR03C|RP|2027-03-25", "field": "itinerary", "before": "Sapphire Coast Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" },
+      { "uuid": "3982c1c7-992c-4401-bcd7-2837efd6d744", "official_id": "ZSR03C|RP|2028-03-11", "field": "itinerary", "before": "Sapphire Coast Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" },
+      { "uuid": "5bfa8c68-7a1d-4057-b39e-7478aa94c9bb", "official_id": "ZSA05D|RP|2027-03-28", "field": "itinerary", "before": "Australia Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" },
+      { "uuid": "71901d38-ac5b-415f-a84c-e8593d8b69e3", "official_id": "ZSA06B|AP|2028-03-02", "field": "itinerary", "before": "Southern Australia Seacation", "after": "Southern Australia Adventure", "classification": "SAFE_METADATA" },
+      { "uuid": "47cce585-389a-4f08-9a10-e5c91fa10b1a", "official_id": "IAY25A|RP|2028-04-01", "field": "itinerary", "before": "Tahiti, Hawaii & South Pacific Crossing", "after": "Hawaii & South Pacific Crossing", "classification": "SAFE_METADATA" },
+      { "uuid": "4773d53f-b7e1-43cc-9da2-4351fdd937cb", "official_id": "IAL20A|RP|2028-04-01", "field": "itinerary", "before": "Tahiti, Hawaii & South Pacific Crossing", "after": "Hawaii & South Pacific Crossing", "classification": "SAFE_METADATA" },
+      { "uuid": "09d24fdc-d2b2-4cd9-875b-5b418da49946", "official_id": "ZSA05F|AP|2028-06-17", "field": "itinerary", "before": "Australia Seacation", "after": "New Zealand Seacation", "classification": "SAFE_METADATA" }
+    ]
+  },
+  "source_snapshots": {
+    "A": {
+      "eligible": 1941,
+      "hash": "ad35440b1d5cb770064764184c470d09b2a48bb89966bddbf3b238bdbea2f713"
+    },
+    "B": {
+      "eligible": 1941,
+      "hash": "ad35440b1d5cb770064764184c470d09b2a48bb89966bddbf3b238bdbea2f713"
+    },
+    "reproducible": true,
+    "netlify_vs_mac_parity": "NOT_PROVEN_FROM_NETLIFY_RUNTIME",
+    "note": "Two local uncached harvests were identical. Netlify runtime harvest was not executed this phase, so GitHub remains the single scheduled owner."
+  },
+  "architecture": {
+    "chosen_scheduler": "GITHUB_UNTIL_NETLIFY_HARVEST_PROOF",
+    "intended_next_scheduler": "NETLIFY_FULL",
+    "github_scheduled_cron_disabled": false,
+    "single_scheduler_proven": true,
+    "artifact_failure_non_authoritative": true,
+    "central_report_persistence": true,
+    "phases": ["SOURCE_FREEZE", "RECONCILIATION_PLAN", "BOUNDED_APPLY", "FINALISE"],
+    "outcomes": ["completed", "completed_with_review", "review_required_blocked", "failed"],
+    "cutover_blockers": [
+      "read-only Netlify harvest parity not proven",
+      "dispatch proof not run against production Netlify",
+      "zero-write Netlify rehearsal not run"
+    ]
+  },
+  "w40": {
+    "controlled_safe_writes": 13,
+    "remap_writes": 3,
+    "failed_write_attempts": 2,
+    "failed_writes_inventory_effect": "none — retries against already-applied itinerary rows",
+    "rollback_manifests": ["ba672f2a-e529-4242-a2e7-426cbd690b28"],
+    "remaining_reviews": 0,
+    "final_proposed_safe_changes": 0,
+    "final_unexplained": 0,
+    "final_princess_classification": "completed",
+    "partial_write_runs": ["6d95338f-3b09-4966-acd9-6e98ee04c628", "e5edfb6d-05e2-43df-9a43-b7a18306f201"],
+    "old_github_apply_rerun": false,
+    "uuid_preservation": {
+      "b34d0183-f99e-47c1-b36c-f1171e341dfb": "SFS33A|MJ|2026-11-19 -> SFV33A|MJ|2026-11-19",
+      "56e9cd80-d512-40e3-9681-1e45827162ee": "SBS15A|MJ|2026-12-07 -> SBV15A|MJ|2026-12-07",
+      "db05e125-e305-4022-aa69-c74077def4fe": "SSB15C|MJ|2026-12-22 -> SVB15A|MJ|2026-12-22"
+    }
+  },
+  "system": {
+    "public_booking_cutoff_days": 21,
+    "source_absence_policy_changed": false,
+    "write_cap": 30,
+    "write_cap_changed": false,
+    "partial_write_run": true,
+    "tests": {
+      "princess_p3n_rearchitecture": "25 passed",
+      "princess_weekly_maintenance": "77 passed",
+      "princess_p3m_post_write_lifecycle": "31 passed",
+      "princess_accepted_baseline_lifecycle": "32 passed",
+      "princess_source_failure": "17 passed",
+      "princess_official_id_remap": "8 passed",
+      "princess_catch_up_batch": "21 passed",
+      "weekly_maintenance_reliability_p0": "99 passed"
+    }
+  }
+}
