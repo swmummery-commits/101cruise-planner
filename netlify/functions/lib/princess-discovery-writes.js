@@ -324,6 +324,7 @@ async function applyPrincessBatchWritesBody({
   supabase,
   destinations,
   performWrites = true,
+  stopOnFirstFailure = false,
   maintenanceTrace = null
 }) {
   const stats = {
@@ -354,7 +355,11 @@ async function applyPrincessBatchWritesBody({
     }
 
     const recognition = indexes ? recognisePrincessExisting(indexes, row, cruiseLine) : { existing: null };
-    const existing = recognition.existing || null;
+    const plannedExisting =
+      row.weekly_planned_action === "remap_official_id_allowed" && row.existing_record_match
+        ? (indexes?.rows || []).find((item) => item.id === row.existing_record_match) || null
+        : null;
+    const existing = plannedExisting || recognition.existing || null;
     const action = classifyProposedAction(row, existing, recognition);
     if (action === "duplicate_skip") {
       stats.duplicate_skips += 1;
@@ -364,7 +369,7 @@ async function applyPrincessBatchWritesBody({
       stats.invalid_skips += 1;
       continue;
     }
-    if (action === "update_identity_review_required") {
+    if (action === "update_identity_review_required" && row.weekly_planned_action !== "remap_official_id_allowed") {
       stats.invalid_skips += 1;
       continue;
     }
@@ -386,11 +391,46 @@ async function applyPrincessBatchWritesBody({
         proposed_action: action,
         error: validationError.message || String(validationError)
       });
-      if (params.stopOnFirstFailure) break;
+      if (stopOnFirstFailure) break;
       continue;
     }
 
     if (!performWrites) continue;
+
+    if (row.weekly_planned_action === "remap_official_id_allowed" && existing) {
+      const { applyPrincessOfficialIdRemap } = require("./princess-official-id-remap");
+      const remapResult = await applyPrincessOfficialIdRemap(supabase, {
+        existingRow: existing,
+        insert: candidate,
+        cruiseLineId: cruiseLine.id,
+        runId,
+        productionRows: indexes?.rows || [existing]
+      });
+      if (!remapResult.ok) {
+        stats.failed += 1;
+        stats.write_details.push({
+          princess_sailing_id: candidate.official_sailing_id,
+          proposed_action: "remap_official_id_allowed",
+          error: remapResult.reason || "remap_failed",
+          discovered_cruise_id: existing.id
+        });
+        if (stopOnFirstFailure) break;
+        continue;
+      }
+      writesRemaining -= 1;
+      stats.updated += 1;
+      stats.write_details.push({
+        discovered_cruise_id: remapResult.discovered_cruise_id,
+        princess_sailing_id: remapResult.official_sailing_id,
+        previous_official_sailing_id: remapResult.previous_official_sailing_id,
+        proposed_action: "remap_official_id_allowed",
+        result_action: "updated",
+        created: false,
+        uuid_preserved: true,
+        rollback_before: remapResult.rollback_before
+      });
+      continue;
+    }
 
     try {
       const before = existing ? snapshotRecordForRollback(existing) : null;
@@ -446,7 +486,7 @@ async function applyPrincessBatchWritesBody({
         proposed_action: action,
         error: msg
       });
-      if (params.stopOnFirstFailure) {
+      if (stopOnFirstFailure) {
         break;
       }
     }

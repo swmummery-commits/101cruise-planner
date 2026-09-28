@@ -313,11 +313,22 @@ function validatePostWriteReconciliation(postWriteSummary) {
       proposed_updates: proposedUpdates
     };
   }
-  if (identityReviews !== 0) {
+  const unexplainedCanonical = Number(postWriteSummary.unexplained_active_rows);
+  const unexplainedOk =
+    postWriteSummary.unexplained_active_ok === true ||
+    (Number.isFinite(unexplainedCanonical) && unexplainedCanonical === 0);
+  if (identityReviews !== 0 && !unexplainedOk && postWriteSummary.canonical_accounting_exact !== true) {
     return {
       ok: false,
       reason: "post_write_unexpected_identity_reviews",
       proposed_identity_review_updates: identityReviews
+    };
+  }
+  if (postWriteSummary.unexplained_active_ok === false) {
+    return {
+      ok: false,
+      reason: "post_write_unexplained_active_rows",
+      unexplained_active_rows: postWriteSummary.unexplained_active_rows
     };
   }
   const activeAccounting = explainPrincessActiveProduction({
@@ -565,6 +576,17 @@ function resolveWeeklyMaintenanceStatus({
   postWriteVerification,
   writesPerformed = 0
 }) {
+  const declaredTerminal =
+    executeResult?.terminal_status ||
+    maintenanceResult?.terminal_status ||
+    executeResult?.summary?.terminal_status ||
+    maintenanceResult?.summary?.terminal_status ||
+    null;
+  if (declaredTerminal === "completed_with_review") return "completed_with_review";
+  if (declaredTerminal === "review_required_blocked") return "review_required_blocked";
+  if (executeResult?.review_required === true && (executeResult?.summary?.inserts > 0 || executeResult?.summary?.updates > 0 || writesPerformed > 0)) {
+    return "completed_with_review";
+  }
   if (executeResult?.review_required === true) return "review_required";
   if (maintenanceResult?.review_required === true) return "review_required";
 
@@ -620,7 +642,14 @@ function resolveWeeklyMaintenanceStatus({
 
 function resolveWeeklyMaintenanceExitCode(report) {
   if (!report) return 1;
-  if (report.status === "completed" || report.status === "review_required") return 0;
+  if (
+    report.status === "completed" ||
+    report.status === "review_required" ||
+    report.status === "completed_with_review" ||
+    report.status === "review_required_blocked"
+  ) {
+    return 0;
+  }
   if (report.status === "blocked") return 2;
   return 1;
 }
@@ -754,19 +783,28 @@ function buildGitHubJobSummary(report) {
   const statusLabel =
     report.status === "completed"
       ? "SUCCESS"
-      : report.status === "review_required"
-        ? "REVIEW REQUIRED — NO WRITES"
-        : report.status === "blocked"
-          ? "BLOCKED"
-          : "FAILED";
+      : report.status === "completed_with_review"
+        ? "COMPLETED WITH REVIEW"
+        : report.status === "review_required"
+          ? "REVIEW REQUIRED — NO WRITES"
+          : report.status === "review_required_blocked"
+            ? "REVIEW REQUIRED — PLAN BLOCKED"
+            : report.status === "blocked"
+              ? "BLOCKED"
+              : "FAILED";
   const title =
-    report.status === "review_required"
+    report.status === "review_required" || report.status === "review_required_blocked"
       ? "## Princess Weekly Maintenance — REVIEW REQUIRED"
-      : "## Princess Weekly Maintenance";
+      : report.status === "completed_with_review"
+        ? "## Princess Weekly Maintenance — COMPLETED WITH REVIEW"
+        : "## Princess Weekly Maintenance";
   const lines = [
     title,
     "",
     report.status === "review_required" ? "**Scheduled review condition — zero production writes performed.**" : null,
+    report.status === "completed_with_review"
+      ? "**Safe lane processed. Review lane remains. This is not an infrastructure failure.**"
+      : null,
     `**Trigger:** ${triggerLabel}`,
     `**Execution mode:** ${report.execution_mode || report.mode}`,
     "",

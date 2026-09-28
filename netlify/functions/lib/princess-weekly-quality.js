@@ -288,14 +288,11 @@ function evaluatePrincessWeeklyQualityGate({
   if (!accountingGate.passed) {
     failures.push(...accountingGate.failures.map((f) => `${PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE}:${f}`));
   }
-  if (performWrites && identityReviewUpdates > 0) {
-    failures.push(IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW);
-  }
 
   const blockApply =
     performWrites &&
     !skipExpansionBlock &&
-    (expansion.failures.length > 0 || !accountingGate.passed || identityReviewUpdates > 0);
+    (expansion.failures.length > 0 || !accountingGate.passed);
 
   return {
     passed: failures.length === 0,

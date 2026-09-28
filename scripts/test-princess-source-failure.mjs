@@ -297,11 +297,31 @@ tests.push(() => {
       products: [{ proposed_action: "update_identity_review_required" }]
     },
     dryRun: false,
-    simulation: { fetch_failed: false },
-    summary: {},
+    simulation: {
+      fetch_failed: false,
+      raw_sailing_count: 2112,
+      raw_group_count: 1000,
+      metrics: { expanded_dated_sailings: 2112 },
+      products: []
+    },
+    summary: {
+      eligible_total: 2042,
+      official_source_total: 1000,
+      disjoint_accounting: {
+        expanded_dated_sailings: 2112,
+        within_public_cutoff: 70,
+        public_eligible_complete: 2042,
+        public_incomplete: 0,
+        other_excluded: 0,
+        accounted_total: 2112,
+        accounting_delta: 0,
+        accounting_exact: true
+      }
+    },
     performWrites: true
   });
-  if (gate.auto_apply_permitted) throw new Error("identity review updates must block auto apply");
+  if (!gate.auto_apply_permitted) throw new Error("identity review must not block unrelated safe-lane apply");
+  if (!gate.review_required) throw new Error("identity review must still be flagged");
 });
 
 tests.push(async () => {

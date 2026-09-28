@@ -69,12 +69,14 @@ function mergeFlattenedWriteStats(summary = {}) {
 
 const DELIBERATE_NON_WRITING_TERMINALS = Object.freeze([
   "review_required",
+  "review_required_blocked",
   "source_repair_required",
   "source_unstable",
   "read_only",
   "controlled_catchup_required",
   "not_yet_commissioned",
-  "disabled"
+  "disabled",
+  "source_worker_not_started"
 ]);
 
 const FAILED_TERMINALS = Object.freeze(["failed_before_writes", "partial_write_failure"]);
@@ -158,10 +160,12 @@ function resolveWeeklyTerminalStatus({
     disabled
   });
   if (already_running || reason === "maintenance_lock_held") return "completed";
+  if (declared === "completed_with_review") return "completed_with_review";
   if (declared && isDeliberateNonWritingTerminal(declared) && flat.committed_material_writes === 0) {
     return declared;
   }
-  if (review_required && flat.committed_material_writes === 0) return "review_required";
+  if (review_required && flat.committed_material_writes > 0) return "completed_with_review";
+  if (review_required && flat.committed_material_writes === 0) return declared === "review_required_blocked" ? "review_required_blocked" : "review_required";
   if (!ok && flat.committed_material_writes > 0) return "partial_write_failure";
   if (!ok && flat.committed_material_writes === 0 && !declared) return "failed_before_writes";
   if (
@@ -178,7 +182,13 @@ function resolveWeeklyTerminalStatus({
 }
 
 function resolveLedgerRunStatus(terminalStatus) {
-  if (terminalStatus === "completed" || terminalStatus === "completed_with_staged_rows") return "completed";
+  if (
+    terminalStatus === "completed" ||
+    terminalStatus === "completed_with_staged_rows" ||
+    terminalStatus === "completed_with_review"
+  ) {
+    return "completed";
+  }
   if (isDeliberateNonWritingTerminal(terminalStatus)) return "completed";
   return "failed";
 }

@@ -95,6 +95,16 @@ const {
   publicBookingMinimumDepartureDate
 } = require("./public-discovered-cruise-inventory");
 const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
+const {
+  dedupeSourceAbsentByUuid,
+  partitionPrincessActiveProduction,
+  assertPrincessCanonicalAccounting
+} = require("./princess-canonical-reconciliation");
+const { classifyPrincessIdentityRemap } = require("./princess-deterministic-remap");
+const { buildPrincessWeeklyLanes, freezePrincessMaterialPlan } = require("./princess-weekly-lanes");
+const { resolvePrincessWeeklyOutcome } = require("./princess-weekly-outcome");
+const { persistPrincessRemapHistory } = require("./princess-identity-remap-history");
+const { applyPrincessOfficialIdRemap } = require("./princess-official-id-remap");
 const { buildSeabournReconciliationSummary } = require("./seabourn-reconciliation-summary");
 const {
   classifySeabournSourceAbsence,
@@ -137,6 +147,24 @@ const SEABOURN_MAX_WEEKLY_WRITES = Math.max(
   Number(process.env.SEABOURN_MAX_WEEKLY_WRITES) || 30
 );
 const WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP = "weekly_change_volume_exceeds_initial_cap";
+
+async function loadPrincessActiveProductionRows(supabase, cruiseLineId) {
+  const rows = [];
+  let offset = 0;
+  const pageSize = 500;
+  const select =
+    "id,official_sailing_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,external_key,identity_key,status,official_url,itinerary";
+  while (true) {
+    const batch = await supabase(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&status=eq.active&select=${select}&order=id.asc&limit=${pageSize}&offset=${offset}`
+    );
+    if (!batch?.length) break;
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
 
 async function loadActiveProductionTotal(supabase, cruiseLineId, lineSlug) {
   if (lineSlug === "celebrity-cruises") {
@@ -483,7 +511,15 @@ async function findSourceAbsentActive({ supabase, cruiseLineId, eligibleKeys, to
       });
     }
   }
-  return absent;
+  const seen = new Set();
+  const unique = [];
+  for (const row of absent) {
+    const uuid = String(row.discovered_cruise_id || "").trim();
+    if (!uuid || seen.has(uuid)) continue;
+    seen.add(uuid);
+    unique.push(row);
+  }
+  return unique;
 }
 
 async function runHalWeeklyMaintenance(context = {}) {
@@ -1104,14 +1140,17 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       (p) => p.proposed_action === "update_identity_review_required"
     );
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
+    const existingRecords = manifest.existing_records || [];
     delete manifest.existing_records;
-    const sourceAbsent = await findSourceAbsentActive({
+    const sourceAbsentRaw = await findSourceAbsentActive({
       supabase: sb,
       cruiseLineId: line.id,
       eligibleKeys,
       today,
       officialProductKeyFn: (raw) => princessOfficialProductKey(raw)
     });
+    const sourceAbsentDedupe = dedupeSourceAbsentByUuid(sourceAbsentRaw);
+    const sourceAbsent = sourceAbsentDedupe.unique;
 
     const princessAccountingInputs = {
       official_source_total: simulation.num_found_official || simulation.raw_group_count || null,
@@ -1153,17 +1192,139 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     const sourceAccounting = extractPrincessSourceAccounting(simulation, princessAccountingInputs);
 
     const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
-    const activeProductionTotal = await loadActiveProductionTotal(sb, line.id, lineSlug);
+    const activeRows = await loadPrincessActiveProductionRows(sb, line.id);
+    const activeProductionTotal = activeRows.length;
+    const eligibleOfficialIds = Array.from(eligibleKeys);
+    const snapshotAOfficialIds = context.snapshotAOfficialIds || context.snapshot_a_official_ids || null;
+    const snapshotBOfficialIds = context.snapshotBOfficialIds || context.snapshot_b_official_ids || eligibleOfficialIds;
+    const sourceCandidates = (manifest.products || [])
+      .filter((entry) => entry.completeness === "complete_high_confidence")
+      .map((entry) => ({
+        official_sailing_id: entry.official_princess_sailing_id || entry.candidate?.official_sailing_id,
+        ship_id: entry.canonical_ship_id || entry.candidate?.ship_id,
+        departure_date: entry.departure_date || entry.candidate?.departure_date,
+        return_date: entry.return_date || entry.candidate?.return_date,
+        nights: entry.nights ?? entry.candidate?.nights,
+        departure_port: entry.canonical_departure_port || entry.candidate?.departure_port,
+        destination_id: entry.destination_id || entry.candidate?.destination_id,
+        external_key: entry.candidate?.external_key,
+        identity_key: entry.candidate?.identity_key,
+        itinerary: entry.candidate?.itinerary
+      }));
+
+    const remapClassifications = [];
+    for (const row of sourceAbsent) {
+      const productionRow = existingRecords.find((item) => item.id === row.discovered_cruise_id)
+        || activeRows.find((item) => item.id === row.discovered_cruise_id);
+      if (!productionRow) continue;
+      const classified = classifyPrincessIdentityRemap({
+        productionRow,
+        sourceCandidates,
+        productionRows: activeRows,
+        snapshotAOfficialIds,
+        snapshotBOfficialIds
+      });
+      if (classified.classification === "NOT_SAME_VOYAGE" && classified.reason === "no_voyage_equivalent_source_candidate") {
+        continue;
+      }
+      remapClassifications.push(classified);
+      const sourceEntry = (manifest.products || []).find(
+        (entry) =>
+          (entry.official_princess_sailing_id || entry.candidate?.official_sailing_id) ===
+          classified.new_official_sailing_id
+      );
+      if (sourceEntry && classified.classification === "DETERMINISTIC_REMAP") {
+        sourceEntry.proposed_action = "remap_official_id_allowed";
+        sourceEntry.recognition_classification = "DETERMINISTIC_REMAP";
+        sourceEntry.existing_record_match = classified.production_uuid;
+        sourceEntry.weekly_planned_action = "remap_official_id_allowed";
+      }
+    }
+    const deterministicRemaps = remapClassifications.filter((row) => row.classification === "DETERMINISTIC_REMAP");
+    const reviewRemaps = remapClassifications.filter((row) =>
+      ["AMBIGUOUS_REMAP", "TRUE_IDENTITY_CHANGE"].includes(row.classification)
+    );
+    const proposedSafeUpdatesNow = (manifest.products || []).filter(
+      (p) => p.proposed_action === "update_safe_metadata_allowed"
+    );
+    const proposedIdentityReviewNow = (manifest.products || []).filter(
+      (p) => p.proposed_action === "update_identity_review_required"
+    );
+    const proposedRemapsNow = (manifest.products || []).filter(
+      (p) => p.proposed_action === "remap_official_id_allowed"
+    );
+    const recognisedUuids = [
+      ...unchanged.map((p) => p.existing_record_match),
+      ...proposedSafeUpdatesNow.map((p) => p.existing_record_match),
+      ...proposedUpdates.map((p) => p.existing_record_match)
+    ].filter(Boolean);
+    const reviewUuids = [
+      ...proposedIdentityReviewNow.map((p) => p.existing_record_match),
+      ...reviewRemaps.map((row) => row.production_uuid)
+    ].filter(Boolean);
+    const canonical = partitionPrincessActiveProduction({
+      activeRows,
+      eligibleOfficialIds,
+      recognisedUuids,
+      deterministicRemapUuids: deterministicRemaps.map((row) => row.production_uuid),
+      reviewUuids,
+      sourceAbsentUuids: sourceAbsent.map((row) => row.discovered_cruise_id),
+      today
+    });
+    const canonicalGate = assertPrincessCanonicalAccounting(canonical);
+    const weeklyLanes = buildPrincessWeeklyLanes({
+      safeInserts: proposedInserts.map((p) => ({
+        official_sailing_id: p.official_princess_sailing_id,
+        action: "insert_active"
+      })),
+      safeUpdates: proposedSafeUpdatesNow.map((p) => ({
+        official_sailing_id: p.official_princess_sailing_id,
+        discovered_cruise_id: p.existing_record_match,
+        action: "update_safe_metadata_allowed"
+      })),
+      deterministicRemaps: proposedRemapsNow.map((p) => ({
+        official_sailing_id: p.official_princess_sailing_id,
+        discovered_cruise_id: p.existing_record_match,
+        action: "remap_official_id_allowed"
+      })),
+      reviewItems: [
+        ...proposedIdentityReviewNow.map((p) => ({
+          official_sailing_id: p.official_princess_sailing_id,
+          discovered_cruise_id: p.existing_record_match,
+          action: "update_identity_review_required"
+        })),
+        ...reviewRemaps
+      ],
+      unexplainedUuids: canonical.uuid_lists.UNEXPLAINED,
+      sourceHealthPass: qualityGate.passed === true,
+      sourceAccountingExact: sourceAccounting.accounting_exact === true,
+      canonicalAccountingExact: canonicalGate.ok === true
+    });
+    const frozenPlan = freezePrincessMaterialPlan(weeklyLanes, { snapshot_id: snapshotId });
     const reconciliation = buildPrincessReconciliationSummary({
       activeProductionTotal,
       eligibleTotal: metrics.eligible_total,
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
-      proposedUpdates: proposedUpdates.length + proposedSafeUpdates.length,
-      proposedIdentityReviewUpdates: proposedIdentityReviewUpdates.length,
-      sourceAbsentActive: sourceAbsent.length,
+      proposedUpdates: proposedSafeUpdatesNow.length + proposedUpdates.length + proposedRemapsNow.length,
+      proposedIdentityReviewUpdates: proposedIdentityReviewNow.length,
+      sourceAbsentActive: canonical.counts.SOURCE_ABSENT_RETAINED,
+      dailyExpiryManaged: canonical.counts.DAILY_EXPIRY_MANAGED,
+      otherExplainedNonEligibleActive:
+        Math.max(0, canonical.counts.RECOGNISED_ELIGIBLE - unchanged.length) +
+        canonical.counts.DETERMINISTIC_IDENTITY_REMAP +
+        canonical.counts.REVIEW_REQUIRED +
+        canonical.counts.LEGACY_EXPLAINED,
       writesExecuted: 0
     });
+    reconciliation.canonical_partition = {
+      counts: canonical.counts,
+      uuid_lists: canonical.uuid_lists,
+      accounting_exact: canonical.accounting_exact,
+      unexplained_ok: canonical.unexplained_ok
+    };
+    reconciliation.unexplained_active_rows = canonical.unexplained_count;
+    reconciliation.unexplained_active_ok = canonical.unexplained_ok;
 
     const summary = {
       line_slug: lineSlug,
@@ -1177,10 +1338,10 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       proposed_inserts: proposedInserts.length,
       insert_classification_counts: princessInsertClassification.counts,
       insert_classification_total: princessInsertClassification.total,
-      proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
-      proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
-      proposed_updates_safe_metadata: proposedSafeUpdates.length,
-      identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
+      proposed_updates: proposedSafeUpdatesNow.length + proposedUpdates.length + proposedRemapsNow.length,
+      proposed_updates_identity_review: proposedIdentityReviewNow.length,
+      proposed_updates_safe_metadata: proposedSafeUpdatesNow.length,
+      identity_review_sailing_ids: proposedIdentityReviewNow.map(
         (p) => p.official_princess_sailing_id || p.stable_identity_key
       ),
       duplicate_match_items: princessInsertClassification.counts.MULTIPLE_PRODUCTION_MATCHES || 0,
@@ -1188,8 +1349,28 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
-      source_absent_active: sourceAbsent.length,
-      source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      source_absent_active: canonical.counts.SOURCE_ABSENT_RETAINED,
+      source_absent_sailing_ids: canonical.buckets.SOURCE_ABSENT_RETAINED.map((r) => r.official_sailing_id),
+      source_absent_duplicate_entries: sourceAbsentDedupe.duplicate_entries,
+      canonical_active_counts: canonical.counts,
+      canonical_active_uuid_lists: canonical.uuid_lists,
+      canonical_accounting_exact: canonical.accounting_exact,
+      unexplained_active_rows: canonical.unexplained_count,
+      unexplained_active_ok: canonical.unexplained_ok,
+      remap_classifications: remapClassifications,
+      weekly_lanes: {
+        safe_count: weeklyLanes.safe_count,
+        review_count: weeklyLanes.review_count,
+        can_run_safe_lane: weeklyLanes.can_run_safe_lane,
+        blocked_reason: weeklyLanes.blocked_reason
+      },
+      frozen_plan: frozenPlan,
+      frozen_source: {
+        snapshot_id: snapshotId,
+        eligible_count: eligibleOfficialIds.length,
+        official_ids: eligibleOfficialIds
+      },
+      phase: performWrites ? "C" : "B",
       reconciliation_arithmetic_ok: reconciliation.reconciliation_arithmetic_ok,
       all_active_recognised_in_eligible_source: reconciliation.all_active_recognised_in_eligible_source,
       cruisetours_excluded: princessAccountingInputs.disjoint_accounting.other_excluded,
@@ -1233,19 +1414,27 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       };
     }
 
-    if (proposedIdentityReviewUpdates.length > 0) {
+    if (!canonical.unexplained_ok) {
+      const blockedOutcome = resolvePrincessWeeklyOutcome({
+        sourceHealthy: qualityGate.passed === true,
+        sourceAccountingExact: sourceAccounting.accounting_exact === true,
+        canonicalAccountingExact: false,
+        unexplainedCount: canonical.unexplained_count,
+        safeLaneProcessed: false,
+        reviewCount: weeklyLanes.review_count,
+        writesVerified: true
+      });
       return {
-        ok: false,
+        ok: true,
         blocked: false,
         failed: false,
         review_required: true,
-        reason: "identity_critical_updates_require_review",
+        terminal_status: blockedOutcome.outcome,
+        reason: "unexplained_active_rows",
         summary: {
           ...summary,
-          proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
-          identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
-            (p) => p.official_princess_sailing_id || p.stable_identity_key
-          )
+          terminal_status: blockedOutcome.outcome,
+          review_required: true
         },
         simulation,
         manifest
@@ -1253,13 +1442,52 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     }
 
     if (dryRun || !performWrites) {
-      return { ok: true, dry_run: true, summary, manifest, simulation };
+      const readOutcome = resolvePrincessWeeklyOutcome({
+        sourceHealthy: qualityGate.passed === true,
+        sourceAccountingExact: sourceAccounting.accounting_exact === true,
+        canonicalAccountingExact: canonical.accounting_exact === true,
+        unexplainedCount: canonical.unexplained_count,
+        safeLaneProcessed: true,
+        reviewCount: weeklyLanes.review_count,
+        writesVerified: true
+      });
+      return {
+        ok: true,
+        dry_run: true,
+        review_required: weeklyLanes.review_count > 0,
+        terminal_status: readOutcome.outcome,
+        summary: { ...summary, terminal_status: readOutcome.outcome },
+        manifest,
+        simulation
+      };
+    }
+
+    if (!weeklyLanes.can_run_safe_lane) {
+      const blockedOutcome = resolvePrincessWeeklyOutcome({
+        sourceHealthy: qualityGate.passed === true,
+        sourceAccountingExact: sourceAccounting.accounting_exact === true,
+        canonicalAccountingExact: canonicalGate.ok === true,
+        unexplainedCount: canonical.unexplained_count,
+        safeLaneProcessed: false,
+        reviewCount: weeklyLanes.review_count,
+        writesVerified: true
+      });
+      return {
+        ok: blockedOutcome.outcome !== "failed",
+        blocked: false,
+        failed: blockedOutcome.outcome === "failed",
+        review_required: true,
+        terminal_status: blockedOutcome.outcome,
+        reason: weeklyLanes.blocked_reason,
+        summary: { ...summary, terminal_status: blockedOutcome.outcome },
+        simulation,
+        manifest
+      };
     }
 
     const isWeeklyMaintenanceWrite =
       (context.writeMode || context.write_mode || "weekly_maintenance") === "weekly_maintenance";
-    const combinedProposed =
-      proposedInserts.length + proposedUpdates.length + proposedSafeUpdates.length;
+    const combinedProposed = weeklyLanes.safe_count;
     const effectiveMaxWrites = isWeeklyMaintenanceWrite
       ? Math.min(maxWrites, MAX_WEEKLY_WRITES)
       : maxWrites;
@@ -1323,12 +1551,23 @@ async function runPrincessWeeklyMaintenance(context = {}) {
         );
         if (!entry) return false;
         if (insertOnly && entry.proposed_action !== "insert_active") return false;
-        return ["insert_active", "update_safe_metadata_allowed"].includes(entry.proposed_action);
+        return ["insert_active", "update_safe_metadata_allowed", "remap_official_id_allowed"].includes(
+          entry.proposed_action
+        );
       })
       .sort((a, b) => {
         const ka = princessOfficialProductKey(a.raw) || "";
         const kb = princessOfficialProductKey(b.raw) || "";
         return ka.localeCompare(kb);
+      })
+      .map((row) => {
+        const official = princessOfficialProductKey(row.raw);
+        const entry = manifest.products.find((p) => p.stable_identity_key === official);
+        return {
+          ...row,
+          weekly_planned_action: entry?.proposed_action || null,
+          existing_record_match: entry?.existing_record_match || null
+        };
       });
 
     if (frozenIds.size) {
@@ -1452,9 +1691,41 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       (writeResult.stats?.duplicate_skips || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
     summary.rollback_manifest_id = rollbackPersist.manifest_record_id || null;
+    const remapDetails = (writeResult.stats?.write_details || []).filter(
+      (detail) => detail.proposed_action === "remap_official_id_allowed" && detail.discovered_cruise_id
+    );
+    for (const detail of remapDetails) {
+      await persistPrincessRemapHistory(sb, {
+        discoveredCruiseId: detail.discovered_cruise_id,
+        oldOfficialSailingId: detail.previous_official_sailing_id,
+        newOfficialSailingId: detail.princess_sailing_id,
+        runRecordId,
+        runId,
+        cruiseLineId: line.id,
+        rollbackManifestId: rollbackPersist.manifest_record_id || null,
+        reason: "deterministic_official_id_remap",
+        sourceSnapshotA: snapshotAOfficialIds,
+        sourceSnapshotB: snapshotBOfficialIds
+      });
+    }
+    const applyOutcome = resolvePrincessWeeklyOutcome({
+      sourceHealthy: qualityGate.passed === true,
+      sourceAccountingExact: sourceAccounting.accounting_exact === true,
+      canonicalAccountingExact: canonical.accounting_exact === true,
+      unexplainedCount: 0,
+      safeLaneProcessed: writeResult.stats?.failed === 0,
+      reviewCount: weeklyLanes.review_count,
+      writesVerified: writeResult.stats?.failed === 0,
+      writeFailure: (writeResult.stats?.failed || 0) > 0,
+      partialWrite: (writeResult.stats?.failed || 0) > 0 && summary.inventory_changed === true
+    });
+    summary.terminal_status = applyOutcome.outcome;
+    summary.review_required = weeklyLanes.review_count > 0;
 
     return {
       ok: writeResult.stats?.failed === 0,
+      review_required: weeklyLanes.review_count > 0,
+      terminal_status: applyOutcome.outcome,
       summary,
       write_result: writeResult,
       manifest,
