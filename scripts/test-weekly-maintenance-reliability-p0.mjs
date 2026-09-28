@@ -860,8 +860,8 @@ test("all weekly Netlify launchers use shared scheduled lease", () => {
   );
   const princessToml = tomlBlock("princess-weekly-maintenance-cron");
   if (/schedule\s*=/.test(princessToml)) throw new Error("Princess must not regain a Netlify cron");
-  if (princess.includes("handleLeasedWeeklyCron")) {
-    throw new Error("Princess Netlify cron must stay GitHub-authoritative, not a leased Netlify dispatcher");
+  if (!princess.includes("handleLeasedWeeklyCron")) {
+    throw new Error("Princess unscheduled launcher must share the leased dispatcher");
   }
 });
 

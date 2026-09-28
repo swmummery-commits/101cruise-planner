@@ -58,9 +58,19 @@
   ]
 
 [functions."princess-weekly-maintenance-cron"]
-  # Unscheduled Netlify diagnostic only. Authoritative Princess APPLY is GitHub
-  # Actions on self-hosted princess-local-mac (Sunday 21:00 UTC / Monday 05:00 Perth).
+  # Unscheduled thin launcher until explicit single-scheduler cutover.
+  # Authoritative Princess weekly schedule remains GitHub Actions
+  # (Sunday 21:00 UTC / Monday 05:00 Perth) until Part 20 proofs complete.
   timeout = 26
+
+[functions."princess-weekly-maintenance-background"]
+  # Background worker for Princess weekly maintenance. NOT scheduled.
+  timeout = 900
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
 
 [functions."explora-weekly-maintenance-cron"]
   # Thin Scheduled Function launcher — Monday 17:00 UTC / Tuesday 01:00 Australia/Perth.

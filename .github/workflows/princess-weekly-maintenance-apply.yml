@@ -88,6 +88,7 @@ jobs:
       - name: Upload apply report artifact
         uses: actions/upload-artifact@v7
         if: always()
+        continue-on-error: true
         with:
           name: princess-weekly-maintenance-apply-report
           path: reports/princess-weekly-apply-*.json

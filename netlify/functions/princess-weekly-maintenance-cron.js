@@ -1,56 +1,57 @@
 /**
- * Princess Cruises weekly inventory maintenance (Netlify Scheduled Function).
- * Schedule: Sunday 20:00 UTC = Monday 04:00 Australia/Perth
+ * Princess weekly maintenance — thin launcher.
+ *
+ * Unscheduled until GitHub cron is disabled at an explicit single-scheduler
+ * cutover. Manual / diagnostic dispatch only in P3N.
  */
 
+const { supabase } = require("./lib/cruise-discovery-maintenance-cron");
 const {
-  assertPrincessWeeklyMaintenanceEnabled,
-  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
-  isPrincessWeeklyReconciliationEnabled
-} = require("./lib/cruise-discovery-maintenance");
-const { runPrincessWeeklyMaintenance } = require("./lib/cruise-discovery-maintenance-runner");
-const { executeWeeklyMaintenance, supabase } = require("./lib/cruise-discovery-maintenance-cron");
+  LAUNCHER_FUNCTION_NAME,
+  BACKGROUND_FUNCTION_NAME,
+  assertLauncherAuth,
+  parseJsonBody,
+  resolveDryRun,
+  resolveMaxWrites,
+  resolveTriggerType,
+  dispatchPrincessWeeklyBackground,
+  redactSecrets
+} = require("./lib/princess-weekly-maintenance-dispatch");
+const { handleLeasedWeeklyCron } = require("./lib/weekly-maintenance-schedule-control");
 
 exports.handler = async (event) => {
   const started = Date.now();
   try {
-    let body = {};
-    try {
-      body = JSON.parse(event.body || "{}");
-    } catch {
-      body = {};
-    }
-
-    const dryRun = body.dry_run === true || !isPrincessWeeklyReconciliationEnabled();
-
-    const lines = await supabase(
-      "ci_cruise_lines?slug=eq.princess-cruises&select=id,name,slug&limit=1"
-    );
-    const line = lines?.[0];
-    if (!line) {
-      return { statusCode: 404, body: JSON.stringify({ success: false, error: "Princess line not found" }) };
-    }
-
-    const result = await executeWeeklyMaintenance({
+    return await handleLeasedWeeklyCron(event, {
+      supabase,
       lineSlug: "princess-cruises",
-      cruiseLineId: line.id,
-      runType: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
-      assertEnabled: assertPrincessWeeklyMaintenanceEnabled,
-      runMaintenance: runPrincessWeeklyMaintenance,
-      dryRun,
-      maxWrites: Number(body.max_writes || 100),
-      triggerType: body.trigger_type || "scheduled"
+      launcherFunctionName: LAUNCHER_FUNCTION_NAME,
+      backgroundFunctionName: BACKGROUND_FUNCTION_NAME,
+      redactSecrets,
+      assertAuth: assertLauncherAuth,
+      parseJsonBody,
+      resolveDryRun,
+      resolveMaxWrites,
+      resolveTriggerType,
+      dispatchBackground: dispatchPrincessWeeklyBackground
     });
-
-    return {
-      statusCode: result.success ? 200 : 500,
-      body: JSON.stringify({ ...result, elapsed_ms: Date.now() - started })
-    };
   } catch (error) {
-    console.error("princess-weekly-maintenance-cron failed", error);
+    console.error("princess-weekly-maintenance-cron dispatch failed", {
+      message: error.message,
+      code: error.code || null
+    });
     return {
       statusCode: error.statusCode || 500,
-      body: JSON.stringify({ success: false, error: error.message || "Princess weekly maintenance failed" })
+      body: JSON.stringify(
+        redactSecrets({
+          success: false,
+          phase: "dispatch",
+          status: "dispatch_failed",
+          error: error.message || "Princess weekly dispatch failed",
+          code: error.code || null,
+          elapsed_ms: Date.now() - started
+        })
+      )
     };
   }
 };
