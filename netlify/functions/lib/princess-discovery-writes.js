@@ -18,6 +18,11 @@ const {
   classifyPrincessP3bCandidate,
   indexProduction
 } = require("./princess-voyage-identity-classifier");
+const {
+  classifyPrincessPlannedWriteAgainstCurrent,
+  reloadPrincessDiscoveredCruise,
+  frozenTargetFromCandidate
+} = require("./princess-idempotent-write");
 
 const RECOGNISED_P3B = new Set([
   "RECOGNISED_CURRENT_ID",
@@ -336,6 +341,7 @@ async function applyPrincessBatchWritesBody({
     invalid_skips: 0,
     failed: 0,
     recovered_after_fetch_failure: 0,
+    idempotent_skips: 0,
     write_details: []
   };
 
@@ -397,6 +403,32 @@ async function applyPrincessBatchWritesBody({
 
     if (!performWrites) continue;
 
+    const plannedAction =
+      row.weekly_planned_action === "remap_official_id_allowed"
+        ? "remap_official_id_allowed"
+        : action;
+    if (existing?.id && supabase) {
+      const current = await reloadPrincessDiscoveredCruise(supabase, existing.id);
+      const verdict = classifyPrincessPlannedWriteAgainstCurrent({
+        currentRow: current || existing,
+        frozenTarget: frozenTargetFromCandidate(candidate),
+        plannedAction
+      });
+      if (verdict.classification === "IDEMPOTENT_ALREADY_APPLIED") {
+        stats.idempotent_skips += 1;
+        stats.write_details.push({
+          discovered_cruise_id: existing.id,
+          princess_sailing_id: candidate.official_sailing_id,
+          proposed_action: plannedAction,
+          result_action: "idempotent_already_applied",
+          created: false,
+          idempotent_skip: true,
+          rollback_before: null
+        });
+        continue;
+      }
+    }
+
     if (row.weekly_planned_action === "remap_official_id_allowed" && existing) {
       const { applyPrincessOfficialIdRemap } = require("./princess-official-id-remap");
       const remapResult = await applyPrincessOfficialIdRemap(supabase, {
@@ -406,6 +438,21 @@ async function applyPrincessBatchWritesBody({
         runId,
         productionRows: indexes?.rows || [existing]
       });
+      if (remapResult.idempotent === true || remapResult.reason === "IDEMPOTENT_ALREADY_APPLIED") {
+        stats.idempotent_skips += 1;
+        stats.write_details.push({
+          discovered_cruise_id: existing.id,
+          princess_sailing_id: candidate.official_sailing_id,
+          previous_official_sailing_id: remapResult.previous_official_sailing_id,
+          proposed_action: "remap_official_id_allowed",
+          result_action: "idempotent_already_applied",
+          created: false,
+          uuid_preserved: true,
+          idempotent_skip: true,
+          rollback_before: null
+        });
+        continue;
+      }
       if (!remapResult.ok) {
         stats.failed += 1;
         stats.write_details.push({

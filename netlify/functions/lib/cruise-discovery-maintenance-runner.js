@@ -1301,12 +1301,25 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       canonicalAccountingExact: canonicalGate.ok === true
     });
     const frozenPlan = freezePrincessMaterialPlan(weeklyLanes, { snapshot_id: snapshotId });
+    const reviewOfficialIds = new Set(
+      proposedIdentityReviewNow
+        .map((p) => p.official_princess_sailing_id || p.candidate?.official_sailing_id)
+        .filter(Boolean)
+    );
+    const remapEligibleIds = new Set(
+      [
+        ...proposedRemapsNow.map((p) => p.official_princess_sailing_id),
+        ...deterministicRemaps.map((row) => row.new_official_sailing_id),
+        ...reviewRemaps.map((row) => row.new_official_sailing_id)
+      ].filter(Boolean)
+    );
+    const remapOnlyEligibleCount = [...remapEligibleIds].filter((id) => !reviewOfficialIds.has(id)).length;
     const reconciliation = buildPrincessReconciliationSummary({
       activeProductionTotal,
       eligibleTotal: metrics.eligible_total,
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
-      proposedUpdates: proposedSafeUpdatesNow.length + proposedUpdates.length + proposedRemapsNow.length,
+      proposedUpdates: proposedSafeUpdatesNow.length + proposedUpdates.length + remapOnlyEligibleCount,
       proposedIdentityReviewUpdates: proposedIdentityReviewNow.length,
       sourceAbsentActive: canonical.counts.SOURCE_ABSENT_RETAINED,
       dailyExpiryManaged: canonical.counts.DAILY_EXPIRY_MANAGED,
@@ -1338,7 +1351,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       proposed_inserts: proposedInserts.length,
       insert_classification_counts: princessInsertClassification.counts,
       insert_classification_total: princessInsertClassification.total,
-      proposed_updates: proposedSafeUpdatesNow.length + proposedUpdates.length + proposedRemapsNow.length,
+      proposed_updates: proposedSafeUpdatesNow.length + proposedUpdates.length + remapOnlyEligibleCount,
       proposed_updates_identity_review: proposedIdentityReviewNow.length,
       proposed_updates_safe_metadata: proposedSafeUpdatesNow.length,
       identity_review_sailing_ids: proposedIdentityReviewNow.map(
@@ -1683,16 +1696,22 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     summary.updates = writeResult.stats?.updated || 0;
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.idempotent_skips = writeResult.stats?.idempotent_skips || 0;
     summary.recovered_after_fetch_failure = writeResult.stats?.recovered_after_fetch_failure || 0;
+    summary.planned_targets = writeProducts.slice(0, effectiveMaxWrites).length;
+    summary.material_mutations = (summary.inserts || 0) + (summary.updates || 0);
+    summary.write_details = writeResult.stats?.write_details || [];
     summary.write_attempts =
       (writeResult.stats?.inserted || 0) +
       (writeResult.stats?.updated || 0) +
-      (writeResult.stats?.failed || 0) +
-      (writeResult.stats?.duplicate_skips || 0);
+      (writeResult.stats?.failed || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
     summary.rollback_manifest_id = rollbackPersist.manifest_record_id || null;
     const remapDetails = (writeResult.stats?.write_details || []).filter(
-      (detail) => detail.proposed_action === "remap_official_id_allowed" && detail.discovered_cruise_id
+      (detail) =>
+        detail.proposed_action === "remap_official_id_allowed" &&
+        detail.discovered_cruise_id &&
+        detail.idempotent_skip !== true
     );
     for (const detail of remapDetails) {
       await persistPrincessRemapHistory(sb, {

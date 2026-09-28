@@ -140,15 +140,31 @@ function completePrincessRollbackManifestWithWriteResult(preApplyManifest, write
     });
   }
 
-  const updated = (base.updated || []).map((entry) => {
+  const alreadyApplied = [];
+  const updated = [];
+  for (const entry of base.updated || []) {
     const detail = byOfficial.get(entry.official_sailing_id);
-    return {
+    if (detail?.idempotent_skip === true || detail?.result_action === "idempotent_already_applied") {
+      alreadyApplied.push({
+        ...entry,
+        action: "already_applied",
+        discovered_cruise_id: detail?.discovered_cruise_id || entry.discovered_cruise_id || null,
+        planned: true,
+        checked: true,
+        already_applied: true,
+        verified: true,
+        before_values: null,
+        after_values: null
+      });
+      continue;
+    }
+    updated.push({
       ...entry,
       discovered_cruise_id:
         detail?.discovered_cruise_id || entry.discovered_cruise_id || null,
       after_values: detail?.after_values || entry.after_values || null
-    };
-  });
+    });
+  }
 
   return {
     ...base,
@@ -156,6 +172,8 @@ function completePrincessRollbackManifestWithWriteResult(preApplyManifest, write
     write_completed: true,
     inserted,
     updated,
+    already_applied: alreadyApplied,
+    idempotent_skips: alreadyApplied,
     inserted_record_ids: inserted.map((row) => row.discovered_cruise_id).filter(Boolean),
     updated_record_ids: updated.map((row) => row.discovered_cruise_id).filter(Boolean),
     official_sailing_ids: [...inserted, ...updated]

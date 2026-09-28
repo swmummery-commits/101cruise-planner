@@ -137,6 +137,23 @@ async function loadCollidingPrincessRows(sb, { cruiseLineId, officialSailingId, 
 }
 
 async function applyPrincessOfficialIdRemap(sb, { existingRow, insert, cruiseLineId, runId, productionRows = null }) {
+  if (
+    existingRow?.id &&
+    insert?.official_sailing_id &&
+    normaliseComparable(existingRow.official_sailing_id) ===
+      normaliseComparable(insert.official_sailing_id)
+  ) {
+    return {
+      ok: true,
+      idempotent: true,
+      reason: "IDEMPOTENT_ALREADY_APPLIED",
+      discovered_cruise_id: existingRow.id,
+      official_sailing_id: existingRow.official_sailing_id,
+      previous_official_sailing_id: existingRow.official_sailing_id,
+      created: false,
+      result_action: "idempotent_already_applied"
+    };
+  }
   const productionForMatch = Array.isArray(productionRows) && productionRows.length ? productionRows : [existingRow];
   const { classifyPrincessP3bCandidate } = require("./princess-voyage-identity-classifier");
   const p3b = classifyPrincessP3bCandidate(insert, productionForMatch);
@@ -186,12 +203,28 @@ async function applyPrincessOfficialIdRemap(sb, { existingRow, insert, cruiseLin
   }
   const patched = await sb(`discovered_cruises?id=eq.${encodeURIComponent(existingRow.id)}`, {
     method: "PATCH",
+    headers: { Prefer: "return=representation" },
     body: patch
   });
-  const row = Array.isArray(patched) ? patched[0] : patched;
-  const protectedCheck = assertProtectedFieldsUnchanged(existingRow, row || patch);
+  let row = Array.isArray(patched) ? patched[0] : patched;
+  if (!row?.id || !row.official_sailing_id) {
+    const reloaded = await sb(
+      `discovered_cruises?id=eq.${encodeURIComponent(existingRow.id)}&select=id,status,official_sailing_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,official_url,external_key,identity_key&limit=1`
+    );
+    row = Array.isArray(reloaded) ? reloaded[0] : reloaded;
+  }
+  const protectedCheck = assertProtectedFieldsUnchanged(existingRow, row || existingRow);
   if (!protectedCheck.ok) {
     return { ok: false, reason: "protected_field_changed", ...protectedCheck, discovered_cruise_id: existingRow.id };
+  }
+  if (normaliseComparable(row?.official_sailing_id) !== normaliseComparable(patch.official_sailing_id)) {
+    return {
+      ok: false,
+      reason: "remap_target_mismatch",
+      discovered_cruise_id: existingRow.id,
+      expected: patch.official_sailing_id,
+      actual: row?.official_sailing_id || null
+    };
   }
   return {
     ok: true,

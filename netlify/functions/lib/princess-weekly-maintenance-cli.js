@@ -214,6 +214,7 @@ function extractWriteAccounting(summary = {}, writeResult = {}) {
   const stats = writeResult?.stats || writeResult || {};
   const committed = (summary.inserts || stats.inserted || 0) + (summary.updates || stats.updated || 0);
   const genuinelyFailed = summary.failed_writes ?? stats.failed ?? 0;
+  const idempotentSkips = summary.idempotent_skips ?? stats.idempotent_skips ?? 0;
   const recovered =
     summary.recovered_after_fetch_failure ?? stats.recovered_after_fetch_failure ?? 0;
   const attempted = summary.write_attempts ?? committed + genuinelyFailed;
@@ -225,6 +226,9 @@ function extractWriteAccounting(summary = {}, writeResult = {}) {
     committed,
     recovered_after_fetch_failure: recovered,
     genuinely_failed: genuinelyFailed,
+    idempotent_skips: idempotentSkips,
+    planned_targets: summary.planned_targets ?? committed + genuinelyFailed + idempotentSkips,
+    material_mutations: summary.material_mutations ?? committed,
     unchanged,
     source_absent_active: summary.source_absent_active ?? 0
   };

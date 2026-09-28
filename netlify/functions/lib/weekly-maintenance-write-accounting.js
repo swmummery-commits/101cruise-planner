@@ -28,6 +28,7 @@ function flattenWeeklyWriteStats(summary = {}) {
     writes.source_absence_hidden
   );
   const failedWrites = num(summary.failed_writes, writes.failed);
+  const idempotentSkips = num(summary.idempotent_skips, writes.idempotent_skips);
   const committed = inserts + updates + promotedActive + cutoffHidden + sourceAbsenceHidden;
   const writeAttempts =
     summary.write_attempts ??
@@ -42,6 +43,7 @@ function flattenWeeklyWriteStats(summary = {}) {
     cutoff_hidden: cutoffHidden,
     source_absence_hidden: sourceAbsenceHidden,
     failed_writes: failedWrites,
+    idempotent_skips: idempotentSkips,
     write_attempts: writeAttempts,
     committed_material_writes: committed,
     inventory_changed: summary.inventory_changed === true || committed > 0,
@@ -60,6 +62,7 @@ function mergeFlattenedWriteStats(summary = {}) {
     cutoff_hidden: flat.cutoff_hidden,
     source_absence_hidden: flat.source_absence_hidden,
     failed_writes: flat.failed_writes,
+    idempotent_skips: flat.idempotent_skips,
     write_attempts: flat.write_attempts,
     committed_material_writes: flat.committed_material_writes,
     inventory_changed: flat.inventory_changed,
