@@ -7,9 +7,9 @@
     "starting_sha": "7026f28c163dd335c06353ccc094d12c2f5aa59f",
     "diagnostics_sha": "188d8f8b298c928dca64ae5df93e0082877e2c97",
     "source_transport_sha": "188d8f8b298c928dca64ae5df93e0082877e2c97",
-    "orchestration_sha": null,
-    "cutover_sha": null,
-    "final_sha": null,
+    "orchestration_sha": "8b62b5aaf3cd737b2c4a6266582cf185365fccdc",
+    "cutover_sha": "8b62b5aaf3cd737b2c4a6266582cf185365fccdc",
+    "final_sha": "8b62b5aaf3cd737b2c4a6266582cf185365fccdc",
     "deployed_sha": "6abb70ad9e48490008",
     "deployed_commit_at_diagnostics": "188d8f8b298c928dca64ae5df93e0082877e2c97",
     "branch": "main"
