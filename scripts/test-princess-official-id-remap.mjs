@@ -147,9 +147,9 @@ test("Celebrity and HAL weekly runners honour frozenOfficialSailingIds", () => {
   if (!halBlock.includes("frozenOfficialSailingIds")) throw new Error("hal missing freeze");
 });
 
-test("Princess Netlify cron remains unscheduled", () => {
+test("Princess Netlify cron is the single weekly schedule", () => {
   const block = toml.match(/\[functions\."princess-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
-  if (/schedule\s*=/.test(block)) throw new Error("Princess Netlify schedule must stay removed");
+  if (!/schedule\s*=\s*"0 21 \* \* 0"/.test(block)) throw new Error("Princess Netlify schedule missing");
 });
 
 test("Celebrity/HAL background packaging includes ports catalogue", () => {

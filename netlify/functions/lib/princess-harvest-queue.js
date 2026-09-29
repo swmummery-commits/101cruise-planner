@@ -77,6 +77,138 @@ function createMemoryPrincessHarvestStore(seed = []) {
   };
 }
 
+const HARVEST_RUN_TYPE = "princess_mac_harvest";
+
+function harvestFromRunRow(row) {
+  if (!row) return null;
+  const stats = row.stats || {};
+  return {
+    id: row.id,
+    period_key: stats.period_key,
+    run_record_id: stats.maintenance_run_record_id || row.id,
+    dispatch_id: stats.dispatch_id,
+    requested_at: stats.requested_at || row.started_at,
+    claimed_at: stats.claimed_at || null,
+    worker_id: stats.worker_id || null,
+    started_at: stats.harvest_started_at || null,
+    finished_at: stats.harvest_finished_at || row.finished_at || null,
+    last_heartbeat_at: stats.last_heartbeat_at || null,
+    status: stats.harvest_status || QUEUED,
+    dry_run: stats.dry_run !== false,
+    source_snapshot_hash: stats.source_snapshot_hash || null,
+    eligible_count: stats.eligible_count ?? null,
+    error_code: stats.error_code || null,
+    error_detail_sanitized: stats.error_detail_sanitized || null,
+    source_freeze: stats.source_freeze || null
+  };
+}
+
+function createRunsBackedPrincessHarvestStore(supabase, cruiseLineId) {
+  async function loadPrincessLineId() {
+    if (cruiseLineId) return cruiseLineId;
+    const lines = await supabase("ci_cruise_lines?slug=eq.princess-cruises&select=id&limit=1");
+    return lines?.[0]?.id || null;
+  }
+
+  return {
+    kind: "cruise_discovery_runs",
+    async insert(row) {
+      const lineId = await loadPrincessLineId();
+      const inserted = await supabase("cruise_discovery_runs", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: {
+          scope: "cruise_line",
+          cruise_line_id: lineId,
+          destination_id: null,
+          status: "running",
+          started_at: row.requested_at,
+          stats: {
+            run_type: HARVEST_RUN_TYPE,
+            run_id: `harvest:${row.period_key}:${row.dispatch_id}`,
+            trigger_type: "mac_harvest_request",
+            harvest_queue: true,
+            harvest_status: QUEUED,
+            period_key: row.period_key,
+            dispatch_id: row.dispatch_id,
+            maintenance_run_record_id: row.run_record_id || null,
+            requested_at: row.requested_at,
+            dry_run: row.dry_run !== false
+          }
+        }
+      });
+      return harvestFromRunRow(Array.isArray(inserted) ? inserted[0] : inserted);
+    },
+    async getById(id) {
+      const rows = await supabase(`cruise_discovery_runs?id=eq.${encodeURIComponent(id)}&select=id,stats,started_at,finished_at,status&limit=1`);
+      return harvestFromRunRow(Array.isArray(rows) ? rows[0] : rows);
+    },
+    async findOpenByPeriod(periodKey, dispatchId) {
+      const rows = await supabase(
+        `cruise_discovery_runs?stats->>run_type=eq.${HARVEST_RUN_TYPE}&stats->>period_key=eq.${encodeURIComponent(
+          periodKey
+        )}&stats->>dispatch_id=eq.${encodeURIComponent(dispatchId)}&stats->>harvest_status=in.(queued,claimed,running)&select=id,stats,started_at,finished_at,status&limit=1`
+      );
+      return harvestFromRunRow(Array.isArray(rows) ? rows[0] : rows);
+    },
+    async claimOne(workerId, nowIso) {
+      const rows = await supabase(
+        `cruise_discovery_runs?stats->>run_type=eq.${HARVEST_RUN_TYPE}&stats->>harvest_status=eq.queued&order=started_at.asc&select=id,stats,started_at,finished_at,status&limit=1`
+      );
+      const current = Array.isArray(rows) ? rows[0] : rows;
+      if (!current) return null;
+      const stats = { ...(current.stats || {}), harvest_status: CLAIMED, claimed_at: nowIso, worker_id: workerId, last_heartbeat_at: nowIso };
+      const updated = await supabase(
+        `cruise_discovery_runs?id=eq.${encodeURIComponent(current.id)}&stats->>harvest_status=eq.queued`,
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: { stats }
+        }
+      );
+      const row = Array.isArray(updated) ? updated[0] : updated;
+      return harvestFromRunRow(row);
+    },
+    async update(id, patch) {
+      const currentRows = await supabase(`cruise_discovery_runs?id=eq.${encodeURIComponent(id)}&select=id,stats,started_at,finished_at,status&limit=1`);
+      const current = Array.isArray(currentRows) ? currentRows[0] : currentRows;
+      if (!current) return null;
+      const stats = { ...(current.stats || {}) };
+      if (patch.status) stats.harvest_status = patch.status;
+      if (patch.claimed_at) stats.claimed_at = patch.claimed_at;
+      if (patch.worker_id) stats.worker_id = patch.worker_id;
+      if (patch.started_at) stats.harvest_started_at = patch.started_at;
+      if (patch.finished_at) stats.harvest_finished_at = patch.finished_at;
+      if (patch.last_heartbeat_at) stats.last_heartbeat_at = patch.last_heartbeat_at;
+      if (patch.source_snapshot_hash !== undefined) stats.source_snapshot_hash = patch.source_snapshot_hash;
+      if (patch.eligible_count !== undefined) stats.eligible_count = patch.eligible_count;
+      if (patch.error_code !== undefined) stats.error_code = patch.error_code;
+      if (patch.error_detail_sanitized !== undefined) stats.error_detail_sanitized = patch.error_detail_sanitized;
+      if (patch.source_freeze !== undefined) stats.source_freeze = patch.source_freeze;
+      if (patch.dry_run !== undefined) stats.dry_run = patch.dry_run;
+      const finished = patch.status === COMPLETED || patch.status === FAILED || patch.status === TIMED_OUT;
+      const updated = await supabase(`cruise_discovery_runs?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: {
+          stats,
+          ...(finished ? { status: patch.status === COMPLETED ? "completed" : "failed", finished_at: patch.finished_at || new Date().toISOString() } : {})
+        }
+      });
+      return harvestFromRunRow(Array.isArray(updated) ? updated[0] : updated);
+    }
+  };
+}
+
+async function resolvePrincessHarvestStore(supabase) {
+  try {
+    await supabase("princess_harvest_requests?select=id&limit=1");
+    return createSupabasePrincessHarvestStore(supabase);
+  } catch (_error) {
+    return createRunsBackedPrincessHarvestStore(supabase);
+  }
+}
+
 function createSupabasePrincessHarvestStore(supabase) {
   return {
     kind: "supabase",
@@ -230,12 +362,58 @@ function evaluateHarvestWait(request, { expectedStartMs, nowMs = Date.now(), gra
   return { ...health, request };
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForPrincessHarvest(
+  store,
+  requestId,
+  {
+    expectedStartMs,
+    graceMs = 20 * 60 * 1000,
+    staleMs = 15 * 60 * 1000,
+    pollMs = 5000,
+    nowFn = Date.now
+  } = {}
+) {
+  while (true) {
+    const request = await store.getById(requestId);
+    const verdict = evaluateHarvestWait(request, {
+      expectedStartMs,
+      nowMs: nowFn(),
+      graceMs,
+      staleMs
+    });
+    if (verdict.status === "completed" || request?.status === COMPLETED) {
+      return { ...verdict, status: "completed", ok: true, request };
+    }
+    if (
+      verdict.status === "SOURCE_WORKER_NOT_STARTED" ||
+      verdict.status === "STALE_SOURCE_WORKER" ||
+      request?.status === FAILED ||
+      request?.status === TIMED_OUT
+    ) {
+      if (request && (request.status === QUEUED || request.status === CLAIMED || request.status === RUNNING)) {
+        await failPrincessHarvestRequest(store, requestId, {
+          errorCode: verdict.status,
+          status: TIMED_OUT,
+          errorDetail: verdict.reason || verdict.status
+        });
+      }
+      return verdict;
+    }
+    await sleep(pollMs);
+  }
+}
+
 function countSchedulerOwners({ githubHasCron, netlifyHasCron }) {
   return [githubHasCron && "github", netlifyHasCron && "netlify"].filter(Boolean);
 }
 
 module.exports = {
   TABLE,
+  HARVEST_RUN_TYPE,
   QUEUED,
   CLAIMED,
   RUNNING,
@@ -244,6 +422,8 @@ module.exports = {
   TIMED_OUT,
   createMemoryPrincessHarvestStore,
   createSupabasePrincessHarvestStore,
+  createRunsBackedPrincessHarvestStore,
+  resolvePrincessHarvestStore,
   enqueuePrincessHarvestRequest,
   claimPrincessHarvestRequest,
   heartbeatPrincessHarvestRequest,
@@ -251,5 +431,6 @@ module.exports = {
   completePrincessHarvestRequest,
   failPrincessHarvestRequest,
   evaluateHarvestWait,
+  waitForPrincessHarvest,
   countSchedulerOwners
 };

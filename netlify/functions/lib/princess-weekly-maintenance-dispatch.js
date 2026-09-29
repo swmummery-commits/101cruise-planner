@@ -11,13 +11,14 @@ const {
 } = require("./cruise-discovery-maintenance");
 const { runPrincessWeeklyMaintenance } = require("./cruise-discovery-maintenance-runner");
 const { createThinWeeklyDispatch } = require("./weekly-maintenance-thin-dispatch");
+const { wrapPrincessRunMaintenance } = require("./princess-mac-harvest-orchestrator");
 
 const dispatch = createThinWeeklyDispatch({
   lineSlug: "princess-cruises",
   runType: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   assertEnabled: assertPrincessWeeklyMaintenanceEnabled,
   isEnabled: isPrincessWeeklyReconciliationEnabled,
-  runMaintenance: runPrincessWeeklyMaintenance,
+  runMaintenance: wrapPrincessRunMaintenance(runPrincessWeeklyMaintenance),
   maxWrites: 30,
   launcherFunctionName: "princess-weekly-maintenance-cron",
   backgroundFunctionName: "princess-weekly-maintenance-background"

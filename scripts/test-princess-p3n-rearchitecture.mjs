@@ -371,6 +371,7 @@ test("single schedule owner is declared", () => {
   const owners = [scheduledInToml && "netlify", githubScheduled && "github"].filter(Boolean);
   if (owners.length > 1) throw new Error(`two schedulers: ${owners.join(",")}`);
   if (owners.length !== 1) throw new Error("no scheduler owner");
+  if (owners[0] !== "netlify") throw new Error("Netlify must own Princess weekly schedule");
 });
 
 test("scheduled lease idempotency key remains week-scoped", () => {

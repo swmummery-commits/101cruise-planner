@@ -301,7 +301,7 @@ await test("zero-write orchestration rehearsal contract", async () => {
   if (claimed.dry_run !== true) throw new Error("must stay dry-run");
 });
 
-await test("single scheduler enforcement currently GitHub-only until cutover", () => {
+await test("single scheduler enforcement is Netlify-only after cutover", () => {
   const princessTomlBlock =
     netlifyToml.match(/\[functions\."princess-weekly-maintenance-cron"\][\s\S]*?(?=\n\[functions\.|$)/)?.[0] ||
     "";
@@ -309,7 +309,7 @@ await test("single scheduler enforcement currently GitHub-only until cutover", (
   const githubHasCron = /schedule:[\s\S]*cron: "0 21 \* \* 0"/.test(applyWorkflow);
   const owners = queue.countSchedulerOwners({ githubHasCron, netlifyHasCron });
   if (owners.length !== 1) throw new Error(`owners=${owners.join(",")}`);
-  if (owners[0] !== "github") throw new Error("diagnosis phase must keep GitHub cron until cutover");
+  if (owners[0] !== "netlify") throw new Error("cutover must leave Netlify as the only scheduler");
 });
 
 await test("GitHub workflow_dispatch retained", () => {

@@ -84,10 +84,10 @@ test("Celebrity background packaging includes ports catalogue", () => {
   }
 });
 
-test("Princess Netlify weekly cron is unscheduled", () => {
+test("Princess Netlify weekly cron is scheduled after P3P cutover", () => {
   const block = tomlBlock("princess-weekly-maintenance-cron");
-  if (/schedule\s*=/.test(block)) throw new Error("Princess Netlify schedule must be removed");
-  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.netlify_schedule_enabled !== false) {
+  if (!/schedule\s*=\s*"0 21 \* \* 0"/.test(block)) throw new Error("Princess Netlify schedule missing");
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.netlify_schedule_enabled !== true) {
     throw new Error("princess netlify_schedule_enabled");
   }
 });
@@ -859,9 +859,9 @@ test("all weekly Netlify launchers use shared scheduled lease", () => {
     "utf8"
   );
   const princessToml = tomlBlock("princess-weekly-maintenance-cron");
-  if (/schedule\s*=/.test(princessToml)) throw new Error("Princess must not regain a Netlify cron");
+  if (!/schedule\s*=/.test(princessToml)) throw new Error("Princess Netlify cron must be enabled after P3P");
   if (!princess.includes("handleLeasedWeeklyCron")) {
-    throw new Error("Princess unscheduled launcher must share the leased dispatcher");
+    throw new Error("Princess launcher must share the leased dispatcher");
   }
 });
 
@@ -2457,12 +2457,12 @@ test("P3F staggered timetable matches netlify/GitHub and monitoring map", () => 
     if (!block.includes(`schedule = "${cron}"`)) throw new Error(`${slug} netlify.toml drifted`);
   }
   const princess = map.scheduleForSlug("princess-cruises");
-  if (princess.cron_utc !== "0 21 * * 0" || princess.scheduler !== "github") {
-    throw new Error("Princess must remain GitHub Monday 05:00 Perth");
+  if (princess.cron_utc !== "0 21 * * 0" || princess.scheduler !== "netlify") {
+    throw new Error("Princess must be Netlify Monday 05:00 Perth");
   }
   const princessNetlify = tomlBlock("princess-weekly-maintenance-cron");
-  if (/^\s*schedule\s*=/m.test(princessNetlify)) {
-    throw new Error("Princess Netlify cron must stay unscheduled");
+  if (!/^\s*schedule\s*=/m.test(princessNetlify)) {
+    throw new Error("Princess Netlify cron must be scheduled");
   }
   if (maintenance.MAINTENANCE_SCHEDULES.daily_expiry.cron_utc !== "30 22 * * *") {
     throw new Error("daily expiry must stay 06:30 Perth");

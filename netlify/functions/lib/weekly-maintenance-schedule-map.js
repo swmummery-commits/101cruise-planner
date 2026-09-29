@@ -46,9 +46,9 @@ const WEEKLY_LINE_SCHEDULE = Object.freeze([
     weekday: "monday",
     perth_hour: 5,
     perth_minute: 0,
-    scheduler: "github",
+    scheduler: "netlify",
     cron_utc: "0 21 * * 0",
-    netlify_scheduled: false
+    netlify_scheduled: true
   },
   {
     slug: "explora-journeys",

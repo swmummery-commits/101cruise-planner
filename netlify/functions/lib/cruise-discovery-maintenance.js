@@ -68,9 +68,9 @@ const MAINTENANCE_SCHEDULES = {
     perth_display: "Monday 05:00 Australia/Perth",
     utc_display: "Sunday 21:00 UTC",
     function: "princess-weekly-maintenance-cron",
-    schedule_registered: false,
-    netlify_schedule_enabled: false,
-    authoritative_scheduler: "github_actions_self_hosted_princess_local_mac"
+    schedule_registered: true,
+    netlify_schedule_enabled: true,
+    authoritative_scheduler: "netlify_orchestrated_mac_harvest"
   },
   explora_weekly: {
     cron_utc: "0 17 * * 1",

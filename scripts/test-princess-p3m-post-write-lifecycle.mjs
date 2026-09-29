@@ -517,10 +517,12 @@ test("today's 120-minute GitHub delay is WARN only", () => {
   if (!summary.includes("Schedule delay")) throw new Error("job summary should show delay warn");
 });
 
-test("apply workflow cron is unchanged", () => {
-  if (!applyWorkflowSrc.includes('cron: "0 21 * * 0"')) throw new Error("cron changed");
-  if (!applyWorkflowSrc.includes("PRINCESS_SCHEDULE_CRON")) throw new Error("missing schedule observability env");
-  if (!applyWorkflowSrc.includes("Observe GitHub schedule delay")) throw new Error("missing delay step");
+test("apply workflow no longer owns the Monday cron after P3P cutover", () => {
+  if (/^\s*schedule:/m.test(applyWorkflowSrc) && applyWorkflowSrc.includes('cron: "0 21 * * 0"')) {
+    throw new Error("GitHub cron must be removed");
+  }
+  const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+  if (!/schedule\s*=\s*"0 21 \* \* 0"/.test(toml)) throw new Error("Netlify cron missing");
 });
 
 test("apply CLI finalises through shared post-write lifecycle", () => {

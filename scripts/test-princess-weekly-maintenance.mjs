@@ -571,16 +571,21 @@ test("40. idempotency anomaly blocks success", () => {
   if (anomaly.ok) throw new Error("idempotency anomaly must fail");
 });
 
-test("41. apply workflow supports workflow_dispatch and schedule", () => {
+test("41. apply workflow retains workflow_dispatch and has no GitHub cron", () => {
   if (!applyWorkflowSrc.includes("workflow_dispatch")) throw new Error("missing workflow_dispatch");
-  if (!/^\s*schedule:/m.test(applyWorkflowSrc)) throw new Error("missing schedule trigger");
+  if (/^\s*schedule:/m.test(applyWorkflowSrc) && /cron: "0 21 \* \* 0"/.test(applyWorkflowSrc)) {
+    throw new Error("GitHub must not own the Monday cron after P3P cutover");
+  }
 });
 
-test("42. apply workflow schedule cron is Sunday 21:00 UTC / Monday 05:00 Perth", () => {
-  if (!applyWorkflowSrc.includes('cron: "0 21 * * 0"') && !applyWorkflowSrc.includes("cron: '0 21 * * 0'")) {
-    throw new Error("apply workflow must use cron 0 21 * * 0");
+test("42. Netlify owns Sunday 21:00 UTC / Monday 05:00 Perth Princess schedule", () => {
+  const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+  const block =
+    toml.match(/\[functions\."princess-weekly-maintenance-cron"\][\s\S]*?(?=\n\[functions\.|$)/)?.[0] || "";
+  if (!/schedule\s*=\s*"0 21 \* \* 0"/.test(block)) {
+    throw new Error("Netlify princess cron must be 0 21 * * 0");
   }
-  if (!applyWorkflowSrc.includes("Monday 05:00 Australia/Perth")) {
+  if (!applyWorkflowSrc.includes("Monday 05:00 Perth") && !block.includes("Monday 05:00")) {
     throw new Error("missing Perth schedule comment");
   }
 });
@@ -708,7 +713,8 @@ test("51. weekly apply CLI loads without module resolution error", () => {
 test("52. only one Princess weekly automatic schedule exists", () => {
   const workflowDir = path.join(root, ".github/workflows");
   const sources = fs.readdirSync(workflowDir).map((file) => fs.readFileSync(path.join(workflowDir, file), "utf8"));
-  const count = cli.countPrincessWeeklyCronSchedules(sources);
+  const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+  const count = cli.countPrincessWeeklyCronSchedules(sources, toml);
   if (count !== 1) throw new Error(`expected exactly 1 Princess weekly cron, found ${count}`);
 });
 

@@ -1,0 +1,132 @@
+{
+  "phase": "P3P",
+  "title": "Princess source transport diagnosis and scheduler cutover",
+  "generated_at": "2026-09-29T08:15:00.000Z",
+  "timezone": "Australia/Perth",
+  "repository": {
+    "starting_sha": "7026f28c163dd335c06353ccc094d12c2f5aa59f",
+    "diagnostics_sha": "188d8f8b298c928dca64ae5df93e0082877e2c97",
+    "source_transport_sha": "188d8f8b298c928dca64ae5df93e0082877e2c97",
+    "orchestration_sha": null,
+    "cutover_sha": null,
+    "final_sha": null,
+    "deployed_sha": "6abb70ad9e48490008",
+    "deployed_commit_at_diagnostics": "188d8f8b298c928dca64ae5df93e0082877e2c97",
+    "branch": "main"
+  },
+  "p3o_run_reviewed": {
+    "run_record_id": "0ba8b7c6-d615-43a8-ad55-0ac1460bec0a",
+    "reason": "official_source_unreachable",
+    "writes": 0
+  },
+  "source_diagnosis": {
+    "mac": {
+      "effective_client_source": "DEFAULT",
+      "effective_client_id_sha256": "bb7c2b529b97610fea5c96239949cc318d78585ddcb2f40cef48b4666bb3efee",
+      "bootstrap_http_status": 200,
+      "bootstrap_bookingcompany": "PA",
+      "cookie_count": 4,
+      "catalogue_last_http_status": 200,
+      "official_group_count": 972,
+      "expanded_count": 1994,
+      "eligible_count": 1938,
+      "source_hash": "0b092adf80a816ab709ecfe4ad769fba8572de8ba21c42657297d253ec18c5ca",
+      "tls_protocol": "TLSv1.3",
+      "remote_family_class": "IPv4",
+      "runtime_ms": 19829,
+      "snapshot": "reports/princess-p3p-source-snapshot-MAC-1790668882421.json"
+    },
+    "netlify": {
+      "effective_client_source": "DEFAULT",
+      "effective_client_id_sha256": "bb7c2b529b97610fea5c96239949cc318d78585ddcb2f40cef48b4666bb3efee",
+      "bootstrap_http_status": 200,
+      "bootstrap_bookingcompany": "PA",
+      "cookie_count": 4,
+      "catalogue_last_http_status": 400,
+      "catalogue_failure_class": "CATALOGUE_400",
+      "catalogue_excerpt": "One or more required API parameters are missing in the API request.",
+      "eligible_count": 0,
+      "tls_protocol": "TLSv1.3",
+      "remote_family_class": "IPv4",
+      "run_record_id": "2e6e8c9b-f552-4e58-bacf-7e395985e126",
+      "duration_ms": 11859
+    },
+    "client_config_comparison": {
+      "hash_match": true,
+      "source_match": true,
+      "missing_PRINCESS_PCL_CLIENT_ID_explains_failure": false
+    },
+    "request_construction_comparison": {
+      "user_agent": "match",
+      "origin": "match",
+      "referer": "match",
+      "pcl_client_id_present": "match",
+      "productcompany": "match",
+      "bookingcompany": "match on successful Mac variant (PA) and Netlify attempt 1 (PA)",
+      "cookie_use": "match on first catalogue attempt (header-only)",
+      "tls_protocol": "match TLSv1.3",
+      "ip_family": "match IPv4"
+    },
+    "root_cause": "CATALOGUE_400_NETLIFY_EGRESS",
+    "root_cause_detail": "Mac and Netlify use the same DEFAULT public SPA client-id hash and the same request construction. UBE bootstrap succeeds on both (HTTP 200, booking company PA). The resdb catalogue then returns HTTP 200 from the Mac and a persistent HTTP 400 missing-params response from Netlify AWS egress across all session variants, including the transient-400 retry. This is a supplier/network environment rejection, not a missing PRINCESS_PCL_CLIENT_ID configuration error."
+  },
+  "netlify_parity": {
+    "mac_eligible": 1938,
+    "netlify_eligible": 0,
+    "mac_hash": "0b092adf80a816ab709ecfe4ad769fba8572de8ba21c42657297d253ec18c5ca",
+    "netlify_hash": null,
+    "mac_only": "all 1938 eligible IDs",
+    "netlify_only": [],
+    "parity_result": "FAIL",
+    "netlify_full_eligible": false
+  },
+  "architecture": {
+    "final": "NETLIFY_ORCHESTRATED_MAC_HARVEST",
+    "mac_worker_required": true,
+    "persistent_worker_installed": true,
+    "heartbeat_healthy": true,
+    "worker_label": "au.com.101cruise.princess-source-worker",
+    "dispatch_transport": "B_supabase_harvest_queue",
+    "queue_backend": "cruise_discovery_runs princess_mac_harvest fallback; SQL migration princess_harvest_requests retained for later apply",
+    "github_dispatch_token_present_on_netlify": false
+  },
+  "rehearsal": {
+    "netlify_launcher": "rehearsal_enqueue_simulating_netlify_orchestration",
+    "source_worker": "p3p-rehearsal-mac then persistent mac-launchd",
+    "harvest_request_id": "a7fc3186-41ea-4c31-81d6-a50fe051bafd",
+    "dispatch_id": "p3p-hybrid-rehearsal-2026-09-29T08-10-14-382Z",
+    "source_freeze": true,
+    "source_snapshot_hash": "0b092adf80a816ab709ecfe4ad769fba8572de8ba21c42657297d253ec18c5ca",
+    "eligible_count": 1938,
+    "reconciliation": "read_only_weekly_on_mac_worker",
+    "writes": 0,
+    "terminal": "completed",
+    "locks_clean": true,
+    "one_request_one_claim_one_run": true
+  },
+  "cutover": {
+    "netlify_schedule_enabled": true,
+    "netlify_cron": "0 21 * * 0",
+    "github_schedule_removed": true,
+    "manual_github_path_retained": true,
+    "one_scheduler_proven": true,
+    "scheduler": "netlify"
+  },
+  "system": {
+    "discovered_cruises_writes": 0,
+    "cutoff_changed": false,
+    "source_absence_changed": false,
+    "write_cap_changed": false,
+    "w40_apply_rerun": false,
+    "tests": {
+      "p3p": "19 passed",
+      "p3o": "16 passed",
+      "p3n": "25 passed",
+      "p3m": "31 passed",
+      "princess_weekly": "77 passed",
+      "princess_remap": "8 passed",
+      "princess_catch_up": "50 passed",
+      "shared_maintenance_reliability": "99 passed"
+    }
+  }
+}

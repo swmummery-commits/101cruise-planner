@@ -16,9 +16,8 @@ on:
         type: choice
         options:
           - "30"
-  schedule:
-    # Monday 05:00 Australia/Perth = Sunday 21:00 UTC
-    - cron: "0 21 * * 0"
+  # P3P cutover: Netlify owns Monday 05:00 Perth (cron 0 21 * * 0).
+  # This workflow remains manual/emergency only.
 
 concurrency:
   group: princess-weekly-maintenance

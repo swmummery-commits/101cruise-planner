@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>au.com.101cruise.princess-source-worker</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>REPO_ROOT/scripts/princess-mac-source-worker.mjs</string>
+    <string>--loop</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>REPO_ROOT</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>HOME/Library/Logs/101cruise-princess-source-worker.log</string>
+  <key>StandardErrorPath</key>
+  <string>HOME/Library/Logs/101cruise-princess-source-worker.err</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PRINCESS_SOURCE_WORKER_ID</key>
+    <string>mac-launchd</string>
+  </dict>
+</dict>
+</plist>

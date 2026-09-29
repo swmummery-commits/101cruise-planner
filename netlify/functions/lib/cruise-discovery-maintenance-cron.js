@@ -136,7 +136,9 @@ async function executeWeeklyMaintenance({
         runId,
         runRecordId: dbRun?.id || null,
         supabase: sb,
-        triggerType
+        triggerType,
+        dispatchId,
+        cruiseLineId
       }),
       lineSlug
     );

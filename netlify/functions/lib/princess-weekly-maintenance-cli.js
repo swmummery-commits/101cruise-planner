@@ -901,13 +901,17 @@ function evaluatePrincessScheduleObservability({
   };
 }
 
-function countPrincessWeeklyCronSchedules(workflowSources = []) {
+function countPrincessWeeklyCronSchedules(workflowSources = [], netlifyToml = "") {
   let count = 0;
   for (const src of workflowSources) {
     if (/^\s*schedule:/m.test(src) && /0 21 \* \* 0/.test(src) && /princess/i.test(src)) {
       count += 1;
     }
   }
+  const block =
+    String(netlifyToml).match(/\[functions\."princess-weekly-maintenance-cron"\][\s\S]*?(?=\n\[functions\.|$)/)?.[0] ||
+    "";
+  if (/schedule\s*=\s*"0 21 \* \* 0"/.test(block)) count += 1;
   return count;
 }
 

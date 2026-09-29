@@ -58,9 +58,9 @@
   ]
 
 [functions."princess-weekly-maintenance-cron"]
-  # Unscheduled thin launcher until explicit single-scheduler cutover.
-  # Authoritative Princess weekly schedule remains GitHub Actions
-  # (Sunday 21:00 UTC / Monday 05:00 Perth) until Part 20 proofs complete.
+  # Authoritative Princess weekly schedule: Sunday 21:00 UTC / Monday 05:00 Australia/Perth.
+  # GitHub cron is removed at P3P cutover. Netlify owns the period lease.
+  schedule = "0 21 * * 0"
   timeout = 26
 
 [functions."princess-weekly-maintenance-background"]

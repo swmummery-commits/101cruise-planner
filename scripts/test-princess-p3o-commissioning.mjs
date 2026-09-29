@@ -279,6 +279,7 @@ await test("single scheduler owner remains exactly one", () => {
   const githubScheduled = /schedule:[\s\S]*cron: "0 21 \* \* 0"/.test(applyWorkflow);
   const owners = [scheduledInToml && "netlify", githubScheduled && "github"].filter(Boolean);
   if (owners.length !== 1) throw new Error(`scheduler owners: ${owners.join(",") || "none"}`);
+  if (owners[0] !== "netlify") throw new Error("P3P cutover must leave Netlify as the scheduler");
 });
 
 await test("parity/rehearsal must not use Monday scheduled lease", () => {

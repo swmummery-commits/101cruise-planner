@@ -19,9 +19,10 @@ exports.handler = async (event) => {
   try {
     assertCronAuth(event);
     const body = parseJsonBody(event);
-    const dryRun = body.force_apply === true ? resolveDryRun(body) : true;
-    const maxWrites = resolveMaxWrites(body);
     const triggerType = String(body.trigger_type || body.triggerType || "background").trim();
+    const scheduled = triggerType === "scheduled";
+    const dryRun = scheduled || body.force_apply === true ? resolveDryRun(body) : true;
+    const maxWrites = resolveMaxWrites(body);
     const dispatchId = body.dispatch_id || body.dispatchId || null;
     const provenance = body.invocation_provenance || null;
 

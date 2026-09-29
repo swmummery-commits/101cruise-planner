@@ -1,8 +1,8 @@
 /**
  * Princess weekly maintenance — thin launcher.
  *
- * Unscheduled until GitHub cron is disabled at an explicit single-scheduler
- * cutover. Manual / diagnostic dispatch only in P3N.
+ * P3P cutover: Netlify owns Sunday 21:00 UTC / Monday 05:00 Australia/Perth.
+ * GitHub workflow_dispatch remains manual/emergency only.
  */
 
 const { supabase } = require("./lib/cruise-discovery-maintenance-cron");
