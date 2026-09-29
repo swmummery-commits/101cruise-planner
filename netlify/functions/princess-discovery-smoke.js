@@ -103,7 +103,11 @@ exports.handler = async (event) => {
           run_id: runId,
           trigger_type: "production_smoke",
           smoke: true,
-          inventory_changed: false
+          inventory_changed: false,
+          source_diagnostics: summary.source_diagnostics || result.simulation?.source_diagnostics || null,
+          source_failure_class: summary.source_failure_class || result.simulation?.source_diagnostics?.failure_class || null,
+          effective_client_id: summary.effective_client_id || result.simulation?.source_diagnostics?.effective_client_id || null,
+          client_id_source: summary.client_id_source || result.simulation?.source_diagnostics?.client_id_source || null
         })
       });
     }
@@ -120,7 +124,7 @@ exports.handler = async (event) => {
         : result.simulation?.fetch_result?.fetch_failed
           ? "catalogue"
           : null;
-    const sourceDiagnostics = result.simulation?.source_diagnostics || null;
+    const sourceDiagnostics = result.simulation?.source_diagnostics || summary.source_diagnostics || null;
     const payload = {
       ok: result.ok === true && !result.blocked,
       mode: "production_read_only",
@@ -129,6 +133,9 @@ exports.handler = async (event) => {
       reason: result.reason || null,
       sourceError,
       sourceErrorStage,
+      sourceFailureClass: summary.source_failure_class || sourceDiagnostics?.failure_class || null,
+      effectiveClientId: summary.effective_client_id || sourceDiagnostics?.effective_client_id || null,
+      clientIdSource: summary.client_id_source || sourceDiagnostics?.client_id_source || null,
       sourceDiagnostics,
       deployedCommitRef: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
       runRecordId: dbRun?.id || null,

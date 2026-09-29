@@ -260,7 +260,7 @@ async function simulatePrincessInventory(context = {}) {
   const fetchResult = await fetchAllPrincessRawSailings({
     today,
     futureOnly: true,
-    collectDiagnostics: context.collectSourceDiagnostics === true
+    collectDiagnostics: context.collectSourceDiagnostics !== false
   });
 
   const normalised = [];

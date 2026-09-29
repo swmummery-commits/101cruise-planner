@@ -79,7 +79,10 @@ const DELIBERATE_NON_WRITING_TERMINALS = Object.freeze([
   "controlled_catchup_required",
   "not_yet_commissioned",
   "disabled",
-  "source_worker_not_started"
+  "source_worker_not_started",
+  "SOURCE_WORKER_NOT_STARTED",
+  "stale_source_worker",
+  "STALE_SOURCE_WORKER"
 ]);
 
 const FAILED_TERMINALS = Object.freeze(["failed_before_writes", "partial_write_failure"]);
@@ -94,7 +97,10 @@ const CLASSIFIED_REASON_TERMINALS = Object.freeze({
   CONTROLLED_CATCHUP_REQUIRED: "controlled_catchup_required",
   NOT_YET_COMMISSIONED: "not_yet_commissioned",
   DISABLED: "disabled",
-  carnival_discovery_write_not_yet_commissioned: "not_yet_commissioned",
+  SOURCE_WORKER_NOT_STARTED: "source_worker_not_started",
+  source_worker_not_started: "source_worker_not_started",
+  STALE_SOURCE_WORKER: "stale_source_worker",
+  stale_source_worker: "stale_source_worker",
   carnival_discovery_write_forbidden: "not_yet_commissioned",
   azamara_source_collapse: "source_repair_required",
   azamara_zero_source: "source_repair_required",

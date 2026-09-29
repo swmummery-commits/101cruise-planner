@@ -1041,17 +1041,36 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       destinations,
       today,
       useCache: false,
-      collectSourceDiagnostics: Boolean(context.collectSourceDiagnostics ?? context.collect_source_diagnostics)
+      collectSourceDiagnostics: true
     });
 
     if (!simulation?.products?.length && simulation?.fetch_failed) {
+      const sourceDiagnostics = simulation.source_diagnostics || null;
+      const failureClass = sourceDiagnostics?.failure_class || "OTHER";
       return {
         ok: false,
         blocked: false,
         failed: true,
         reason: "official_source_unreachable",
         line_slug: lineSlug,
-        simulation
+        simulation,
+        summary: {
+          line_slug: lineSlug,
+          run_id: runId,
+          run_type: runType,
+          trigger_type: context.triggerType || context.trigger_type || "scheduled",
+          dry_run: dryRun === true,
+          terminal_status: "failed_before_writes",
+          source_failure_class: failureClass,
+          source_diagnostics: sourceDiagnostics,
+          effective_client_id: sourceDiagnostics?.effective_client_id || null,
+          client_id_source: sourceDiagnostics?.client_id_source || null,
+          official_source_total: 0,
+          eligible_total: 0,
+          inserts: 0,
+          updates: 0,
+          inventory_changed: false
+        }
       };
     }
 

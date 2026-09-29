@@ -13,6 +13,14 @@
 const https = require("https");
 const { canonicalUrl } = require("./cruise-discovery-structured");
 const { fetchSourceExcerpt } = require("./source-fetch");
+const {
+  fingerprintClientId,
+  classifyClientIdSource,
+  requestConstructionFingerprint,
+  classifyPrincessSourceFailure,
+  lookupDnsClass,
+  redactSecretsFromDiagnostics
+} = require("./princess-source-diagnostics");
 
 const ADAPTER_ID = "princess";
 const ADAPTER_VERSION = "2026-08-07.princess2";
@@ -112,10 +120,12 @@ function classifyProductType(raw) {
   return "cruise";
 }
 
-async function resolvePclClientId() {
-  const envId = String(process.env.PRINCESS_PCL_CLIENT_ID || "").trim();
-  if (envId) return envId;
-  if (String(process.env.PRINCESS_PCL_CLIENT_ID_REFRESH || "").trim().toLowerCase() === "true") {
+async function resolvePclClientIdDetailed(env = process.env) {
+  const envId = String(env.PRINCESS_PCL_CLIENT_ID || "").trim();
+  if (envId) {
+    return { value: envId, source: "ENV" };
+  }
+  if (String(env.PRINCESS_PCL_CLIENT_ID_REFRESH || "").trim().toLowerCase() === "true") {
     try {
       const chunk = await fetchSourceExcerpt(
         "https://www.princess.com/cruise-search/_next/static/chunks/commons.3bc1da26bfee81df1d5d.js",
@@ -123,12 +133,17 @@ async function resolvePclClientId() {
       );
       const text = chunk.excerpt || chunk.html || "";
       const m = text.match(/32e7224[a-f0-9]{24}/i) || text.match(/[a-f0-9]{32}/i);
-      if (m) return m[0];
+      if (m) return { value: m[0], source: "REFRESHED" };
     } catch (_err) {
       /* fallback below */
     }
   }
-  return DEFAULT_CLIENT_ID;
+  return { value: DEFAULT_CLIENT_ID, source: classifyClientIdSource(env, false) };
+}
+
+async function resolvePclClientId() {
+  const resolved = await resolvePclClientIdDetailed();
+  return resolved.value;
 }
 
 function readResponseSetCookies(response) {
@@ -175,6 +190,54 @@ function sanitizeBodyExcerpt(text, maxLen = 240) {
   return cleaned.slice(0, maxLen);
 }
 
+function sanitizeSessionFingerprint(session) {
+  if (!session) return null;
+  const cookie = session.cookie ? String(session.cookie) : "";
+  return {
+    ok: session.ok !== false,
+    client_id: fingerprintClientId(session.clientId),
+    client_id_source: session.client_id_source || null,
+    cookie_present: Boolean(cookie),
+    cookie_count: cookie
+      ? cookie.split(";").map((part) => part.trim()).filter(Boolean).length
+      : Number(session.diagnostics?.cookie_count || 0),
+    productcompany: session.productCompany || null,
+    bookingcompany: session.bookingCompany || null
+  };
+}
+
+function buildPrincessSourceDiagnosticsEnvelope({
+  session = null,
+  catalogue = null,
+  extra = {}
+} = {}) {
+  const bootstrap = session?.diagnostics || extra.bootstrap || null;
+  const catalogueDiag = catalogue?.diagnostics || extra.catalogue || null;
+  const transport =
+    extra.transport ||
+    bootstrap?.attempts?.[0]?.transport ||
+    catalogueDiag?.attempts?.[0]?.transport ||
+    null;
+  const fetchFailed = extra.fetch_failed === true || session?.ok === false || catalogue?.ok === false;
+  const failureClass = fetchFailed
+    ? classifyPrincessSourceFailure({
+        bootstrap,
+        catalogue: catalogueDiag,
+        transport
+      })
+    : null;
+  return redactSecretsFromDiagnostics({
+    effective_client_id: fingerprintClientId(session?.clientId),
+    client_id_source: session?.client_id_source || extra.client_id_source || classifyClientIdSource(),
+    session: sanitizeSessionFingerprint(session),
+    bootstrap,
+    catalogue: catalogueDiag,
+    request: bootstrap?.attempts?.[0]?.request || catalogueDiag?.attempts?.[0]?.request || extra.request || null,
+    transport,
+    failure_class: failureClass
+  });
+}
+
 function describeCatalogueAttempt(sessionVariant, attemptIndex) {
   return {
     attempt: attemptIndex + 1,
@@ -194,9 +257,17 @@ function readNodeSetCookies(headers = {}) {
 
 async function princessTransportGet(url, headers, { timeoutMs = 30000 } = {}) {
   if (transportGetOverride) {
-    return transportGetOverride(url, headers, { timeoutMs });
+    const response = await transportGetOverride(url, headers, { timeoutMs });
+    return { ...response, transport: { mocked: true, tcp_tls_success: true } };
   }
   const parsed = new URL(url);
+  const dns = await lookupDnsClass(parsed.hostname);
+  if (!dns.ok) {
+    const err = new Error("princess_source_dns_failure");
+    err.code = dns.error_code || "ENOTFOUND";
+    err.transport = { dns, tcp_tls_success: false, timeout: false };
+    throw err;
+  }
   return new Promise((resolve, reject) => {
     const req = https.request(
       {
@@ -209,6 +280,16 @@ async function princessTransportGet(url, headers, { timeoutMs = 30000 } = {}) {
       },
       (response) => {
         let text = "";
+        const socket = response.socket;
+        const transport = {
+          dns,
+          hostname: parsed.hostname,
+          path: `${parsed.pathname}${parsed.search}`,
+          tcp_tls_success: true,
+          tls_protocol: typeof socket?.getProtocol === "function" ? socket.getProtocol() : null,
+          remote_family_class: socket?.remoteFamily === "IPv6" ? "IPv6" : "IPv4",
+          timeout: false
+        };
         response.on("data", (chunk) => {
           text += chunk;
         });
@@ -217,22 +298,41 @@ async function princessTransportGet(url, headers, { timeoutMs = 30000 } = {}) {
             status: response.statusCode || 0,
             headers: response.headers || {},
             text,
-            setCookie: readNodeSetCookies(response.headers)
+            setCookie: readNodeSetCookies(response.headers),
+            transport
           });
         });
       }
     );
     req.on("timeout", () => {
-      req.destroy(new Error("princess_source_timeout"));
+      const err = new Error("princess_source_timeout");
+      err.code = "ETIMEDOUT";
+      err.transport = { dns, hostname: parsed.hostname, tcp_tls_success: false, timeout: true };
+      req.destroy(err);
     });
-    req.on("error", reject);
+    req.on("error", (error) => {
+      error.transport = {
+        dns,
+        hostname: parsed.hostname,
+        tcp_tls_success: false,
+        timeout: /timeout/i.test(error.message || "") || error.code === "ETIMEDOUT",
+        tls_ok: !/CERT|SSL|TLS/i.test(String(error.code || error.message || "")),
+        error_code: error.code || "TRANSPORT_ERROR"
+      };
+      reject(error);
+    });
     req.end();
   });
 }
 
 async function princessApiGet(path, { session = null, clientId = null, collectDiagnostics = false } = {}) {
   const started = Date.now();
-  const id = clientId || session?.clientId || (await resolvePclClientId());
+  const resolved = clientId
+    ? { value: clientId, source: session?.client_id_source || "SESSION" }
+    : session?.clientId
+      ? { value: session.clientId, source: session.client_id_source || "SESSION" }
+      : await resolvePclClientIdDetailed();
+  const id = resolved.value;
   const bookingCompany =
     session?.bookingCompany || session?.booking_company || DEFAULT_BOOKING_COMPANY;
   const productCompany = session?.productCompany || session?.product_company || DEFAULT_PRODUCT_COMPANY;
@@ -248,7 +348,43 @@ async function princessApiGet(path, { session = null, clientId = null, collectDi
   if (session?.cookie) headers.Cookie = session.cookie;
 
   const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-  const response = await princessTransportGet(url, headers);
+  let response;
+  try {
+    response = await princessTransportGet(url, headers);
+  } catch (error) {
+    const transport = error.transport || { tcp_tls_success: false, error_code: error.code || "TRANSPORT_ERROR" };
+    const result = {
+      ok: false,
+      status: 0,
+      data: null,
+      text: "",
+      headers: {},
+      setCookie: [],
+      transport
+    };
+    if (collectDiagnostics) {
+      result.diagnostics = redactSecretsFromDiagnostics({
+        http_status: 0,
+        elapsed_ms: Date.now() - started,
+        response_content_type: null,
+        response_headers: {},
+        body_excerpt: sanitizeBodyExcerpt(error.message),
+        transport,
+        effective_client_id: fingerprintClientId(id),
+        client_id_source: resolved.source,
+        request: requestConstructionFingerprint({
+          userAgent: USER_AGENT,
+          origin: headers.Origin,
+          referer: headers.Referer,
+          clientIdPresent: Boolean(id),
+          cookiePresent: Boolean(session?.cookie),
+          productcompany: productCompany,
+          bookingcompany: bookingCompany
+        })
+      });
+    }
+    return result;
+  }
   const text = response.text;
   let data = null;
   try {
@@ -263,52 +399,71 @@ async function princessApiGet(path, { session = null, clientId = null, collectDi
     data,
     text,
     headers: response.headers,
-    setCookie
+    setCookie,
+    transport: response.transport || null
   };
   if (collectDiagnostics) {
-    result.diagnostics = {
+    const parsedUrl = new URL(url);
+    result.diagnostics = redactSecretsFromDiagnostics({
       http_status: response.status,
       elapsed_ms: Date.now() - started,
       response_content_type: response.headers["content-type"] || null,
       response_content_length: response.headers["content-length"] || null,
       response_headers: sanitizeResponseHeaders(response.headers),
       body_excerpt: sanitizeBodyExcerpt(text),
-      transport: "https",
-      request: {
-        bootstrap_cookies_used: Boolean(session?.cookie),
-        client_id_included: Boolean(id),
-        bookingcompany: bookingCompany,
+      transport: response.transport || { transport: "https" },
+      hostname: parsedUrl.hostname,
+      path: `${parsedUrl.pathname}${parsedUrl.search}`,
+      effective_client_id: fingerprintClientId(id),
+      client_id_source: resolved.source,
+      request: requestConstructionFingerprint({
+        userAgent: USER_AGENT,
+        origin: headers.Origin,
+        referer: headers.Referer,
+        clientIdPresent: Boolean(id),
+        cookiePresent: Boolean(session?.cookie),
         productcompany: productCompany,
-        agencyCountry: DEFAULT_AGENCY_COUNTRY,
-        path: path.startsWith("http") ? path.replace(API_BASE, "") : path
-      }
-    };
+        bookingcompany: bookingCompany
+      })
+    });
   }
   return result;
 }
 
 async function bootstrapPrincessSession(options = {}) {
   const collectDiagnostics = options.collectDiagnostics === true;
-  const clientId = options.clientId || (await resolvePclClientId());
+  const resolved = options.clientId
+    ? { value: options.clientId, source: options.client_id_source || "SESSION" }
+    : await resolvePclClientIdDetailed();
+  const clientId = resolved.value;
   const result = await princessApiGet("/ube/p1.0/ube?env=prod&country=AU", {
     clientId,
     collectDiagnostics,
     session: {
       productCompany: DEFAULT_PRODUCT_COMPANY,
-      bookingCompany: DEFAULT_BOOKING_COMPANY
+      bookingCompany: DEFAULT_BOOKING_COMPANY,
+      client_id_source: resolved.source
     }
   });
   if (!result.ok) {
+    const diagnostics = collectDiagnostics
+      ? redactSecretsFromDiagnostics({
+          stage: "bootstrap",
+          attempts: [result.diagnostics].filter(Boolean),
+          effective_client_id: fingerprintClientId(clientId),
+          client_id_source: resolved.source,
+          failure_class: classifyPrincessSourceFailure({
+            bootstrap: { attempts: [result.diagnostics].filter(Boolean) },
+            transport: result.transport || result.diagnostics?.transport
+          })
+        })
+      : null;
     return {
       ok: false,
       error: result.data?.message || result.data?.httpMessage || `ube_bootstrap_http_${result.status}`,
       clientId,
-      diagnostics: collectDiagnostics
-        ? {
-            stage: "bootstrap",
-            attempts: [result.diagnostics].filter(Boolean)
-          }
-        : null
+      client_id_source: resolved.source,
+      diagnostics
     };
   }
   const settings = result.data?.ube?.settings || {};
@@ -318,16 +473,22 @@ async function bootstrapPrincessSession(options = {}) {
   return {
     ok: true,
     clientId,
+    client_id_source: resolved.source,
     cookie,
     productCompany: settings.productCompany || DEFAULT_PRODUCT_COMPANY,
     bookingCompany: features.bookingCompanyCode || features.id || DEFAULT_BOOKING_COMPANY,
     settings,
     diagnostics: collectDiagnostics
-      ? {
+      ? redactSecretsFromDiagnostics({
           stage: "bootstrap",
           attempts: [result.diagnostics].filter(Boolean),
-          cookie_count: (result.setCookie || []).length
-        }
+          cookie_count: (result.setCookie || []).length,
+          cookie_present: Boolean(cookie),
+          bookingcompany: features.bookingCompanyCode || features.id || DEFAULT_BOOKING_COMPANY,
+          productcompany: settings.productCompany || DEFAULT_PRODUCT_COMPANY,
+          effective_client_id: fingerprintClientId(clientId),
+          client_id_source: resolved.source
+        })
       : null
   };
 }
@@ -401,7 +562,8 @@ async function fetchPrincessResdbCatalogue({
           clientId: variant.clientId,
           cookie: variant.cookie || null,
           productCompany: variant.productCompany,
-          bookingCompany: variant.bookingCompany
+          bookingCompany: variant.bookingCompany,
+          client_id_source: variant.client_id_source || session?.client_id_source
         }
       });
       recordCatalogueControlAttempt(internalAttempts, variant, result, internalAttempts.length);
@@ -579,16 +741,20 @@ function expandProductGroupsToRawSailings(
 
 async function fetchAllPrincessRawSailings(options = {}) {
   const today = options.today || new Date().toISOString().slice(0, 10);
-  const collectDiagnostics = options.collectDiagnostics === true;
+  const collectDiagnostics = options.collectDiagnostics !== false;
   const session = options.session || (await bootstrapPrincessSession({ ...options, collectDiagnostics }));
   if (!session.ok) {
+    const source_diagnostics = buildPrincessSourceDiagnosticsEnvelope({
+      session,
+      extra: { fetch_failed: true }
+    });
     return {
       ok: false,
       fetch_failed: true,
       error: session.error,
       products: [],
-      session,
-      source_diagnostics: session.diagnostics || null
+      session: sanitizeSessionFingerprint(session),
+      source_diagnostics
     };
   }
 
@@ -596,7 +762,8 @@ async function fetchAllPrincessRawSailings(options = {}) {
     clientId: session.clientId,
     cookie: session.cookie,
     productCompany: session.productCompany,
-    bookingCompany: session.bookingCompany
+    bookingCompany: session.bookingCompany,
+    client_id_source: session.client_id_source || classifyClientIdSource()
   };
 
   const [catalogue, catalogueNames, reference] = await Promise.all([
@@ -606,17 +773,19 @@ async function fetchAllPrincessRawSailings(options = {}) {
   ]);
 
   if (!catalogue.ok) {
+    const source_diagnostics = buildPrincessSourceDiagnosticsEnvelope({
+      session: { ...session, client_id_source: sessionCtx.client_id_source },
+      catalogue,
+      extra: { fetch_failed: true }
+    });
     return {
       ok: false,
       fetch_failed: true,
       error: catalogue.error,
       error_detail: catalogue.error_detail || null,
       products: [],
-      session: sessionCtx,
-      source_diagnostics: {
-        bootstrap: session.diagnostics || null,
-        catalogue: catalogue.diagnostics || null
-      }
+      session: sanitizeSessionFingerprint(sessionCtx),
+      source_diagnostics
     };
   }
 
@@ -632,12 +801,18 @@ async function fetchAllPrincessRawSailings(options = {}) {
     futureOnly: options.futureOnly !== false
   });
 
-  const minimalCatalogueDiag =
-    catalogue.diagnostics?.transient_retry === true
+  const source_diagnostics = collectDiagnostics
+    ? buildPrincessSourceDiagnosticsEnvelope({
+        session: { ...session, client_id_source: sessionCtx.client_id_source },
+        catalogue
+      })
+    : catalogue.diagnostics?.transient_retry === true
       ? {
-          stage: "catalogue",
-          transient_retry: true,
-          control_attempts: catalogue.diagnostics.control_attempts ?? null
+          catalogue: {
+            stage: "catalogue",
+            transient_retry: true,
+            control_attempts: catalogue.diagnostics.control_attempts ?? null
+          }
         }
       : null;
 
@@ -650,14 +825,7 @@ async function fetchAllPrincessRawSailings(options = {}) {
     itinerary_name_count: itineraryNamesById.size,
     itinerary_names_fetch_failed: !catalogueNames.ok,
     reference,
-    source_diagnostics: collectDiagnostics
-      ? {
-          bootstrap: session.diagnostics || null,
-          catalogue: catalogue.diagnostics || null
-        }
-      : minimalCatalogueDiag
-        ? { catalogue: minimalCatalogueDiag }
-        : null,
+    source_diagnostics,
     ...expanded,
     source_contract: SOURCE_CONTRACT
   };
@@ -770,6 +938,7 @@ module.exports = {
   classifyProductType,
   parseSailDate,
   resolvePclClientId,
+  resolvePclClientIdDetailed,
   bootstrapPrincessSession,
   fetchPrincessResdbCatalogue,
   fetchPrincessReferenceData,
@@ -783,6 +952,8 @@ module.exports = {
   summarisePrincessProducts,
   sanitizeResponseHeaders,
   sanitizeBodyExcerpt,
+  sanitizeSessionFingerprint,
+  buildPrincessSourceDiagnosticsEnvelope,
   formatPrincessHttpError,
   isPrincessTransientMissingParamsError,
   __setPrincessTransportGetForTests: (fn) => {
