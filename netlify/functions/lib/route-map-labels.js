@@ -179,6 +179,17 @@ function placePortLabels(ports, routePoints, themeLabel, viewport) {
       });
     }
 
+    if (best && themeLabel.leaderOnlyWhenClose) {
+      let nearest = Infinity;
+      for (const other of ports) {
+        if (other === port) continue;
+        nearest = Math.min(nearest, Math.hypot(other.x - port.x, other.y - port.y));
+      }
+      const displaced = best.candidate !== "ur" && best.candidate !== "r";
+      const closePx = Number(themeLabel.closePx) > 0 ? Number(themeLabel.closePx) : 96;
+      best.useLeader = nearest < closePx || displaced;
+    }
+
     if (best) {
       placed.push(best);
       occupied.push({ ...best.box, kind: "label" });

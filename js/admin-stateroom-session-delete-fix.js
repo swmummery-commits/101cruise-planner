@@ -67,6 +67,13 @@
 
     const localSignOut = async function () {
       try {
+        if (typeof global.persistFeaturedLocalDraftNow === "function") {
+          global.persistFeaturedLocalDraftNow();
+        }
+      } catch (_error) {
+        /* keep the stored draft */
+      }
+      try {
         await global.supabaseClient?.auth?.signOut?.({ scope: "local" });
       } finally {
         try { currentUser = null; } catch (_) {}

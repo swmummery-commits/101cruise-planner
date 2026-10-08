@@ -20,11 +20,13 @@ const { loadMarineRouteRow, saveMarineRouteRow, deleteMarineRouteRow } = require
 const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
 const { routeObjectEndpointsPlausible, routeObjectAvoidsLand } = require("./lib/marine-route");
 const { renderRouteMapSvg } = require("./lib/route-map-svg");
+const { normaliseRouteMapStyle } = require("./lib/route-map-style");
 const {
   ROUTE_MAP_RENDERER_VERSION,
   DEFAULT_PNG_WIDTH,
   ROUTE_MAP_STORAGE_BUCKET,
   saveRouteMapAssets,
+  svgToPngBuffer,
   storageObjectPaths,
   publicObjectUrl,
   deleteRouteMapAssetsFromStorage
@@ -390,6 +392,84 @@ async function handleStatus(featuredCruiseId) {
   });
 }
 
+async function loadCruiseBranding(featuredCruiseId) {
+  try {
+    const rows = await supabaseGet(
+      `featured_cruises?id=eq.${encodeURIComponent(featuredCruiseId)}` +
+        `&select=ci_cruise_lines(name),ci_cruise_ships(name)&limit=1`
+    );
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return {
+      lineName: row?.ci_cruise_lines?.name || "",
+      shipName: row?.ci_cruise_ships?.name || ""
+    };
+  } catch {
+    return { lineName: "", shipName: "" };
+  }
+}
+
+function renderOptionsForStyle(style, body, branding) {
+  if (style !== "social") return {};
+  return {
+    style: "social",
+    format: body.format === "square" ? "square" : "portrait",
+    branding
+  };
+}
+
+async function handlePreview(featuredCruiseId, body) {
+  const style = normaliseRouteMapStyle(body.style);
+  const routeResult = await ensureRouteObject(featuredCruiseId, false);
+  if (!routeResult.ok) {
+    const first = routeResult.errors?.[0] || {};
+    return jsonResponse(400, {
+      ok: false,
+      errors: [
+        {
+          code: first.code || "missing_route_object",
+          message: first.message || "Add a mapped itinerary before previewing a route map."
+        }
+      ]
+    });
+  }
+  const branding = style === "social" ? await loadCruiseBranding(featuredCruiseId) : null;
+  let rendered;
+  try {
+    rendered = renderRouteMapSvg(
+      routeResult.routeObject,
+      renderOptionsForStyle(style, body, branding)
+    );
+  } catch (error) {
+    return jsonResponse(500, {
+      ok: false,
+      errors: [{ code: "svg_render_failed", message: error.message || "SVG render failed." }]
+    });
+  }
+  if (!rendered.ok || !rendered.svg) {
+    return jsonResponse(500, {
+      ok: false,
+      errors: rendered.errors?.length
+        ? rendered.errors
+        : [{ code: "svg_render_failed", message: "SVG renderer failed." }]
+    });
+  }
+  try {
+    const png = await svgToPngBuffer(rendered.svg, { width: 900 });
+    return jsonResponse(200, {
+      ok: true,
+      style,
+      width: rendered.meta.width,
+      height: rendered.meta.height,
+      preview_png: `data:image/png;base64,${png.buffer.toString("base64")}`
+    });
+  } catch (error) {
+    return jsonResponse(500, {
+      ok: false,
+      errors: [{ code: "png_render_failed", message: error.message || "Could not render the preview." }]
+    });
+  }
+}
+
 async function handleGenerate(featuredCruiseId, body) {
   const started = Date.now();
   const stages = [];
@@ -437,9 +517,14 @@ async function handleGenerate(featuredCruiseId, body) {
 
   mark("rendering_svg");
   const tSvg = Date.now();
+  const style = normaliseRouteMapStyle(body.style);
   let rendered;
   try {
-    rendered = renderRouteMapSvg(routeResult.routeObject, {});
+    const branding = style === "social" ? await loadCruiseBranding(featuredCruiseId) : null;
+    rendered = renderRouteMapSvg(
+      routeResult.routeObject,
+      renderOptionsForStyle(style, body, branding)
+    );
   } catch (error) {
     return jsonResponse(500, {
       ok: false,
@@ -471,9 +556,11 @@ async function handleGenerate(featuredCruiseId, body) {
   let saved;
   const tSave = Date.now();
   try {
+    const style = normaliseRouteMapStyle(body.style);
     saved = await saveRouteMapAssets(featuredCruiseId, rendered.svg, {
-      pngWidth: Number(body.png_width) || DEFAULT_PNG_WIDTH,
-      rendererVersion: ROUTE_MAP_RENDERER_VERSION
+      pngWidth: Number(body.png_width) || (style === "social" ? 1620 : DEFAULT_PNG_WIDTH),
+      rendererVersion:
+        style === "social" ? `${ROUTE_MAP_RENDERER_VERSION}-social` : ROUTE_MAP_RENDERER_VERSION
       // Production: Supabase Storage only — no localFallback
     });
   } catch (error) {
@@ -579,6 +666,7 @@ exports.handler = async (event) => {
 
   try {
     if (action === "status") return await handleStatus(featuredCruiseId);
+    if (action === "preview") return await handlePreview(featuredCruiseId, body);
     if (action === "generate") return await handleGenerate(featuredCruiseId, body);
     if (action === "delete") return await handleDelete(featuredCruiseId);
     return jsonResponse(400, {

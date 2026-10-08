@@ -13,6 +13,7 @@
  */
 
 const { ROUTE_MAP_THEME } = require("./route-map-theme");
+const { normaliseRouteMapStyle, resolveSocialRender } = require("./route-map-style");
 const { unwrapPolylineForDrawing } = require("./antimeridian");
 const {
   boundsFromPoints,
@@ -205,6 +206,24 @@ function buildSeaDepthEllipses(theme, width, height) {
   return parts.join("");
 }
 
+function socialBrandFooter(width, mapHeight, footer, branding) {
+  const line = [branding?.lineName, branding?.shipName].filter(Boolean).join("  ·  ");
+  const trimmed = line.length > 46 ? `${line.slice(0, 45)}…` : line;
+  const brandSize = Math.max(18, Math.round(footer * 0.34));
+  const metaSize = Math.max(12, Math.round(footer * 0.2));
+  const textY = mapHeight + Math.round(footer * 0.62);
+  const meta =
+    trimmed
+      ? `<text x="36" y="${textY}" font-family="Noto Sans, Helvetica, Arial, sans-serif" font-size="${metaSize}" font-weight="600" fill="#5E6B74">${escapeXml(trimmed)}</text>`
+      : "";
+  return `<g id="social-brand">
+    <rect x="0" y="${mapHeight}" width="${width}" height="${footer}" fill="#F7F4EE"/>
+    <rect x="0" y="${mapHeight}" width="${width}" height="6" fill="#8DD9BF"/>
+    ${meta}
+    <text x="${width - 36}" y="${textY}" text-anchor="end" font-family="Noto Sans, Helvetica, Arial, sans-serif" font-size="${brandSize}" font-weight="800" letter-spacing="1.2" fill="#F80020">101 CRUISE</text>
+  </g>`;
+}
+
 /**
  * Render a deterministic standalone SVG from a Route Object.
  */
@@ -222,9 +241,13 @@ function renderRouteMapSvg(routeObject, options = {}) {
   }
 
   const route = normalised.route;
-  const theme = deepMergeTheme(ROUTE_MAP_THEME, options.theme);
-  const width = Number(options.width) || theme.layout.width;
-  const height = Number(options.height) || theme.layout.height;
+  const style = normaliseRouteMapStyle(options.style);
+  const social = style === "social" ? resolveSocialRender(options) : null;
+  const theme = deepMergeTheme(ROUTE_MAP_THEME, social ? social.theme : options.theme);
+  const width = Number(options.width) || (social ? social.width : theme.layout.width);
+  const height = Number(options.height) || (social ? social.height : theme.layout.height);
+  const footerH = social ? social.footer : 0;
+  const frameHeight = height - footerH;
   const shipProgress =
     options.shipProgress != null ? Number(options.shipProgress) : theme.layout.shipProgress;
   const coastlineResolution =
@@ -262,7 +285,7 @@ function renderRouteMapSvg(routeObject, options = {}) {
   const rawBounds = boundsFromPoints(boundPoints);
   const geo = expandBoundsForViewport(rawBounds, {
     width,
-    height,
+    height: frameHeight,
     paddingRatio: options.paddingRatio != null ? options.paddingRatio : theme.layout.paddingRatio,
     paddingDegreesMin: theme.layout.paddingDegreesMin,
     minLonSpan: theme.layout.minLonSpan,
@@ -270,7 +293,7 @@ function renderRouteMapSvg(routeObject, options = {}) {
   });
   const projector = createProjector(geo, {
     width,
-    height,
+    height: frameHeight,
     precision: theme.layout.coordPrecision
   });
 
@@ -320,20 +343,30 @@ function renderRouteMapSvg(routeObject, options = {}) {
     projectedStops,
     projectedRoute,
     theme.label,
-    { width, height }
+    { width, height: frameHeight }
   );
 
-  const countryObstacles = projectedStops.map((stop) => {
-    const r = theme.marker.radius + 10;
-    return {
-      left: stop.x - r,
-      top: stop.y - r,
-      right: stop.x + r,
-      bottom: stop.y + r
-    };
-  });
+  const countryObstacles = [
+    ...projectedStops.map((stop) => {
+      const r = theme.marker.radius + 10;
+      return {
+        left: stop.x - r,
+        top: stop.y - r,
+        right: stop.x + r,
+        bottom: stop.y + r
+      };
+    }),
+    ...(style === "social"
+      ? labels.map((label) => ({
+          left: label.box.left - 6,
+          top: label.box.top - 4,
+          right: label.box.right + 6,
+          bottom: label.box.bottom + 4
+        }))
+      : [])
+  ];
 
-  const countryLabels = placeCountryLabels(geo, projector, { width, height }, {
+  const countryLabels = placeCountryLabels(geo, projector, { width, height: frameHeight }, {
     maxLabels: theme.countryLabel?.maxLabels ?? 8,
     padPx: theme.countryLabel?.padPx ?? 22,
     // Markers only — port name boxes shouldn't push coastal countries off the map.
@@ -350,12 +383,14 @@ function renderRouteMapSvg(routeObject, options = {}) {
     }))
   ];
 
-  const ship = placeShip(
-    projectedRoute,
-    shipProgress,
-    shipObstacles,
-    theme.layout.shipMarkerClearancePx
-  );
+  const ship = social?.hideShip
+    ? null
+    : placeShip(
+        projectedRoute,
+        shipProgress,
+        shipObstacles,
+        theme.layout.shipMarkerClearancePx
+      );
 
   const arrowObstacles = [
     ...projectedStops.map((s) => ({
@@ -502,6 +537,36 @@ function renderRouteMapSvg(routeObject, options = {}) {
   // --- Port markers ---
   parts.push('<g id="port-markers">');
   for (const stop of projectedStops) {
+    if (theme.marker.variant === "social") {
+      const role =
+        stop.sequence === 1 ? "origin" : stop.sequence === projectedStops.length ? "destination" : "via";
+      const via = theme.marker.radius;
+      const hero = Math.round(via * 2.55 * 10) / 10;
+      let mark = "";
+      if (role === "origin") {
+        mark =
+          `<circle r="${hero + 4}" fill="#1F7A4D" fill-opacity="0.16"/>` +
+          `<circle r="${hero}" fill="#1F7A4D"/>` +
+          `<circle r="${Math.max(2.2, hero * 0.38)}" fill="#FFFFFF"/>`;
+      } else if (role === "destination") {
+        const s = hero;
+        const lift = s * 1.35;
+        mark =
+          `<g transform="translate(0 ${-lift})">` +
+          `<rect x="${-s}" y="${-s * 1.35}" width="${s * 2}" height="${s * 2}" rx="${s * 0.45}" fill="#F80020"/>` +
+          `<path d="M ${-s * 0.42} ${s * 0.55} L ${s * 0.42} ${s * 0.55} L 0 ${s * 1.35} Z" fill="#F80020"/>` +
+          `<circle cy="${-s * 0.35}" r="${Math.max(2, s * 0.38)}" fill="#FFFFFF"/>` +
+          `</g>`;
+      } else {
+        mark =
+          `<circle r="${via + 1.4}" fill="#F7FBFD"/>` +
+          `<circle r="${via}" fill="#1A3344"/>`;
+      }
+      parts.push(
+        `<g class="port-marker" data-sequence="${stop.sequence}" data-role="${role}" transform="translate(${stop.x} ${stop.y})">${mark}</g>`
+      );
+      continue;
+    }
     const shadow = theme.marker.shadowOpacity
       ? `<circle cx="0.6" cy="0.9" r="${theme.marker.radius}" fill="#0F1720" fill-opacity="${theme.marker.shadowOpacity}"/>`
       : "";
@@ -535,13 +600,17 @@ function renderRouteMapSvg(routeObject, options = {}) {
   }
   parts.push("</g>");
 
+  if (social && footerH > 0) {
+    parts.push(socialBrandFooter(width, frameHeight, footerH, social.branding));
+  }
+
   parts.push("</svg>");
   const svg = parts.join("");
 
   const clipWarnings = [];
   for (const label of labels) {
     const b = label.box;
-    if (b.left < 0 || b.top < 0 || b.right > width || b.bottom > height) {
+    if (b.left < 0 || b.top < 0 || b.right > width || b.bottom > frameHeight) {
       clipWarnings.push({
         code: "label_clipped",
         port_id: label.portId,
@@ -568,7 +637,8 @@ function renderRouteMapSvg(routeObject, options = {}) {
     label_count: labels.length,
     country_label_count: countryLabels.length,
     runtime_ms: Date.now() - started,
-    theme_phase: "3c"
+    theme_phase: style === "social" ? "social" : "3c",
+    style
   };
 
   return {

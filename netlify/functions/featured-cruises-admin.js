@@ -9,6 +9,7 @@
  */
 
 const { requireAdmin } = require("./admin-auth");
+const { planPricingReplacement } = require("./lib/pricing-replace-plan");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -112,30 +113,57 @@ async function saveCruiseRow({ id, cruise, userId }) {
   throw new Error("Could not save cruise because required database columns are missing.");
 }
 
-async function replacePricing({ featuredCruiseId, pricing }) {
+async function replacePricing({ featuredCruiseId, pricing, preserveExistingIfEmpty = false }) {
   const cruiseId = String(featuredCruiseId || "").trim();
   if (!cruiseId) throw Object.assign(new Error("featured_cruise_id is required."), { statusCode: 400 });
 
-  await supabase(`featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(cruiseId)}`, {
-    method: "DELETE",
-    prefer: "return=minimal"
+  const existing = await supabase(
+    `featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(cruiseId)}&select=id`,
+    { method: "GET", prefer: "return=representation" }
+  );
+  const plan = planPricingReplacement({
+    existingIds: Array.isArray(existing) ? existing : [],
+    incomingRows: Array.isArray(pricing) ? pricing : [],
+    preserveExistingIfEmpty: Boolean(preserveExistingIfEmpty)
   });
+  if (plan.mode === "preserve") {
+    return { inserted: 0, preserved: true, deleted: 0 };
+  }
 
-  const rows = Array.isArray(pricing) ? pricing : [];
-  if (!rows.length) return { inserted: 0 };
+  const insertPayload = plan.insert.map((row) => ({ ...row, featured_cruise_id: cruiseId }));
+  let insertedRows = [];
+  if (insertPayload.length) {
+    const created = await supabase("featured_cruise_pricing", {
+      method: "POST",
+      body: insertPayload,
+      prefer: "return=representation"
+    });
+    insertedRows = Array.isArray(created) ? created : created ? [created] : [];
+  }
 
-  const payload = rows.map((row) => {
-    const copy = { ...(row && typeof row === "object" ? row : {}) };
-    delete copy.id;
-    return { ...copy, featured_cruise_id: cruiseId };
-  });
+  if (!plan.deleteIds.length) {
+    return { inserted: insertPayload.length, preserved: false, deleted: 0 };
+  }
 
-  await supabase("featured_cruise_pricing", {
-    method: "POST",
-    body: payload,
-    prefer: "return=minimal"
-  });
-  return { inserted: payload.length };
+  const deleteFilter = plan.deleteIds.map((id) => encodeURIComponent(id)).join(",");
+  try {
+    await supabase(`featured_cruise_pricing?id=in.(${deleteFilter})`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+  } catch (error) {
+    const newIds = insertedRows.map((row) => row?.id).filter(Boolean);
+    if (newIds.length) {
+      const rollbackFilter = newIds.map((id) => encodeURIComponent(id)).join(",");
+      await supabase(`featured_cruise_pricing?id=in.(${rollbackFilter})`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      }).catch(() => {});
+    }
+    throw error;
+  }
+
+  return { inserted: insertPayload.length, preserved: false, deleted: plan.deleteIds.length };
 }
 
 async function patchCruise({ id, patch }) {
@@ -174,7 +202,8 @@ exports.handler = async function handler(event) {
     if (action === "replace_pricing") {
       const result = await replacePricing({
         featuredCruiseId: body.featured_cruise_id,
-        pricing: body.pricing
+        pricing: body.pricing,
+        preserveExistingIfEmpty: Boolean(body.preserve_existing_if_empty)
       });
       return jsonResponse(200, { success: true, ...result });
     }

@@ -432,6 +432,12 @@
 
     const runSave = async () => {
     try {
+      issueNumber = nextNumber;
+      issueDate = nextDate;
+      issueTemplate = nextTemplate;
+      if (typeof global.ensureAdminSession === "function") {
+        await global.ensureAdminSession();
+      }
       issueBusy = true;
       routeMapSaveBusy = true;
       routeMapSaveResults = [];

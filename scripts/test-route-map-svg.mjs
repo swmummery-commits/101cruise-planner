@@ -356,6 +356,56 @@ test("L Missing or malformed Route Object geometry", () => {
   assert(!badLeg.ok);
 });
 
+test("M Social route map is an additional style", () => {
+  const route = buildFromPorts(MED_PORTS, "fixture-med-social");
+  const classic = renderRouteMapSvg(route);
+  assert(classic.meta.width === 1200 && classic.meta.height === 675, "classic stays 16:9");
+  assert(/data-sequence="1"[\s\S]*?>1<\/text>/.test(classic.svg), "classic keeps numbered markers");
+
+  const portrait = renderRouteMapSvg(route, {
+    style: "social",
+    format: "portrait",
+    branding: { lineName: "Azamara", shipName: "Azamara Pursuit" }
+  });
+  assert(portrait.ok, JSON.stringify(portrait.errors));
+  assert(portrait.meta.width === 1080 && portrait.meta.height === 1350, "social portrait canvas");
+  assert(portrait.meta.style === "social");
+  assert(/data-role="origin"/.test(portrait.svg), "origin marker");
+  assert(/data-role="destination"/.test(portrait.svg), "destination marker");
+  assert(/data-role="via"/.test(portrait.svg), "intermediate dots");
+  assert(!/1\.\s+Barcelona/.test(portrait.svg), "social labels omit sequence numbers");
+  assert(/101 CRUISE/.test(portrait.svg), "101 branding on standalone social map");
+  assert(/#1A3344/.test(portrait.svg), "dark route line");
+  assert(portrait.svg.indexOf("101 CRUISE") > 0);
+
+  const square = renderRouteMapSvg(route, { style: "social", format: "square", presentation: "inset" });
+  assert(square.ok && square.meta.width === 1080 && square.meta.height === 1080, "social square canvas");
+  assert(!/id="social-brand"/.test(square.svg), "inset map leaves branding to the template");
+});
+
+test("N Social labels use leader lines when ports are close", () => {
+  const { placePortLabels } = require(path.join(root, "netlify/functions/lib/route-map-labels.js"));
+  const placed = placePortLabels(
+    [
+      { id: "a", name: "Alpha Harbour", x: 120, y: 140, markerRadius: 8, sequence: 1 },
+      { id: "b", name: "Beta Quay", x: 168, y: 154, markerRadius: 8, sequence: 2 }
+    ],
+    [],
+    {
+      fontSize: 16,
+      offset: 22,
+      paddingX: 2,
+      paddingY: 2,
+      maxChars: 28,
+      includeSequencePrefix: false,
+      leaderOnlyWhenClose: true,
+      closePx: 90
+    },
+    { width: 600, height: 600 }
+  );
+  assert(placed.labels.some((label) => label.useLeader), "close ports get a leader line");
+});
+
 const failed = results.filter((r) => !r.ok);
 console.log(
   JSON.stringify(
