@@ -179,6 +179,17 @@ assert(
     "2026-10-08T01:00:00Z"
   ) === false
 );
+assert(
+  "the same instant in another timestamp format is not another session",
+  localDraftConflictsWithDatabase(
+    { editingFeaturedCruiseId: "cruise-a", baseUpdatedAt: "2026-10-08T01:00:00.000Z" },
+    "2026-10-08T01:00:00+00:00"
+  ) === false
+);
+assert(
+  "the itinerary follow-up write is remembered as this session",
+  /mapPatch\?\.cruise\?\.updated_at/.test(adminJs)
+);
 assert("a newer edit makes an in-flight save stale", saveGenerationIsStale(4, 5) === true);
 assert("the current edit can still be saved", saveGenerationIsStale(5, 5) === false);
 assert("network failures can be retried", saveFailureKind("Failed to fetch", 0) === "network");

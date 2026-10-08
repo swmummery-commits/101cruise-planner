@@ -141,9 +141,16 @@
     return { drafts };
   }
 
+  function sameDatabaseInstant(left, right) {
+    const a = Date.parse(left);
+    const b = Date.parse(right);
+    if (Number.isFinite(a) && Number.isFinite(b)) return a === b;
+    return String(left) === String(right);
+  }
+
   function localDraftConflictsWithDatabase(draft, serverUpdatedAt) {
     if (!draft?.editingFeaturedCruiseId || !draft.baseUpdatedAt || !serverUpdatedAt) return false;
-    return String(serverUpdatedAt) !== String(draft.baseUpdatedAt);
+    return !sameDatabaseInstant(draft.baseUpdatedAt, serverUpdatedAt);
   }
 
   function saveGenerationIsStale(startedGeneration, currentGeneration) {

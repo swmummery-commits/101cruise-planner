@@ -153,15 +153,9 @@
     }
   }
 
-  function validateEditorial(editorial, { creating = false } = {}) {
+  function validateEditorial(editorial) {
     const teaseWords = wordCount(editorial.tease);
     if (teaseWords > 9) return `Tease must be 9 words or fewer. It is currently ${teaseWords} words.`;
-
-    const headlineWords = wordCount(editorial.headline);
-    if (creating && !headlineWords) return "Enter a headline before creating the newsletter.";
-    if (headlineWords && (headlineWords < 8 || headlineWords > 16)) {
-      return `Headline must be between 8 and 16 words. It is currently ${headlineWords} words.`;
-    }
     return "";
   }
 
@@ -211,7 +205,7 @@
     const headlineWords = wordCount(values.headline);
     return `
       <h4>New Newsletter</h4>
-      <p class="admin-muted">Set the opening copy once, then go straight into the newsletter to add specials. The design template can still be changed later.</p>
+      <p class="admin-muted">You can add specials first and finish this opening copy afterwards. The design template can still be changed later.</p>
       <div class="newsletter-setup-grid">
         <div class="admin-field">
           <label for="newsletterCreateNumber">Newsletter Number</label>
@@ -228,7 +222,7 @@
           <span id="newsletterCreateTeaseCount" class="newsletter-word-count${countClass(teaseWords, null, 9)}">${teaseWords} / 9 words</span>
         </div>
         <div class="admin-field newsletter-setup-wide">
-          <label for="newsletterCreateHeadline">Headline <span class="admin-required">*</span> <span class="admin-helper-inline">8 to 16 words</span></label>
+          <label for="newsletterCreateHeadline">Headline <span class="admin-helper-inline">8 to 16 words, optional</span></label>
           <input id="newsletterCreateHeadline" type="text" value="${esc(values.headline)}" oninput="NewsletterSetup.captureCreateDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
           <span id="newsletterCreateHeadlineCount" class="newsletter-word-count${countClass(headlineWords, 8, 16)}">${headlineWords} / 8–16 words</span>
         </div>
@@ -268,7 +262,7 @@
             <span id="newsletterWorkspaceTeaseCount" class="newsletter-word-count${countClass(teaseWords, null, 9)}">${teaseWords} / 9 words</span>
           </div>
           <div class="admin-field newsletter-setup-wide">
-            <label for="newsletterWorkspaceHeadline">Headline <span class="admin-helper-inline">8 to 16 words</span></label>
+            <label for="newsletterWorkspaceHeadline">Headline <span class="admin-helper-inline">8 to 16 words, optional</span></label>
             <input id="newsletterWorkspaceHeadline" type="text" value="${esc(editorial.headline)}" ${disabled} oninput="NewsletterSetup.captureEditorDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
             <span id="newsletterWorkspaceHeadlineCount" class="newsletter-word-count${countClass(headlineWords, 8, 16)}">${headlineWords} / 8–16 words</span>
           </div>
@@ -368,7 +362,7 @@
   async function createNewsletter() {
     const values = readCreateForm();
     createDraft = values;
-    const error = validateEditorial(values, { creating: true });
+    const error = validateEditorial(values);
     if (error) {
       setLocalMessage(error, "error");
       refreshCounts();
@@ -423,7 +417,7 @@
     await ensureActiveHydrated();
     const editorial = readEditorForm();
     editorDrafts.set(active.id, editorial);
-    const error = validateEditorial(editorial, { creating: false });
+    const error = validateEditorial(editorial);
     if (error) {
       setLocalMessage(error, "error");
       refreshCounts();

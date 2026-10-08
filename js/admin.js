@@ -13523,7 +13523,7 @@ async function performFeaturedCruiseSave(options = {}) {
         route_map_media_id: payload.route_map_media_id,
         route_map_image_url: payload.route_map_image_url
       });
-      await featuredCruisesAdminApi({
+      const mapPatch = await featuredCruisesAdminApi({
         action: "patch_cruise",
         id: cruiseId,
         patch: {
@@ -13532,6 +13532,9 @@ async function performFeaturedCruiseSave(options = {}) {
           route_map_itinerary_signature: refreshedMap.route_map_itinerary_signature
         }
       });
+      // This second write moves updated_at. Remember that time, or the next
+      // save looks like another session changed the cruise.
+      if (mapPatch?.cruise?.updated_at) savedRow.updated_at = mapPatch.cruise.updated_at;
     }
 
     await featuredCruisesAdminApi({
