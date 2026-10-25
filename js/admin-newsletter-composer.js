@@ -597,6 +597,26 @@
     }
   }
 
+  async function repairRouteMapCoordinates(featuredCruiseId, { batchId } = {}) {
+    if (batchId != null && batchId !== routeMapBatchId) {
+      throw new Error("Route map batch superseded.");
+    }
+    const headers =
+      typeof global.adminAuthHeaders === "function"
+        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
+        : { "Content-Type": "application/json" };
+    const response = await fetch("/.netlify/functions/geocode-ports", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ featured_cruise_id: featuredCruiseId })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Coordinate lookup failed (HTTP ${response.status}).`);
+    }
+    return data;
+  }
+
   async function generateMissingRouteMaps(cruises, { batchId } = {}) {
     const results = [];
     const inFlight = new Set();
@@ -615,14 +635,19 @@
         typeof global.featuredCruiseCanGenerateRouteMap === "function"
           ? global.featuredCruiseCanGenerateRouteMap(cruise)
           : false;
+      let coordinateRepair = null;
       if (!canGenerate) {
-        results.push({
-          cruiseId: cruise.id,
-          name,
-          status: "needs_coordinates",
-          message: "Add itinerary port coordinates before a route map can be generated."
-        });
-        continue;
+        try {
+          coordinateRepair = await repairRouteMapCoordinates(cruise.id, { batchId });
+        } catch (error) {
+          coordinateRepair = {
+            ok: false,
+            failed: 1,
+            unresolved: 0,
+            results: [],
+            message: error.message || "Coordinate lookup failed."
+          };
+        }
       }
       if (inFlight.has(cruise.id)) continue;
       inFlight.add(cruise.id);
@@ -642,9 +667,26 @@
             await global.loadFeaturedCruises();
           }
         } else {
-          const errMsg =
+          let errMsg =
             data.errors?.[0]?.message || data.error || "Route map generation failed.";
-          results.push({ cruiseId: cruise.id, name, status: "failed", message: errMsg });
+          const unresolved = Number(coordinateRepair?.unresolved || 0);
+          const failedLookup = Number(coordinateRepair?.failed || 0);
+          if ((unresolved || failedLookup) && /missing coordinates|missing canonical port/i.test(errMsg)) {
+            const unresolvedNames = (coordinateRepair?.results || [])
+              .filter((row) => !row.ok)
+              .map((row) => row.canonical_name)
+              .filter(Boolean);
+            const detail = unresolvedNames.length
+              ? ` Coordinate review still required for: ${[...new Set(unresolvedNames)].join(", ")}.`
+              : " Some port coordinates still need review.";
+            errMsg += detail;
+          }
+          results.push({
+            cruiseId: cruise.id,
+            name,
+            status: /missing coordinates|missing canonical port/i.test(errMsg) ? "needs_coordinates" : "failed",
+            message: errMsg
+          });
         }
       } catch (error) {
         results.push({
