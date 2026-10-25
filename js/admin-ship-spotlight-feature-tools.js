@@ -50,10 +50,15 @@
   function ensureTitlesHtml(html) {
     const source = String(html || "");
     if (!source.includes("cr101-ss-feature-col")) return source;
-    const holder = document.createElement("div");
-    holder.innerHTML = source;
-    ensureNewsletterFeatureTitles(holder);
-    return holder.innerHTML;
+    try {
+      const holder = document.createElement("div");
+      holder.innerHTML = source;
+      ensureNewsletterFeatureTitles(holder);
+      const next = String(holder.innerHTML || "");
+      return next.trim() ? next : source;
+    } catch (_error) {
+      return source;
+    }
   }
 
   function installEmailWrapper() {

@@ -7,6 +7,8 @@
 
   const PUBLIC_BASE = "https://101cruise.com.au/ships/";
   const EMAIL_ASSET_ENDPOINT = "/.netlify/functions/ship-spotlight-mailchimp-assets";
+  const SAVE_ENDPOINT = "/.netlify/functions/admin-ship-spotlight-save";
+  const SHIP_FACT_COLUMNS = "id,cruise_line_id,name,slug,status,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,active";
   const MAX_WIDTH = 600;
   const PAGE_BG = "#FFFFFF";
   const BRAND_GREEN = "#8DD9BF";
@@ -72,10 +74,12 @@
   let previewOpen = false;
   let hostedHtmlCache = "";
   let hostedHtmlSource = "";
+  let clipboardRetryPending = false;
 
   function invalidateHostedHtmlCache() {
     hostedHtmlCache = "";
     hostedHtmlSource = "";
+    clipboardRetryPending = false;
   }
 
   const esc = (value) => String(value == null ? "" : value)
@@ -279,7 +283,7 @@
     busy = true; message = "Loading Ship Spotlights…"; messageTone = ""; render();
     const db = client();
     const [shipRes, lineRes, spotlightRes, mediaRes, researchRes] = await Promise.all([
-      db.from("ci_cruise_ships").select("id,cruise_line_id,name,slug,status,ship_class,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,stateroom_breakdown,cabin_type_summary,gross_tonnage,length_metres,beam_metres,cruising_speed_knots,facilities,hero_image_url,image_gallery,active").eq("active", true).order("name"),
+      db.from("ci_cruise_ships").select(SHIP_FACT_COLUMNS).eq("active", true).order("name"),
       db.from("ci_cruise_lines").select("id,name,slug,logo_url,active,sold_by_101cruise").order("name"),
       db.from("ship_spotlights").select("*").order("updated_at", { ascending: false }),
       db.from("media_library").select("id,title,alt_text,public_url,ship_id,is_default,is_active,media_type").eq("media_type", "ship").eq("is_active", true),
@@ -309,10 +313,58 @@
     if (ship) draft.stat_keys = technicalStats(ship).map((item) => item.key);
   }
 
+  async function refreshSelectedShipFacts({ captureForm = true, resetDraft = false } = {}) {
+    if (captureForm) capture();
+    const shipId = selectedShipId;
+    if (!shipId) throw new Error("Select a ship first.");
+    const db = client();
+    const [shipRes, mediaRes, spotlightRes] = await Promise.all([
+      db.from("ci_cruise_ships").select(SHIP_FACT_COLUMNS).eq("id", shipId).maybeSingle(),
+      db.from("media_library").select("id,title,alt_text,public_url,ship_id,is_default,is_active,media_type").eq("ship_id", shipId).eq("media_type", "ship").eq("is_active", true),
+      db.from("ship_spotlights").select("*").eq("ship_id", shipId).order("updated_at", { ascending: false }).limit(1)
+    ]);
+    if (shipRes.error) throw new Error(shipRes.error.message || "Could not load the latest ship details.");
+    if (!shipRes.data) throw new Error("This ship could not be found, so newsletter HTML could not be generated.");
+    if (mediaRes.error) throw new Error(mediaRes.error.message || "Could not load the latest ship images.");
+    if (spotlightRes.error) throw new Error(spotlightRes.error.message || "Could not load the saved Ship Spotlight.");
+
+    const index = ships.findIndex((row) => row.id === shipId);
+    if (index >= 0) ships[index] = shipRes.data;
+    else ships.push(shipRes.data);
+    media = media.filter((row) => row.ship_id !== shipId).concat(mediaRes.data || []);
+    const spotlightRow = Array.isArray(spotlightRes.data) ? spotlightRes.data[0] : null;
+    if (spotlightRow?.id) {
+      spotlights = spotlights.filter((row) => row.ship_id !== shipId).concat(spotlightRow);
+    }
+    if (resetDraft) draft = freshDraft(shipRes.data);
+    else if (draft) {
+      draft.stat_keys = technicalStats(shipRes.data).map((item) => item.key);
+      if (!draft.id && spotlightRow?.id) draft.id = spotlightRow.id;
+    }
+    return shipRes.data;
+  }
+
   async function selectShip(id) {
-    capture(); selectedShipId = id || ""; invalidateHostedHtmlCache(); previewOpen = false;
-    draft = selectedShipId ? freshDraft(currentShip()) : null;
-    message = ""; messageTone = ""; render();
+    capture();
+    selectedShipId = id || "";
+    invalidateHostedHtmlCache();
+    previewOpen = false;
+    message = "";
+    messageTone = "";
+    if (!selectedShipId) {
+      draft = null;
+      render();
+      return;
+    }
+    try {
+      await refreshSelectedShipFacts({ captureForm: false, resetDraft: true });
+    } catch (error) {
+      draft = currentShip() ? freshDraft(currentShip()) : null;
+      message = error.message || "Could not load the latest ship details.";
+      messageTone = "error";
+    }
+    if (!draft && currentShip()) draft = freshDraft(currentShip());
+    render();
   }
 
   function publicUrl() { return draft?.public_slug ? `${PUBLIC_BASE}${encodeURIComponent(draft.public_slug)}` : ""; }
@@ -492,16 +544,86 @@ ${cta}
     return assets;
   }
 
+  async function persistSpotlight() {
+    capture();
+    const ship = currentShip();
+    if (!ship || !draft) throw new Error("Select a ship first.");
+    if (!String(draft.hero_image_url || "").trim()) {
+      throw new Error("Choose a hero image before copying the newsletter block.");
+    }
+    const headers = typeof global.adminAuthHeaders === "function"
+      ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
+      : { "Content-Type": "application/json" };
+    const response = await fetch(SAVE_ENDPOINT, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        ship_id: ship.id,
+        eyebrow: draft.eyebrow || "SHIP SPOTLIGHT",
+        newsletter_heading: draft.newsletter_heading || ship.name,
+        editorial_intro: draft.editorial_intro || "",
+        hero_image_url: draft.hero_image_url,
+        public_slug: draft.public_slug || ship.slug || ship.name,
+        publication_status: draft.publication_status || "draft",
+        stat_keys: technicalStats(ship).map((item) => item.key),
+        supporting_image_urls: draft.supporting_image_urls || []
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false || !data.spotlight?.id) {
+      throw new Error(data.error || `Could not save the Ship Spotlight before copying (HTTP ${response.status}).`);
+    }
+    draft = {
+      ...draft,
+      ...data.spotlight,
+      hero_image_url: data.spotlight.hero_image_url || draft.hero_image_url,
+      stat_keys: technicalStats(ship).map((item) => item.key)
+    };
+    spotlights = spotlights.filter((row) => row.ship_id !== ship.id).concat(data.spotlight);
+    return data.spotlight;
+  }
+
+  async function copyPreparedHtml(html) {
+    const text = String(html || "");
+    if (!text.trim()) {
+      throw new Error("Newsletter HTML could not be generated from the saved Ship Spotlight.");
+    }
+    const copier = global.NewsletterMailchimpAssets?.copyHostedHtml;
+    if (!copier) {
+      await navigator.clipboard.writeText(text);
+      return { ok: true, html: text };
+    }
+    const result = await copier(text);
+    if (result?.ok) return result;
+    if (result?.code === "clipboard_blocked") return result;
+    const reason = String(result?.error || "").trim();
+    if (/no hosted newsletter HTML/i.test(reason)) {
+      throw new Error("Newsletter HTML could not be generated from the saved Ship Spotlight.");
+    }
+    throw new Error(reason || "Could not copy the newsletter block.");
+  }
+
+  // Hosted HTML is only a transient copy buffer. Every Copy rebuilds it from the
+  // latest ship record and the current Ship Spotlight form. Image files are
+  // reused when their bytes have not changed.
   async function prepareHostedHtml() {
-    const saved = await save({ quiet: true }); if (!saved) return "";
+    await refreshSelectedShipFacts({ captureForm: true, resetDraft: false });
+    await persistSpotlight();
     let html = emailHtml();
+    if (!String(html || "").trim()) {
+      throw new Error("Newsletter HTML could not be generated. Choose a hero image and try again.");
+    }
     hostedHtmlSource = html;
     const assets = emailAssetsForCurrentShip();
     if (!assets.length) return html;
-    message = `Preparing Ship Spotlight images 1 of ${assets.length}…`; messageTone = ""; busy = true; render();
+    if (!draft?.id) throw new Error("Save the Ship Spotlight before copying its newsletter block.");
+    message = `Preparing Ship Spotlight images 1 of ${assets.length}…`;
+    messageTone = "";
+    render();
     const headers = typeof global.adminAuthHeaders === "function" ? await global.adminAuthHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
     for (let i = 0; i < assets.length; i += 1) {
-      message = `Preparing Ship Spotlight images ${i + 1} of ${assets.length}…`; render();
+      message = `Preparing Ship Spotlight images ${i + 1} of ${assets.length}…`;
+      render();
       const asset = assets[i];
       const response = await fetch(EMAIL_ASSET_ENDPOINT, {
         method: "POST",
@@ -513,39 +635,75 @@ ${cta}
       if (!response.ok || data.success === false || !hostedUrl) throw new Error(data.error || "Could not prepare a Ship Spotlight image.");
       html = html.split(asset.raw_url).join(hostedUrl);
     }
+    if (!String(html || "").trim()) {
+      throw new Error("Newsletter HTML was empty after preparing images.");
+    }
     return html;
   }
 
   async function copyNewsletterBlock() {
     if (busy) return;
-    try {
-      hostedHtmlCache = await prepareHostedHtml();
-      const copier = global.NewsletterMailchimpAssets?.copyHostedHtml;
-      if (copier) {
-        const result = await copier(hostedHtmlCache);
-        if (!result.ok) {
-          if (result.code === "clipboard_blocked") { message = "The block is ready. Click Copy Newsletter Block again and it will copy immediately."; messageTone = "success"; busy = false; render(); return; }
-          throw new Error(result.error || "Could not copy the newsletter block.");
+    busy = true;
+    const run = async () => {
+      try {
+        message = "Preparing the latest newsletter HTML…";
+        messageTone = "";
+        render();
+        if (clipboardRetryPending && hostedHtmlCache && hostedHtmlSource) {
+          await refreshSelectedShipFacts({ captureForm: true, resetDraft: false });
+          const currentSource = emailHtml();
+          if (currentSource && currentSource === hostedHtmlSource) {
+            const retry = await copyPreparedHtml(hostedHtmlCache);
+            if (retry.code === "clipboard_blocked") {
+              message = "The block is ready. Click Copy Newsletter Block again and it will copy immediately.";
+              messageTone = "success";
+              busy = false;
+              render();
+              return;
+            }
+            clipboardRetryPending = false;
+            busy = false;
+            message = "Newsletter block copied. Paste it into a normal newsletter code block wherever you want it.";
+            messageTone = "success";
+            render();
+            return;
+          }
         }
-      } else {
-        await navigator.clipboard.writeText(hostedHtmlCache);
+        clipboardRetryPending = false;
+        hostedHtmlCache = await prepareHostedHtml();
+        const result = await copyPreparedHtml(hostedHtmlCache);
+        if (result.code === "clipboard_blocked") {
+          clipboardRetryPending = true;
+          message = "The block is ready. Click Copy Newsletter Block again and it will copy immediately.";
+          messageTone = "success";
+          busy = false;
+          render();
+          return;
+        }
+        clipboardRetryPending = false;
+        busy = false;
+        message = "Newsletter block copied. Paste it into a normal newsletter code block wherever you want it.";
+        messageTone = "success";
+        render();
+      } catch (error) {
+        invalidateHostedHtmlCache();
+        busy = false;
+        message = error.message || "Could not prepare the newsletter block.";
+        messageTone = "error";
+        render();
       }
-      busy = false; message = "Newsletter block copied. Paste it into a normal newsletter code block wherever you want it."; messageTone = "success"; render();
-    } catch (error) { invalidateHostedHtmlCache(); busy = false; message = error.message || "Could not prepare the newsletter block."; messageTone = "error"; render(); }
+    };
+    if (typeof global.AdminLoading?.withSaving === "function") {
+      return global.AdminLoading.withSaving(run, {
+        key: "ship-spotlight-copy-html",
+        supportMessage: "Preparing the latest Ship Spotlight newsletter HTML…"
+      });
+    }
+    return run();
   }
 
-  async function copyAgainIfReady() {
-    if (!hostedHtmlCache) return copyNewsletterBlock();
-    const currentSource = emailHtml();
-    if (!currentSource || currentSource !== hostedHtmlSource) {
-      invalidateHostedHtmlCache();
-      return copyNewsletterBlock();
-    }
-    try {
-      const result = global.NewsletterMailchimpAssets?.copyHostedHtml ? await global.NewsletterMailchimpAssets.copyHostedHtml(hostedHtmlCache) : (await navigator.clipboard.writeText(hostedHtmlCache), { ok: true });
-      if (!result.ok) throw new Error(result.error || "Could not copy HTML.");
-      message = "Newsletter block copied. Paste it into a normal newsletter code block wherever you want it."; messageTone = "success"; render();
-    } catch (error) { message = error.message; messageTone = "error"; render(); }
+  function copyAgainIfReady() {
+    return copyNewsletterBlock();
   }
 
   function openPreview() { capture(); previewOpen = true; render(); }
@@ -594,7 +752,7 @@ ${cta}
       <section><h3>Areas & features</h3><p class="admin-muted">Pulled directly from the ship record using the same feature normalisation as My Ship. Object-based features are displayed by name, not as [object Object].</p>${adminFeatureSummary(ship)}</section>
       <section><div class="ss-section-head"><div><h3>Hero image</h3><p class="admin-muted">The hero, cruise-line logo and room chart are prepared through the Ship Spotlight Mailchimp image pipeline before the block is copied.</p></div><button class="admin-button secondary small" onclick="ShipSpotlightAdmin.useMediaLibrary()">Open Media Library</button></div><div class="admin-field"><label>Hero image</label><select id="ssHero" onchange="ShipSpotlightAdmin.capture(); ShipSpotlightAdmin.render()"><option value="">Select image</option>${heroOptions}</select></div></section>
       <section><h3>Public ship page</h3><div class="ss-grid two"><div class="admin-field"><label>Public slug</label><input id="ssSlug" value="${esc(draft.public_slug)}"></div><label class="ss-publish"><input id="ssPublished" type="checkbox" ${draft.publication_status === "published" ? "checked" : ""}> Publish this Ship Spotlight page</label></div><div class="admin-helper">${esc(publicUrl())}</div></section>
-      <div class="ss-actions"><button class="admin-button secondary" onclick="ShipSpotlightAdmin.openPreview()">Preview Newsletter Block</button><button class="admin-button secondary" onclick="ShipSpotlightAdmin.save()" ${busy ? "disabled" : ""}>Save Spotlight</button><button class="admin-button black" onclick="ShipSpotlightAdmin.${hostedHtmlCache ? "copyAgainIfReady" : "copyNewsletterBlock"}()" ${busy ? "disabled" : ""}>${busy ? "Preparing…" : "Copy Newsletter Block"}</button></div></div>`;
+      <div class="ss-actions"><button class="admin-button secondary" onclick="ShipSpotlightAdmin.openPreview()">Preview Newsletter Block</button><button class="admin-button secondary" onclick="ShipSpotlightAdmin.save()" ${busy ? "disabled" : ""}>Save Spotlight</button><button class="admin-button black" onclick="ShipSpotlightAdmin.copyNewsletterBlock()" ${busy ? "disabled" : ""}>${busy ? "Preparing…" : "Copy Newsletter Block"}</button></div></div>`;
   }
 
   function styles() {
@@ -619,7 +777,15 @@ ${cta}
     styles();
     if (!overlay) { overlay = document.createElement("div"); overlay.className = "ss-overlay"; overlay.id = "shipSpotlightOverlay"; document.body.appendChild(overlay); }
     overlay.hidden = false; render();
-    try { await ensureLoaded(); } catch (error) { busy = false; message = error.message || "Could not load Ship Spotlights."; messageTone = "error"; render(); }
+    try {
+      await ensureLoaded();
+      if (selectedShipId) await refreshSelectedShipFacts({ captureForm: true, resetDraft: false });
+    } catch (error) {
+      busy = false;
+      message = error.message || "Could not load Ship Spotlights.";
+      messageTone = "error";
+    }
+    render();
   }
   function close() { if (overlay) overlay.hidden = true; }
 

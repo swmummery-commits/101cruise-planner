@@ -219,10 +219,15 @@
   function transformHtml(html) {
     const source = String(html || "");
     if (!source.includes("cr101-ss-wrapper")) return source;
-    const holder = document.createElement("div");
-    holder.innerHTML = source;
-    transformRoot(holder);
-    return holder.innerHTML;
+    try {
+      const holder = document.createElement("div");
+      holder.innerHTML = source;
+      transformRoot(holder);
+      const next = String(holder.innerHTML || "");
+      return next.trim() ? next : source;
+    } catch (_error) {
+      return source;
+    }
   }
 
   function installEmailHtmlWrapper() {
