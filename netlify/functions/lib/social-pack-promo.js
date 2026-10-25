@@ -29,19 +29,19 @@ function money(value) {
   return `$${formatMoney(value)}`;
 }
 
-function staffPrice(model) {
-  return money(model.staffFare?.staffFare);
+function publicPrice(model) {
+  return money(model.promoFare?.cruise101Fare);
 }
 
 function retailPrice(model) {
-  const retail = model.staffFare?.retailFare;
-  const staff = model.staffFare?.staffFare;
-  if (retail == null || staff == null || retail <= staff) return "";
+  const retail = model.promoFare?.retailFare;
+  const publicFare = model.promoFare?.cruise101Fare;
+  if (retail == null || publicFare == null || retail <= publicFare) return "";
   return money(retail);
 }
 
 function badgeLabel(model) {
-  return savingsLabel(model.staffFare?.savings, model.savingsDisplay);
+  return savingsLabel(model.promoFare?.savings, model.savingsDisplay);
 }
 
 function lineShip(model, max = 36) {
@@ -234,7 +234,7 @@ function mapFrame(href, x, y, w, h, { radius = 28 } = {}) {
 }
 
 function fareBlock(model, x, y, { priceSize = 72, align = "start" } = {}) {
-  const price = staffPrice(model);
+  const price = publicPrice(model);
   const retail = retailPrice(model);
   const badge = badgeLabel(model);
   const parts = [];
@@ -295,7 +295,7 @@ function renderRouteDealSvg(model, format, mapHref) {
   const routeY = shipY + shipLines.length * (shipSize + 4) + (square ? 16 : 22);
   const metaY = routeY + Math.max(1, route.length) * (routeSize + 6) + 8;
   const priceSize = square ? 64 : 78;
-  const price = staffPrice(model);
+  const price = publicPrice(model);
   const retail = retailPrice(model);
   const badge = badgeLabel(model);
   const priceY = Math.min(height - 156, metaY + (square ? 108 : 124));
@@ -330,7 +330,7 @@ function renderPriceShockSvg(model, format) {
   const { width, height } = FORMATS[format];
   const square = format === "square";
   const pad = 64;
-  const price = staffPrice(model) || "—";
+  const price = publicPrice(model) || "—";
   const priceSize = price.length > 8 ? (square ? 92 : 112) : square ? 120 : 156;
   const retail = retailPrice(model);
   const badge = badgeLabel(model);
@@ -376,7 +376,7 @@ function renderDestinationJourneySvg(model, format) {
     maxChars: square ? 34 : 40,
     omitted: model.portsOmitted || 0
   });
-  const price = staffPrice(model);
+  const price = publicPrice(model);
   const retail = retailPrice(model);
   const badge = badgeLabel(model);
   return `${svgOpen(width, height, "Destination Journey")}
@@ -420,7 +420,7 @@ function renderShipJourneySvg(model, format, mapHref) {
   });
   const portY = mapY + mapH + (square ? 44 : 52);
   const priceY = height - 118;
-  const price = staffPrice(model);
+  const price = publicPrice(model);
   const retail = retailPrice(model);
   const badge = badgeLabel(model);
   const ship = model.shipName || "Ship";
