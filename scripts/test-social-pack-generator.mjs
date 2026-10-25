@@ -597,6 +597,21 @@ async function main() {
 
     const adminSrc = fs.readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
     const adminCss = fs.readFileSync(path.join(root, "css/admin.css"), "utf8");
+    assert(/TEMPLATE_DEMOS/.test(adminSrc), "static template demo graphics");
+    assert(/data-social-pack-demo/.test(adminSrc), "template chips expose hover demos");
+    assert(/social-pack-type-vision/.test(adminCss), "hover vision card styles");
+    [
+      ["classic", "classic.svg"],
+      ["premium_dark", "premium-dark.svg"],
+      ["route_deal", "route-deal.svg"],
+      ["price_shock", "price-shock.svg"],
+      ["destination_journey", "destination-journey.svg"],
+      ["ship_journey", "ship-journey.svg"]
+    ].forEach(([key, file]) => {
+      assert(adminSrc.includes(`${key}: {`), `demo graphic listed for ${key}`);
+      assert(adminSrc.includes(`/images/social-pack-demos/${file}`), `demo src for ${key}`);
+      assert(fs.existsSync(path.join(root, "images/social-pack-demos", file)), `demo file ${file}`);
+    });
     assert(/slidePreviewClass\(name\)/.test(adminSrc), "square/portrait preview class helper");
     assert(/figure class="\$\{slidePreviewClass\(name\)\}"/.test(adminSrc), "preview figures keep native format");
     assert(/\.social-pack-slides img \{[\s\S]*object-fit: contain;/.test(adminCss), "preview shows the full graphic");

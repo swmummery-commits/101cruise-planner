@@ -7949,6 +7949,56 @@ body.admin-loading-active {
   margin: 8px 0 14px;
 }
 
+.social-pack-type-vision {
+  position: fixed;
+  z-index: 12000;
+  width: 260px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #d9e0dc;
+  box-shadow: 0 18px 40px rgba(17, 24, 22, 0.18);
+  pointer-events: none;
+}
+
+.social-pack-type-vision[hidden] {
+  display: none;
+}
+
+.social-pack-type-vision img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #f4f5f6;
+  border: 1px solid #e5e7eb;
+}
+
+.social-pack-type-vision strong,
+.social-pack-type-vision span,
+.social-pack-type-vision em {
+  display: block;
+  margin-top: 8px;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+.social-pack-type-vision strong {
+  font-size: 14px;
+  color: #12181d;
+}
+
+.social-pack-type-vision span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #545454;
+}
+
+.social-pack-type-vision em {
+  font-size: 11px;
+  font-style: normal;
+  color: #7a8580;
+}
+
 .social-pack-template-prompt-card .social-pack-choice-stack {
   align-items: center;
 }

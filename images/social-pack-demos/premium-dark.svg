@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" role="img" aria-label="Premium Dark sample">
+  <rect width="320" height="400" fill="#0b1220"/>
+  <rect width="320" height="400" fill="#173246" opacity=".35"/>
+  <text x="20" y="36" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text>
+  <text x="20" y="118" fill="#fff" font-family="Georgia,'Times New Roman',serif" font-size="28" font-weight="800">ROME</text>
+  <text x="20" y="154" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="700">’ BARCELONA</text>
+  <text x="20" y="186" fill="#c8cdd4" font-family="Helvetica,Arial,sans-serif" font-size="12">Oceania Sirena  ·  11 nights</text>
+  <rect x="20" y="210" width="280" height="1" fill="#dde2e8" opacity=".25"/>
+  <text x="20" y="236" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Civitavecchia</text>
+  <text x="20" y="256" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Cagliari</text>
+  <text x="20" y="276" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Malaga</text>
+  <rect x="20" y="300" width="160" height="44" rx="4" fill="#111827" stroke="#8dd9bf"/>
+  <text x="32" y="318" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">AIRLINE STAFF FARE</text>
+  <text x="32" y="336" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="800">$2,480</text>
+  <rect x="0" y="384" width="320" height="16" fill="#8dd9bf"/>
+</svg>

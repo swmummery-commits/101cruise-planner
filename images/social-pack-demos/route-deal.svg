@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Route Deal sample">
+  <rect width="320" height="320" fill="#fff"/>
+  <rect width="320" height="168" fill="#d7ebe4"/>
+  <circle cx="58" cy="72" r="6" fill="#173246"/>
+  <circle cx="168" cy="46" r="6" fill="#173246"/>
+  <circle cx="248" cy="92" r="6" fill="#173246"/>
+  <path d="M58 72 C110 40 150 38 168 46 C200 58 220 86 248 92" fill="none" stroke="#173246" stroke-width="3"/>
+  <rect x="16" y="128" width="110" height="22" rx="11" fill="#173246"/>
+  <text x="71" y="143" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">PRINCESS</text>
+  <rect x="228" y="12" width="80" height="24" rx="12" fill="#173246"/>
+  <text x="268" y="28" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="800">SAVE 28%</text>
+  <text x="20" y="200" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="20" font-weight="800">Sapphire Princess</text>
+  <text x="20" y="222" fill="#243140" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="600">Honolulu  ’  Vancouver</text>
+  <text x="20" y="242" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="10">12 May 2026   |   15 nights</text>
+  <text x="20" y="276" fill="#173246" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="800">$2,280</text>
+  <text x="20" y="294" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="9">from</text>
+  <rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/>
+</svg>

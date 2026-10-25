@@ -37,6 +37,39 @@
     ["ship_journey", "Ship + Journey"]
   ];
 
+  const TEMPLATE_DEMOS = {
+    classic: {
+      src: "/images/social-pack-demos/classic.svg",
+      title: "Classic",
+      note: "Photo poster with destination, ship, and room prices."
+    },
+    premium_dark: {
+      src: "/images/social-pack-demos/premium-dark.svg",
+      title: "Premium Dark",
+      note: "Dark cinematic poster with a large route and fare."
+    },
+    route_deal: {
+      src: "/images/social-pack-demos/route-deal.svg",
+      title: "Route Deal",
+      note: "Map-led square fare graphic."
+    },
+    price_shock: {
+      src: "/images/social-pack-demos/price-shock.svg",
+      title: "Price Shock",
+      note: "Dark square with a large staff fare."
+    },
+    destination_journey: {
+      src: "/images/social-pack-demos/destination-journey.svg",
+      title: "Destination Journey",
+      note: "Destination photo with the fare overlaid."
+    },
+    ship_journey: {
+      src: "/images/social-pack-demos/ship-journey.svg",
+      title: "Ship + Journey",
+      note: "Ship photo, route map, and fare."
+    }
+  };
+
   function templateHasMap(value) {
     return value === "route_deal" || value === "ship_journey";
   }
@@ -398,6 +431,7 @@
   }
 
   async function setPackTemplate(value) {
+    hideTemplateVision();
     const next = String(value || "classic").toLowerCase();
     packTemplate = PACK_TEMPLATES.some(([key]) => key === next) ? next : "classic";
     packTemplateChosen = true;
@@ -868,16 +902,17 @@
 
   function renderChoiceGroup(label, options, current, handler, visible = true) {
     if (!visible) return "";
+    const demoAttr = handler === "setPackTemplate";
     return `
       <div class="social-pack-treatment" role="group" aria-label="${esc(label)}">
         <span class="admin-small">${esc(label)}</span>
         ${options
-          .map(
-            ([value, text]) =>
-              `<button type="button" class="media-filter-chip ${
-                current === value ? "is-active" : ""
-              }" onclick="SocialPackAdmin.${handler}('${value}')" ${busy ? "disabled" : ""}>${esc(text)}</button>`
-          )
+          .map(([value, text]) => {
+            const demo = demoAttr && TEMPLATE_DEMOS[value] ? ` data-social-pack-demo="${esc(value)}"` : "";
+            return `<button type="button" class="media-filter-chip${demoAttr ? " social-pack-type-chip" : ""} ${
+              current === value ? "is-active" : ""
+            }" onclick="SocialPackAdmin.${handler}('${value}')"${demo} ${busy ? "disabled" : ""}>${esc(text)}</button>`;
+          })
           .join("")}
       </div>`;
   }
@@ -1070,7 +1105,9 @@
           <div class="social-pack-choice-stack" style="margin-top:16px">
             ${PACK_TEMPLATES.map(
               ([value, label]) =>
-                `<button type="button" class="media-filter-chip" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${
+                `<button type="button" class="media-filter-chip social-pack-type-chip" data-social-pack-demo="${esc(
+                  value
+                )}" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${
                   busy ? "disabled" : ""
                 }>${esc(label)}</button>`
             ).join("")}
@@ -1124,6 +1161,79 @@
 
   function renderModal() {
     return "";
+  }
+
+  function visionCard() {
+    let el = document.getElementById("socialPackTypeVision");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "socialPackTypeVision";
+      el.className = "social-pack-type-vision";
+      el.hidden = true;
+      el.setAttribute("role", "tooltip");
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function hideTemplateVision() {
+    const el = document.getElementById("socialPackTypeVision");
+    if (!el) return;
+    el.hidden = true;
+    el.innerHTML = "";
+  }
+
+  function positionTemplateVision(el, anchor) {
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.min(280, window.innerWidth - 24);
+    el.style.width = `${width}px`;
+    const cardH = el.offsetHeight || 360;
+    let left = rect.left;
+    let top = rect.bottom + 10;
+    if (left + width > window.innerWidth - 12) left = window.innerWidth - width - 12;
+    if (left < 12) left = 12;
+    if (top + cardH > window.innerHeight - 12) top = Math.max(12, rect.top - cardH - 10);
+    el.style.left = `${Math.round(left)}px`;
+    el.style.top = `${Math.round(top)}px`;
+  }
+
+  function showTemplateVision(anchor) {
+    const demo = TEMPLATE_DEMOS[anchor?.dataset?.socialPackDemo];
+    if (!demo) return;
+    const el = visionCard();
+    el.innerHTML = `
+      <img src="${esc(demo.src)}" alt="">
+      <strong>${esc(demo.title)}</strong>
+      <span>${esc(demo.note)}</span>
+      <em>Sample layout — not this cruise</em>`;
+    el.hidden = false;
+    positionTemplateVision(el, anchor);
+  }
+
+  function isVisionRelated(node) {
+    return Boolean(node?.closest?.("[data-social-pack-demo], #socialPackTypeVision"));
+  }
+
+  if (!global.__socialPackTemplateVisionInstalled) {
+    document.addEventListener("pointerover", (event) => {
+      const button = event.target?.closest?.("[data-social-pack-demo]");
+      if (button) showTemplateVision(button);
+    });
+    document.addEventListener("pointerout", (event) => {
+      if (isVisionRelated(event.relatedTarget)) return;
+      if (event.target?.closest?.("[data-social-pack-demo], #socialPackTypeVision")) hideTemplateVision();
+    });
+    document.addEventListener("focusin", (event) => {
+      const button = event.target?.closest?.("[data-social-pack-demo]");
+      if (button) showTemplateVision(button);
+    });
+    document.addEventListener("focusout", (event) => {
+      if (isVisionRelated(event.relatedTarget)) return;
+      hideTemplateVision();
+    });
+    document.addEventListener("scroll", hideTemplateVision, true);
+    window.addEventListener("resize", hideTemplateVision);
+    global.__socialPackTemplateVisionInstalled = true;
   }
 
   global.SocialPackAdmin = {

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Ship and Journey sample">
+  <rect width="320" height="320" fill="#f6f3ec"/>
+  <rect width="320" height="112" fill="#395a68"/>
+  <rect x="40" y="48" width="240" height="38" rx="18" fill="#d9e4e8"/>
+  <text x="20" y="28" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text>
+  <text x="20" y="140" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="800">Marina</text>
+  <text x="20" y="158" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="11">Oceania Cruises</text>
+  <rect x="20" y="172" width="280" height="58" rx="8" fill="#d7ebe4"/>
+  <circle cx="70" cy="201" r="5" fill="#173246"/>
+  <circle cx="160" cy="190" r="5" fill="#173246"/>
+  <circle cx="250" cy="206" r="5" fill="#173246"/>
+  <path d="M70 201 C110 176 140 176 160 190 C200 210 220 212 250 206" fill="none" stroke="#173246" stroke-width="2.5"/>
+  <text x="20" y="250" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="11">Barcelona  ·  Palma  ·  Rome</text>
+  <text x="20" y="278" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1">AIRLINE STAFF FARE</text>
+  <text x="20" y="302" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="800">$2,480</text>
+  <rect x="216" y="274" width="84" height="24" rx="12" fill="#f80020"/>
+  <text x="258" y="290" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">SAVE 19%</text>
+  <rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/>
+</svg>

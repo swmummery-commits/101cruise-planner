@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Destination Journey sample">
+  <defs>
+    <linearGradient id="djDemo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4aa3b5"/>
+      <stop offset=".45" stop-color="#1d4d5c"/>
+      <stop offset="1" stop-color="#081018"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="320" fill="url(#djDemo)"/>
+  <circle cx="240" cy="70" r="36" fill="#f3d9a4" opacity=".55"/>
+  <text x="20" y="36" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text>
+  <text x="20" y="188" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="800">Hawaii</text>
+  <text x="20" y="212" fill="#f4f7f8" font-family="Helvetica,Arial,sans-serif" font-size="12">Honolulu  ·  Maui  ·  Kauai</text>
+  <text x="20" y="248" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1.2">AIRLINE STAFF FARE</text>
+  <text x="20" y="284" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="800">$2,280</text>
+  <rect x="216" y="248" width="84" height="24" rx="12" fill="#f80020"/>
+  <text x="258" y="264" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">SAVE 22%</text>
+  <rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/>
+</svg>
