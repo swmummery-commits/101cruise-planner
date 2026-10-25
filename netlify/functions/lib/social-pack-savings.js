@@ -1,6 +1,7 @@
 /**
- * Airline-staff savings for promotional Social Pack templates.
- * Dollar and percentage are both calculated. The admin chooses which one to show.
+ * Public 101 Cruise savings for promotional Social Pack templates.
+ * Dollar and percentage are both calculated from brochure/retail price versus
+ * the public 101 Cruise price. Airline/staff pricing must never be used here.
  */
 
 const { parsePrice, formatMoney, sortPricingRows } = require("./social-pack-pricing");
@@ -52,18 +53,18 @@ function savingsLabel(savings, display) {
   return normaliseSavingsDisplay(display) === "dollar" ? savings.dollarLabel : savings.percentLabel;
 }
 
-/** First priced cabin (display order) that has an airline staff fare. */
-function selectStaffFare(rows) {
+/** First priced cabin (display order) that has a public 101 Cruise fare. */
+function selectPromoFare(rows) {
   const sorted = sortPricingRows(rows);
   for (const row of sorted) {
-    const staffFare = parsePrice(row.airline_price);
-    if (staffFare == null) continue;
+    const cruise101Fare = parsePrice(row.cruise_101_price);
+    if (cruise101Fare == null) continue;
     const retailFare = parsePrice(row.brochure_price);
     return {
       roomLabel: String(row.room_label || "").trim(),
       retailFare,
-      staffFare,
-      savings: computeFareSavings(retailFare, staffFare)
+      cruise101Fare,
+      savings: computeFareSavings(retailFare, cruise101Fare)
     };
   }
   return null;
@@ -73,5 +74,5 @@ module.exports = {
   normaliseSavingsDisplay,
   computeFareSavings,
   savingsLabel,
-  selectStaffFare
+  selectPromoFare
 };
