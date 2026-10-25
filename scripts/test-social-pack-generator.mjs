@@ -596,6 +596,11 @@ async function main() {
     assert(normaliseTemplate("unknown") === "classic", "invalid → classic");
 
     const adminSrc = fs.readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
+    const adminCss = fs.readFileSync(path.join(root, "css/admin.css"), "utf8");
+    assert(/slidePreviewClass\(name\)/.test(adminSrc), "square/portrait preview class helper");
+    assert(/figure class="\$\{slidePreviewClass\(name\)\}"/.test(adminSrc), "preview figures keep native format");
+    assert(/\.social-pack-slides img \{[\s\S]*object-fit: contain;/.test(adminCss), "preview shows the full graphic");
+    assert(/\.social-pack-slides figure\.is-square img \{[\s\S]*aspect-ratio: 1 \/ 1;/.test(adminCss), "square preview uses a 1:1 frame");
     assert(/function renderTemplateSelector\(\)/.test(adminSrc), "shared template selector helper");
     assert(/renderTemplateSelector\(\)/.test(adminSrc), "template selector rendered in workspace");
     assert(/renderTemplatePrompt\(\)/.test(adminSrc), "centered template prompt on open");

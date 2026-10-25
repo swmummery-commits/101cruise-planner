@@ -918,6 +918,11 @@
       </div>`;
   }
 
+  function slidePreviewClass(name) {
+    const key = String(name || "").toLowerCase();
+    return /(^|[-_/])square([-_.]|$)/.test(key) ? "is-square" : "is-portrait";
+  }
+
   function renderSlides() {
     if (!preview?.slides) return "";
     const order = preview.slide_order || Object.keys(preview.slides);
@@ -927,7 +932,7 @@
           .map((name, i) => {
             const src = preview.slides[name];
             if (!src) return "";
-            return `<figure><img src="${esc(src)}" alt="${esc(name)}"><figcaption>${i + 1}. ${esc(
+            return `<figure class="${slidePreviewClass(name)}"><img src="${esc(src)}" alt="${esc(name)}"><figcaption>${i + 1}. ${esc(
               name
             )}</figcaption></figure>`;
           })
@@ -1014,7 +1019,7 @@
                   }
                   <p class="admin-small">${
                     templateShowsSavings(packTemplate)
-                      ? "Preview is reduced. Downloads include full square (1080×1080) and portrait (1080×1350)."
+                      ? "Preview shows the complete square (1080×1080) and portrait (1080×1350) frames. Downloads use the full-resolution files."
                       : "Preview is reduced resolution for Admin. Downloads remain full 1080×1350."
                   }</p>
                   ${

@@ -8052,8 +8052,9 @@ body.admin-loading-active {
 
 .social-pack-slides {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: start;
 }
 
 .social-pack-slides figure {
@@ -8064,11 +8065,16 @@ body.admin-loading-active {
   width: 100%;
   height: auto;
   aspect-ratio: 1080 / 1350;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: top center;
   display: block;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  background: #111;
+  background: #f4f5f6;
+}
+
+.social-pack-slides figure.is-square img {
+  aspect-ratio: 1 / 1;
 }
 
 .social-pack-slides figcaption {
