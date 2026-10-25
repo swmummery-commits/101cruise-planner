@@ -1068,10 +1068,16 @@
     if (!stop.port_id || I().isAtSeaStopType(stop.stop_type)) return "";
     const lat = stop._editLat ?? stop.port?.latitude ?? "";
     const lng = stop._editLng ?? stop.port?.longitude ?? "";
-    if (!portNeedsCoordinates(stop) && stop._coordMessage == null && !stop._coordError) return "";
+    const provisional = String(stop.port?.status || "").toLowerCase() === "provisional";
+    const missing = portNeedsCoordinates(stop);
+
+    // Always expose coordinates for provisional ports so the admin can verify/correct them.
+    // Verified ports stay compact unless coordinates are missing or an edit/result message is active.
+    if (!provisional && !missing && stop._coordMessage == null && !stop._coordError) return "";
+
     return `
       <div class="fc-itin-coords" data-local-id="${esc(stop.localId)}">
-        <span class="fc-itin-coords-label">Coordinates</span>
+        <span class="fc-itin-coords-label">Coordinates${provisional ? " · provisional port" : ""}</span>
         <label class="fc-itin-coord">
           <span>Lat</span>
           <input data-fc-itin="latitude" type="number" step="any" min="-90" max="90" value="${esc(lat === null || lat === undefined ? "" : String(lat))}" placeholder="-90 to 90" aria-label="Latitude">
@@ -1080,11 +1086,53 @@
           <span>Lng</span>
           <input data-fc-itin="longitude" type="number" step="any" min="-180" max="180" value="${esc(lng === null || lng === undefined ? "" : String(lng))}" placeholder="-180 to 180" aria-label="Longitude">
         </label>
-        <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.savePortCoordinates('${esc(stop.localId)}')">Save coordinates</button>
+        <div class="admin-actions-row" style="gap:6px;flex-wrap:wrap">
+          <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.findPortCoordinates('${esc(stop.localId)}')">${missing ? "Find coordinates" : "Find again"}</button>
+          <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.savePortCoordinates('${esc(stop.localId)}')">Save coordinates</button>
+        </div>
+        ${missing ? `<span class="admin-muted fc-itin-coord-msg">No coordinates are stored yet. Try automatic lookup or enter them manually.</span>` : ""}
         ${stop._coordError ? `<span class="admin-error fc-itin-coord-msg">${esc(stop._coordError)}</span>` : ""}
         ${stop._coordMessage ? `<span class="admin-success fc-itin-coord-msg">${esc(stop._coordMessage)}</span>` : ""}
       </div>
     `;
+  }
+
+  async function findPortCoordinates(localId) {
+    captureFromDom();
+    const stop = stops.find((s) => s.localId === localId);
+    if (!stop) return;
+    stop._coordError = "";
+    stop._coordMessage = "";
+
+    if (!stop.port_id) {
+      stop._coordError = "Resolve this port before looking up coordinates.";
+      rerender();
+      return;
+    }
+
+    try {
+      const data = await geocodeMissingPorts([stop.port_id]);
+      const result = (data.results || []).find((row) => row.id === stop.port_id);
+      if (result?.ok && result.latitude != null && result.longitude != null) {
+        const cached = portsCache.find((p) => p.id === stop.port_id);
+        if (cached) stop.port = { ...cached };
+        else stop.port = { ...(stop.port || {}), latitude: result.latitude, longitude: result.longitude };
+        stop._editLat = result.latitude;
+        stop._editLng = result.longitude;
+        stop._coordMessage = "Coordinates found and saved to the Ports catalogue.";
+      } else {
+        const reason =
+          result?.reason === "low_confidence"
+            ? "The automatic result was not confident enough to save."
+            : result?.error === "no_match"
+              ? "No reliable coordinate match was found."
+              : "Coordinates could not be resolved automatically.";
+        stop._coordError = `${reason} You can enter latitude and longitude manually below.`;
+      }
+    } catch (error) {
+      stop._coordError = `${error.message || "Coordinate lookup failed."} You can enter latitude and longitude manually below.`;
+    }
+    rerender();
   }
 
   async function savePortCoordinates(localId) {
@@ -1484,6 +1532,7 @@
     toggleStop,
     expandAllStops,
     collapseAllStops,
+    findPortCoordinates,
     savePortCoordinates,
     renderSection,
     renderRouteMapReadiness,
