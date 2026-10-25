@@ -112,9 +112,35 @@ function queryCandidates(port) {
   return unique.slice(0, 5);
 }
 
+const COUNTRY_CODE_BY_NAME = {
+  australia: "au",
+  chile: "cl",
+  "cook islands": "ck",
+  "dominican republic": "do",
+  "faroe islands": "fo",
+  france: "fr",
+  greece: "gr",
+  indonesia: "id",
+  ireland: "ie",
+  japan: "jp",
+  "new zealand": "nz",
+  norway: "no",
+  philippines: "ph",
+  samoa: "ws",
+  spain: "es",
+  "united kingdom": "gb",
+  "united states": "us",
+  vietnam: "vn",
+  hawaii: "us"
+};
+
 function countryCode(port) {
-  const code = String(port?.country_code || "").trim().toLowerCase();
-  return /^[a-z]{2}$/.test(code) ? code : "";
+  const stored = String(port?.country_code || "").trim().toLowerCase();
+  const inferred = COUNTRY_CODE_BY_NAME[norm(port?.country)] || "";
+  // A stale importer code must not override an explicit country name.
+  if (inferred && stored && inferred !== stored) return inferred;
+  if (inferred) return inferred;
+  return /^[a-z]{2}$/.test(stored) ? stored : "";
 }
 
 function candidateScore(port, hit, query) {
@@ -125,13 +151,16 @@ function candidateScore(port, hit, query) {
   const hitCode = String(hitAddress.country_code || "").toLowerCase();
   if (expectedCode && hitCode && expectedCode !== hitCode) return -1000;
   if (expectedCountry && hitCountry && expectedCountry !== hitCountry) {
-    const aliases = {
-      "united states": ["usa", "united states of america"],
+    const equivalents = {
+      "united states": ["usa", "united states of america", "hawaii"],
+      hawaii: ["united states", "united states of america", "usa"],
       "united kingdom": ["uk", "great britain", "scotland", "england", "wales", "northern ireland"],
+      scotland: ["united kingdom", "uk", "great britain"],
+      england: ["united kingdom", "uk", "great britain"],
       "faroe islands": ["faroes"],
       "cook islands": ["cook islands"]
     };
-    const allowed = aliases[expectedCountry] || [];
+    const allowed = equivalents[expectedCountry] || [];
     if (!allowed.includes(hitCountry)) return -1000;
   }
 
