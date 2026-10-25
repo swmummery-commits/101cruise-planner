@@ -11966,7 +11966,7 @@ async function parseRouteMapGenerateResponse(response) {
           {
             code: "timeout",
             message:
-              "Route map generation timed out on the server. Wait a moment and try Generate again — the first map in a region can take longer."
+              "Route map generation could not be completed by the synchronous endpoint."
           }
         ]
       };
@@ -11990,7 +11990,7 @@ function renderFeaturedRouteMapStatusPanel() {
         ${featuredRouteMapBrandSpinnerHtml()}
         <div class="featured-route-map-status-copy">
           <p class="featured-route-map-status-title">${esc(featuredRouteMapGenProgress || "Working on your route map…")}</p>
-          <p class="featured-route-map-status-detail">Calculating the sea route, rendering the map, and uploading the PNG. This can take 10–30 seconds.</p>
+          <p class="featured-route-map-status-detail">Calculating the sea route, rendering the map, and uploading the PNG in the background. The first map for a new route can take longer, but you should not need to click Generate again.</p>
         </div>
       </div>
     `;
@@ -12306,6 +12306,62 @@ function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) 
   }
 }
 
+async function waitForFeaturedRouteMapBackground({
+  cruiseId,
+  baselineGeneratedAt = null,
+  requestedAt = Date.now(),
+  timeoutMs = 8 * 60 * 1000
+} = {}) {
+  const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
+  const started = Date.now();
+  let lastStatus = null;
+
+  while (Date.now() - started < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
+    const response = await fetch("/.netlify/functions/route-map-generate", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "status",
+        featured_cruise_id: cruiseId
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      lastStatus = data;
+      continue;
+    }
+    lastStatus = data;
+
+    const generatedAt = data.generated_at || null;
+    const generatedMs = Date.parse(generatedAt || "");
+    const baselineMs = Date.parse(baselineGeneratedAt || "");
+    const isFresh =
+      Boolean(data.has_assets && generatedAt) &&
+      (
+        !baselineGeneratedAt ||
+        generatedAt !== baselineGeneratedAt ||
+        (Number.isFinite(generatedMs) && generatedMs >= requestedAt - 5000) ||
+        (Number.isFinite(generatedMs) && Number.isFinite(baselineMs) && generatedMs > baselineMs)
+      );
+
+    if (isFresh) return { ok: true, status: data };
+  }
+
+  return {
+    ok: false,
+    status: lastStatus,
+    errors: [
+      {
+        code: "background_generation_timeout",
+        message:
+          "Route map generation is still running longer than expected. You do not need to click Generate again. Leave this cruise open and the map will appear when the background job finishes."
+      }
+    ]
+  };
+}
+
 async function generateFeaturedRouteMap() {
   if (!editingFeaturedCruiseId || featuredRouteMapGenerating || featuredRouteMapDeleting) return;
   if (!featuredCruiseCanGenerateRouteMap(featuredFormDraft)) {
@@ -12359,50 +12415,69 @@ async function generateFeaturedRouteMap() {
       updateFeaturedRouteMapProgressInPlace();
 
       const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
-      const controller = new AbortController();
-      const abortTimer = setTimeout(() => controller.abort(), 110000);
-      let response;
-      try {
-        response = await fetch("/.netlify/functions/route-map-generate", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "generate",
-            featured_cruise_id: editingFeaturedCruiseId,
-            style: featuredRouteMapStyle,
-            format: featuredRouteMapStyle === "social" ? "portrait" : "landscape",
-            png_width: featuredRouteMapStyle === "social" ? 1620 : 2000,
-            force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
-          }),
-          signal: controller.signal
-        });
-      } finally {
-        clearTimeout(abortTimer);
-      }
-      const data = await parseRouteMapGenerateResponse(response);
+      const baselineGeneratedAt = featuredFormDraft?.route_map_generated_at || null;
+      const requestedAt = Date.now();
 
-      const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+      featuredRouteMapGenProgress = "Starting background route generation…";
+      updateFeaturedRouteMapProgressInPlace();
 
-      if (response.ok && data.ok) {
-        applyFeaturedGeneratedRouteMapResult(
-          {
-            ...data,
-            ...(refreshed || {})
-          },
-          { recovered: false }
-        );
-      } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
-        applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
-      } else {
+      const response = await fetch("/.netlify/functions/route-map-generate-background", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "generate",
+          featured_cruise_id: editingFeaturedCruiseId,
+          style: featuredRouteMapStyle,
+          format: featuredRouteMapStyle === "social" ? "portrait" : "landscape",
+          png_width: featuredRouteMapStyle === "social" ? 1620 : 2000,
+          force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
+        })
+      });
+
+      if (!response.ok && response.status !== 202) {
+        const data = await parseRouteMapGenerateResponse(response);
         featuredRouteMapGenResult = data && typeof data === "object" ? data : { ok: false };
         if (!featuredRouteMapGenResult.ok) {
-          featuredRouteMapGenResult.ok = false;
           featuredRouteMapGenResult.errors = data.errors || [
-            { code: "generate_failed", message: "Route map generation failed." }
+            { code: "generate_failed", message: "Route map generation could not be started." }
           ];
         }
         featuredRouteMapSectionMessage = "";
         featuredRouteMapSectionMessageTone = "";
+      } else {
+        featuredRouteMapGenProgress = "Calculating sea route in the background…";
+        updateFeaturedRouteMapProgressInPlace();
+
+        const waited = await waitForFeaturedRouteMapBackground({
+          cruiseId: editingFeaturedCruiseId,
+          baselineGeneratedAt,
+          requestedAt
+        });
+
+        const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+        if (waited.ok && refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+          applyFeaturedGeneratedRouteMapResult(
+            {
+              ...(waited.status || {}),
+              ...(refreshed || {})
+            },
+            { recovered: false }
+          );
+        } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+          applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
+        } else {
+          featuredRouteMapGenResult = {
+            ok: false,
+            errors: waited.errors || [
+              {
+                code: "generate_failed",
+                message: "Route map generation did not complete."
+              }
+            ]
+          };
+          featuredRouteMapSectionMessage = "";
+          featuredRouteMapSectionMessageTone = "";
+        }
       }
     } catch (error) {
       const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
@@ -12416,7 +12491,7 @@ async function generateFeaturedRouteMap() {
             {
               code: timedOut ? "timeout" : "network_error",
               message: timedOut
-                ? "Route map generation took too long. Try Generate again — the itinerary was kept."
+                ? "Route map generation took longer than expected. The background job may still be running; you do not need to click Generate again."
                 : error.message || "Network error during generation."
             }
           ]
