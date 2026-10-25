@@ -36,9 +36,8 @@
     if (!node) {
       node = document.createElement("div");
       node.dataset.ssActionStatus = "1";
-      node.className = "admin-small";
-      node.style.flex = "1 0 100%";
-      node.style.marginBottom = "8px";
+      node.className = "ss-action-status";
+      node.setAttribute("role", "status");
       actions.insertBefore(node, actions.firstChild);
     }
     return node;
@@ -48,7 +47,8 @@
     const node = statusNode();
     if (!node) return;
     node.textContent = message || "";
-    node.style.color = tone === "error" ? "#9a2525" : tone === "success" ? "#17633f" : "#545454";
+    node.classList.toggle("is-success", tone === "success");
+    node.classList.toggle("is-error", tone === "error");
   }
 
   async function authHeaders() {

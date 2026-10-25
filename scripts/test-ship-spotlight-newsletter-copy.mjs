@@ -365,5 +365,10 @@ assert.doesNotMatch(pageHtml(sandbox), /There is no hosted newsletter HTML to co
 const source = fs.readFileSync(new URL("js/admin-ship-spotlight-v2.js", root), "utf8");
 assert.doesNotMatch(source, /if\s*\(\s*!saved\s*\)\s*return\s*""/);
 assert.doesNotMatch(source, /copyAgainIfReady"\s*:\s*"copyNewsletterBlock"/);
+assert.match(source, /\.ss-actions\{[^}]*flex-wrap:wrap/);
+assert.match(source, /\.ss-actions \.ss-action-status\{[^}]*overflow-wrap:anywhere/);
+
+const reliabilitySrc = fs.readFileSync(new URL("js/admin-ship-spotlight-reliability-fix.js", root), "utf8");
+assert.match(reliabilitySrc, /className = "ss-action-status"/);
 
 console.log("ship spotlight newsletter copy: ok");
