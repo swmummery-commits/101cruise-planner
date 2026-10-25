@@ -262,6 +262,8 @@ async function idsForAllMissing(limit, offset) {
   return (rows || []).map((row) => row.id).filter(Boolean);
 }
 
+exports.resolvePort = resolvePort;
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return jsonResponse(204, "");
   if (event.httpMethod !== "POST") return jsonResponse(405, { ok: false, error: "Method not allowed" });
