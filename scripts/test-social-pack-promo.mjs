@@ -51,9 +51,9 @@ const model = {
   nightsLabel: "20 NIGHTS",
   routeMapStyle: "social",
   savingsDisplay: "percentage",
-  staffFare: {
+  promoFare: {
     retailFare: 18956,
-    staffFare: 2799,
+    cruise101Fare: 2799,
     savings: computeFareSavings(18956, 2799)
   },
   ports: ["Singapore", "Semarang", "Benoa", "Darwin", "Cairns", "Airlie Beach", "Mooloolaba", "Sydney"]
@@ -89,7 +89,7 @@ test("route deal follows map-then-panel hierarchy", () => {
   assert(portrait.includes("14 NOVEMBER 2026"), "departure date");
   assert(portrait.includes("20 nights"), "nights");
   assert(portrait.includes(">from<"), "from label");
-  assert(portrait.includes("$2,799"), "airline staff fare");
+  assert(portrait.includes("$2,799"), "101 Cruise fare");
   assert(portrait.includes("Retail"), "retail label");
   assert(portrait.includes("$18,956"), "retail fare");
   assert(portrait.includes("SAVE 85%"), "percentage badge");
@@ -111,7 +111,7 @@ test("long itineraries stay on a limited number of lines", () => {
   assert(lines[lines.length - 1].includes("more"), lines.join(" | "));
 });
 
-test("price shock keeps the fare as the hero", () => {
+test("price shock keeps the 101 Cruise fare as the hero", () => {
   const svg = renderPriceShockSvg({ ...model, template: "price_shock", savingsDisplay: "percentage" }, "portrait");
   assert(svg.includes("$2,799"));
   assert(svg.includes("SAVE 85%"));
