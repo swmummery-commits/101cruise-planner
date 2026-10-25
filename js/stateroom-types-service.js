@@ -173,9 +173,20 @@
   async function listAllStateroomTypes({ client } = {}) {
     const supabase = client || getSupabaseClient();
     if (supabase) {
-      const { data, error } = await supabase.from(TABLE).select(SELECT_FIELDS).order("name", { ascending: true });
-      if (error) throw new Error(error.message || "Could not load stateroom types.");
-      return sortStateroomTypes(data || []);
+      const pageSize = 1000;
+      const rows = [];
+      for (let from = 0; from < 20000; from += pageSize) {
+        const { data, error } = await supabase
+          .from(TABLE)
+          .select(SELECT_FIELDS)
+          .order("name", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw new Error(error.message || "Could not load stateroom types.");
+        const batch = Array.isArray(data) ? data : [];
+        rows.push(...batch);
+        if (batch.length < pageSize) break;
+      }
+      return sortStateroomTypes(rows);
     }
     const result = await api("list");
     return sortStateroomTypes(result.stateroom_types || []);
@@ -217,6 +228,15 @@
     return normalizeAllocationMap(result.allocations || {});
   }
 
+  // Inserts one cruise-line allocation. Never deletes or rewrites other lines.
+  async function addCruiseLineStateroomType(cruiseLineId, stateroomTypeId) {
+    const result = await api("add_line_allocation", {
+      cruise_line_id: cruiseLineId,
+      stateroom_type_id: stateroomTypeId
+    });
+    return normalizeAllocationMap(result.allocations || {});
+  }
+
   async function reorderStateroomTypes(orderedIds) {
     const result = await api("reorder", { ordered_ids: orderedIds });
     return sortStateroomTypes(result.stateroom_types || []);
@@ -244,7 +264,8 @@
     checkStateroomTypeUsage,
     reorderStateroomTypes,
     loadCruiseLineStateroomAllocations,
-    saveCruiseLineStateroomTypes
+    saveCruiseLineStateroomTypes,
+    addCruiseLineStateroomType
   };
 
   service.__test__ = {

@@ -9766,12 +9766,22 @@ async function loadFeaturedCruises() {
   }
 }
 
-async function loadStateroomTypesForPricing({ rerender = true } = {}) {
+let stateroomTypesLoadChain = Promise.resolve();
+
+function loadStateroomTypesForPricing(options) {
+  const run = stateroomTypesLoadChain.then(() => performLoadStateroomTypesForPricing(options || {}));
+  stateroomTypesLoadChain = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+async function performLoadStateroomTypesForPricing({ rerender = true } = {}) {
   stateroomTypesLoadError = "";
   const svc = window.StateroomTypesService;
+  const retainedTypes = Array.isArray(stateroomTypesActive) && stateroomTypesActive.length > 0;
+  const retainedAllocations = cruiseLineStateroomAllocations && Object.keys(cruiseLineStateroomAllocations).length > 0;
   if (!svc) {
-    stateroomTypesActive = [];
-    cruiseLineStateroomAllocations = {};
+    if (!retainedTypes) stateroomTypesActive = [];
+    if (!retainedAllocations) cruiseLineStateroomAllocations = {};
     stateroomTypesLoadError = "Stateroom types service failed to load.";
     if (rerender) renderAdmin();
     return;
@@ -9781,25 +9791,32 @@ async function loadStateroomTypesForPricing({ rerender = true } = {}) {
   if (rerender) renderAdmin();
 
   try {
+    let types;
     try {
-      stateroomTypesActive = await svc.listActiveStateroomTypes({ client: supabaseClient });
+      types = await svc.listActiveStateroomTypes({ client: supabaseClient });
     } catch (directError) {
-      stateroomTypesActive = await svc.listActiveStateroomTypes();
+      types = await svc.listActiveStateroomTypes();
     }
+    stateroomTypesActive = types;
   } catch (error) {
     console.warn("Stateroom types load skipped", error.message);
-    stateroomTypesActive = [];
-    stateroomTypesLoadError = error.message || "Could not load stateroom types.";
+    if (!retainedTypes) {
+      stateroomTypesActive = [];
+      stateroomTypesLoadError = error.message || "Could not load stateroom types.";
+    }
   }
 
   try {
     cruiseLineStateroomAllocations = await svc.loadCruiseLineStateroomAllocations();
   } catch (error) {
     console.warn("Cruise line stateroom allocations load skipped", error.message);
-    cruiseLineStateroomAllocations = {};
+    if (!retainedAllocations) cruiseLineStateroomAllocations = {};
   } finally {
     stateroomTypesCatalogLoading = false;
     if (rerender) renderAdmin();
+    if (typeof window.refreshCiShipStateroomTypeSelects === "function") {
+      window.refreshCiShipStateroomTypeSelects();
+    }
   }
 }
 window.loadStateroomTypesForPricing = loadStateroomTypesForPricing;

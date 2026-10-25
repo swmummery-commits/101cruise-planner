@@ -41,7 +41,8 @@
       "checkStateroomTypeUsage",
       "reorderStateroomTypes",
       "loadCruiseLineStateroomAllocations",
-      "saveCruiseLineStateroomTypes"
+      "saveCruiseLineStateroomTypes",
+      "addCruiseLineStateroomType"
     ];
 
     for (const name of methodNames) {

@@ -88,8 +88,10 @@
       return;
     }
 
-    missing.forEach((id) => existing.add(id));
-    const updated = await svc.saveCruiseLineStateroomTypes(lineId, [...existing]);
+    let updated = allocations;
+    for (const id of missing) {
+      updated = await svc.addCruiseLineStateroomType(lineId, id);
+    }
     assignAllocationMap(updated);
   }
 

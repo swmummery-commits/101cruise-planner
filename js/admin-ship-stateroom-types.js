@@ -1,8 +1,9 @@
 /**
  * Ship stateroom integration for the canonical Stateroom Types catalogue.
- * Room types are filtered by cruise line and can be created directly from the
- * ship editor. New types are allocated to the cruise line and propagated to
- * other ships in the same ship class.
+ * The breakdown dropdown lists room types already allocated to the ship's
+ * cruise line. Adding a name selects that existing type, or creates it and
+ * allocates it to this cruise line only. Other cruise lines and other ships
+ * are left unchanged.
  */
 (function (global) {
   "use strict";
@@ -83,9 +84,6 @@
       return String(document.getElementById("ciShipId")?.value || "").trim();
     }
   }
-  function currentShipClass() {
-    return String(document.getElementById("ciShipClass")?.value || "").trim();
-  }
   function allTypes() {
     try { return Array.isArray(stateroomTypesActive) ? stateroomTypesActive : []; } catch (_) { return []; }
   }
@@ -160,7 +158,7 @@
             <button type="button" class="admin-button secondary small" onclick="cancelCiShipInlineStateroomType()">Cancel</button>
           </div>
           <div id="ciShipInlineStateroomMessage" class="admin-message" style="margin-top:6px;"></div>
-          <div class="admin-small" style="margin-top:5px;">This will add the type to this cruise line, this ship, and other ships in the same ship class.</div>
+          <div class="admin-small" style="margin-top:5px;">An existing room type is selected as-is. A new name is added to the catalogue and to this cruise line only.</div>
         </div>
       </div>`);
     setTimeout(() => document.getElementById("ciShipInlineNewStateroomType")?.focus(), 0);
@@ -182,72 +180,7 @@
     removeInlineAddEditor({ restore: true });
   };
 
-  async function attachTypeToCurrentShipAndClass(target, lineId) {
-    const db = global.supabaseClient;
-    const svc = service();
-    if (!db || !target?.id || !lineId || !svc) return { attached: 0, classSiblings: 0 };
-
-    const openShipId = currentShipId();
-    const className = currentShipClass();
-    const classKey = svc.normalizeName(className);
-
-    const { data: lineShips, error: lineShipsError } = await db
-      .from("ci_cruise_ships")
-      .select("id,name,cruise_line_id,ship_class,stateroom_breakdown")
-      .eq("cruise_line_id", lineId);
-    if (lineShipsError) throw new Error(lineShipsError.message);
-
-    const allLineShips = Array.isArray(lineShips) ? lineShips : [];
-    let targets = classKey
-      ? allLineShips.filter((ship) => svc.normalizeName(ship?.ship_class) === classKey)
-      : [];
-
-    if (openShipId && !targets.some((ship) => String(ship.id) === openShipId)) {
-      const current = allLineShips.find((ship) => String(ship.id) === openShipId);
-      if (current) targets.push(current);
-    }
-    if (!targets.length && openShipId) {
-      targets = [{ id: openShipId, name: "", ship_class: className, stateroom_breakdown: [] }];
-    }
-    if (!targets.length) return { attached: 0, classSiblings: 0 };
-
-    const linkRows = targets.map((ship) => ({
-      ship_id: ship.id,
-      stateroom_type_id: target.id,
-      source_label: target.name,
-      display_order: (Array.isArray(ship.stateroom_breakdown) ? ship.stateroom_breakdown.length : 0) + 1
-    }));
-    const linkResult = await db
-      .from("ship_stateroom_types")
-      .upsert(linkRows, { onConflict: "ship_id,stateroom_type_id" });
-    if (linkResult.error) throw new Error(linkResult.error.message);
-
-    const targetKey = svc.normalizeName(target.name);
-    const siblingUpdates = [];
-    for (const ship of targets) {
-      if (openShipId && String(ship.id) === openShipId) continue;
-      const breakdown = Array.isArray(ship.stateroom_breakdown) ? ship.stateroom_breakdown.slice() : [];
-      const alreadyPresent = breakdown.some((row) => svc.normalizeName(row?.label) === targetKey);
-      if (alreadyPresent) continue;
-      const nextBreakdown = [...breakdown, { label: target.name, count: "", sqm: "" }];
-      siblingUpdates.push((async () => {
-        const result = await db.from("ci_cruise_ships").update({ stateroom_breakdown: nextBreakdown }).eq("id", ship.id);
-        if (result.error) throw new Error(`${ship.name || "Class ship"}: ${result.error.message}`);
-        try {
-          const idx = ciCruiseShips.findIndex((row) => String(row.id) === String(ship.id));
-          if (idx >= 0) ciCruiseShips[idx] = { ...ciCruiseShips[idx], stateroom_breakdown: nextBreakdown };
-        } catch (_) {}
-      })());
-    }
-    await Promise.all(siblingUpdates);
-
-    return {
-      attached: targets.length,
-      classSiblings: Math.max(0, targets.filter((ship) => !openShipId || String(ship.id) !== openShipId).length)
-    };
-  }
-
-  global.saveCiShipInlineStateroomType = async function () {
+  async function selectInlineStateroomType() {
     const svc = service();
     if (!svc || addBusy || !inlineAddSelect) return;
 
@@ -279,22 +212,19 @@
         if (!validation.ok) throw new Error(validation.error);
         target = await svc.createStateroomType(validation.payload);
         created = true;
+        types.push(target);
       }
       if (!target?.id) throw new Error("The room type was saved but no id was returned.");
 
-      const existingIds = new Set((allocationMap()[lineId] || []).map(String));
-      existingIds.add(String(target.id));
-      const updatedMap = await svc.saveCruiseLineStateroomTypes(lineId, [...existingIds]);
+      const allocations = await svc.loadCruiseLineStateroomAllocations();
+      const alreadyAllocated = new Set((allocations?.[lineId] || []).map(String)).has(String(target.id));
+      const updatedMap = alreadyAllocated
+        ? allocations
+        : await svc.addCruiseLineStateroomType(lineId, target.id);
       try { cruiseLineStateroomAllocations = updatedMap; } catch (_) {}
+      try { stateroomTypesActive = svc.sortStateroomTypes(types); } catch (_) {}
 
-      const refreshedTypes = await svc.listAllStateroomTypes();
-      try { stateroomTypesActive = refreshedTypes; } catch (_) {}
-
-      const propagation = await attachTypeToCurrentShipAndClass(target, lineId);
       const targetSelect = inlineAddSelect;
-
-      // Allow refreshStateroomSelects to rebuild this dropdown with the newly
-      // created canonical option before assigning it as the selected value.
       addBusy = false;
       refreshStateroomSelects();
       if (targetSelect && document.body.contains(targetSelect)) {
@@ -305,13 +235,13 @@
       if (typeof global.updateCiStateroomTotals === "function") global.updateCiStateroomTotals();
       else if (typeof updateCiStateroomTotals === "function") updateCiStateroomTotals();
 
-      const siblingText = propagation.classSiblings > 0
-        ? ` It was also attached to ${propagation.classSiblings} other ship${propagation.classSiblings === 1 ? "" : "s"} in the ${currentShipClass()} class.`
-        : "";
-      inlineAddMessage(
-        `${created ? "Created" : "Found existing"} “${target.name || requestedName}”, added it to this cruise line and selected it for this ship.${siblingText}`,
-        "success"
-      );
+      const name = target.name || requestedName;
+      const message = created
+        ? `Created “${name}”, allocated it to this cruise line, and selected it. Other cruise lines were not changed.`
+        : alreadyAllocated
+          ? `“${name}” is already allocated to this cruise line and is now selected.`
+          : `“${name}” is already in the catalogue. It was allocated to this cruise line and selected. Other cruise lines were not changed.`;
+      inlineAddMessage(message, "success");
 
       setTimeout(() => {
         if (inlineAddSelect === targetSelect) removeInlineAddEditor({ restore: false });
@@ -322,6 +252,17 @@
       if (input) input.disabled = false;
       document.querySelectorAll(".ci-stateroom-inline-add button").forEach((button) => { button.disabled = false; });
     }
+  }
+
+  global.saveCiShipInlineStateroomType = async function () {
+    const run = () => selectInlineStateroomType();
+    if (global.AdminLoading?.withSaving) {
+      return global.AdminLoading.withSaving(run, {
+        key: "ci-ship-inline-room-type",
+        supportMessage: "Saving room type…"
+      });
+    }
+    return run();
   };
 
   if (typeof renderCiStateroomRow === "function") {
@@ -427,10 +368,5 @@
     refreshStateroomSelects();
   }, true);
 
-  setTimeout(() => {
-    if (typeof global.loadStateroomTypesForPricing !== "function") return;
-    global.loadStateroomTypesForPricing({ rerender: false })
-      .then(() => refreshStateroomSelects())
-      .catch(() => {});
-  }, 0);
+  global.refreshCiShipStateroomTypeSelects = refreshStateroomSelects;
 })(typeof window !== "undefined" ? window : globalThis);

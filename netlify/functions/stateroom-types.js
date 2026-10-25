@@ -11,6 +11,7 @@
  *   { action: "check_usage", id }
  *   { action: "list_line_allocations" }
  *   { action: "save_line_allocations", cruise_line_id, stateroom_type_ids }
+ *   { action: "add_line_allocation", cruise_line_id, stateroom_type_id }
  */
 
 const { requireAdmin } = require("./admin-auth");
@@ -100,11 +101,21 @@ async function nextDisplayOrderValue() {
   return max + 10;
 }
 
+async function fetchAll(pathAndQuery) {
+  const pageSize = 1000;
+  const rows = [];
+  for (let offset = 0; offset < 20000; offset += pageSize) {
+    const separator = pathAndQuery.includes("?") ? "&" : "?";
+    const page = await supabase(`${pathAndQuery}${separator}limit=${pageSize}&offset=${offset}`);
+    const batch = Array.isArray(page) ? page : [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return rows;
+}
+
 async function listStateroomTypes() {
-  const rows = await supabase(
-    `stateroom_types?select=${encodeURIComponent(SELECT)}&order=name.asc&limit=500`
-  );
-  return Array.isArray(rows) ? rows : [];
+  return fetchAll(`stateroom_types?select=${encodeURIComponent(SELECT)}&order=name.asc`);
 }
 
 async function findById(id) {
@@ -240,8 +251,8 @@ async function reorderStateroomTypes(orderedIds) {
 }
 
 async function listLineAllocations() {
-  const rows = await supabase(
-    "cruise_line_stateroom_types?select=cruise_line_id,stateroom_type_id&limit=5000"
+  const rows = await fetchAll(
+    "cruise_line_stateroom_types?select=cruise_line_id,stateroom_type_id&order=cruise_line_id.asc,stateroom_type_id.asc"
   );
   const allocations = {};
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -353,6 +364,40 @@ async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
   return listLineAllocations();
 }
 
+async function addLineAllocation(cruiseLineId, stateroomTypeId) {
+  const lineId = String(cruiseLineId || "").trim();
+  const typeId = String(stateroomTypeId || "").trim();
+  if (!lineId) badRequest("Cruise line id is required.");
+  if (!typeId) badRequest("Stateroom type id is required.");
+
+  const lineRows = await supabase(
+    `ci_cruise_lines?select=id&id=eq.${encodeURIComponent(lineId)}&limit=1`
+  );
+  if (!Array.isArray(lineRows) || !lineRows[0]) badRequest("Cruise line not found.");
+
+  const typeRows = await supabase(
+    `stateroom_types?select=id,name&id=eq.${encodeURIComponent(typeId)}&limit=1`
+  );
+  if (!Array.isArray(typeRows) || !typeRows[0]) badRequest("Stateroom type not found.");
+
+  const existing = await supabase(
+    `cruise_line_stateroom_types?select=stateroom_type_id&cruise_line_id=eq.${encodeURIComponent(lineId)}&stateroom_type_id=eq.${encodeURIComponent(typeId)}&limit=1`
+  );
+  if (!Array.isArray(existing) || !existing.length) {
+    try {
+      await supabase("cruise_line_stateroom_types", {
+        method: "POST",
+        prefer: "return=minimal",
+        body: { cruise_line_id: lineId, stateroom_type_id: typeId }
+      });
+    } catch (error) {
+      if (!/duplicate|unique|already exists/i.test(String(error.message || ""))) throw error;
+    }
+  }
+
+  return listLineAllocations();
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") return jsonResponse(204, {});
   if (event.httpMethod !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
@@ -396,6 +441,10 @@ exports.handler = async function handler(event) {
       const allocations = await saveLineAllocations(body.cruise_line_id, body.stateroom_type_ids);
       return jsonResponse(200, { success: true, allocations });
     }
+    if (action === "add_line_allocation") {
+      const allocations = await addLineAllocation(body.cruise_line_id, body.stateroom_type_id);
+      return jsonResponse(200, { success: true, allocations, added: true });
+    }
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {
     const statusCode = error.statusCode || (/calm/.test(String(error.calm)) ? 400 : 500);
@@ -411,5 +460,6 @@ exports.__test__ = {
   normalizeName,
   sanitizeNameFields,
   isStateroomTypeInUse,
-  shipBlockersForRemovedTypes
+  shipBlockersForRemovedTypes,
+  addLineAllocation
 };
