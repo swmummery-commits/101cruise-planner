@@ -16,6 +16,7 @@
  */
 
 const { requireAdmin } = require("./admin-auth");
+const { resolvePort: resolvePortCoordinates } = require("./geocode-ports");
 const { loadMarineRouteRow, saveMarineRouteRow, deleteMarineRouteRow } = require("./lib/marine-route-persist");
 const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
 const { routeObjectEndpointsPlausible, routeObjectAvoidsLand } = require("./lib/marine-route");
@@ -269,6 +270,65 @@ async function handleDelete(featuredCruiseId) {
   });
 }
 
+async function repairMissingCoordinatesForCruise(featuredCruiseId) {
+  const rows = await supabaseGet(
+    `featured_cruise_itinerary_stops?featured_cruise_id=eq.${encodeURIComponent(featuredCruiseId)}` +
+      `&port_id=not.is.null&select=port_id,ports(id,canonical_name,display_name,city,country,country_code,region,aliases,status,latitude,longitude)&order=display_order.asc`
+  );
+  const missingById = new Map();
+  for (const row of rows || []) {
+    const port = row.ports || null;
+    if (!port?.id) continue;
+    if (port.latitude != null && port.longitude != null) continue;
+    missingById.set(port.id, port);
+  }
+  const ports = [...missingById.values()].slice(0, 10);
+  if (!ports.length) return { updated: 0, unresolved: 0, results: [] };
+
+  const results = [];
+  let requestIndex = 0;
+  for (const port of ports) {
+    try {
+      const hit = await resolvePortCoordinates(port, { requestIndex });
+      requestIndex += 1;
+      if (!hit?.ok) {
+        results.push({ id: port.id, canonical_name: port.canonical_name, ok: false, ...hit });
+        continue;
+      }
+      await supabase(`ports?id=eq.${encodeURIComponent(port.id)}`, {
+        method: "PATCH",
+        body: {
+          latitude: hit.latitude,
+          longitude: hit.longitude,
+          updated_at: new Date().toISOString()
+        },
+        prefer: "return=minimal"
+      });
+      results.push({
+        id: port.id,
+        canonical_name: port.canonical_name,
+        ok: true,
+        latitude: hit.latitude,
+        longitude: hit.longitude,
+        confidence_score: hit.score
+      });
+    } catch (error) {
+      results.push({
+        id: port.id,
+        canonical_name: port.canonical_name,
+        ok: false,
+        error: "geocode_failed",
+        message: String(error.message || error).slice(0, 200)
+      });
+    }
+  }
+  return {
+    updated: results.filter((row) => row.ok).length,
+    unresolved: results.filter((row) => !row.ok).length,
+    results
+  };
+}
+
 async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
   const timings = {};
   const t0 = Date.now();
@@ -305,10 +365,27 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
   }
 
   const t1 = Date.now();
-  const generated = await generateMarineRouteForCruise(supabaseGet, featuredCruiseId, {
+  let generated = await generateMarineRouteForCruise(supabaseGet, featuredCruiseId, {
     simplifyPreset: "final-map"
   });
   timings.generate_route_ms = Date.now() - t1;
+
+  const missingCoordinateError = (generated.errors || []).some((error) => error?.code === "missing_coordinates");
+  if ((!generated.ok || !generated.routeObject) && missingCoordinateError) {
+    const repairStarted = Date.now();
+    const repair = await repairMissingCoordinatesForCruise(featuredCruiseId);
+    timings.coordinate_repair_ms = Date.now() - repairStarted;
+    timings.coordinate_repair_updated = repair.updated;
+    timings.coordinate_repair_unresolved = repair.unresolved;
+
+    if (repair.updated > 0) {
+      const retryStarted = Date.now();
+      generated = await generateMarineRouteForCruise(supabaseGet, featuredCruiseId, {
+        simplifyPreset: "final-map"
+      });
+      timings.generate_route_retry_ms = Date.now() - retryStarted;
+    }
+  }
 
   if (!generated.ok || !generated.routeObject) {
     return {
