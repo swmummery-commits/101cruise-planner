@@ -30,7 +30,9 @@ const {
 const { buildSocialPackZip } = require("./lib/social-pack-zip");
 const { buildCaption } = require("./lib/social-pack-caption");
 const { uploadZipAndSign } = require("./lib/social-pack-export-storage");
-const { normaliseTemplate } = require("./lib/social-pack-template");
+const { normaliseTemplate, templateHasMap } = require("./lib/social-pack-template");
+const { normaliseRouteMapStyle } = require("./lib/route-map-style");
+const { normaliseSavingsDisplay } = require("./lib/social-pack-savings");
 
 /** Stay under Netlify sync response practical limit (~6MB). */
 const PREVIEW_SAFE_BYTES = Math.floor(5.5 * 1024 * 1024);
@@ -152,12 +154,14 @@ function logPreview(event) {
   }
 }
 
-async function buildPackForCruise(id, { index = 1, treatment = "soft", template = "classic", includedRoomLabels, manualMediaId } = {}) {
+async function buildPackForCruise(id, { index = 1, treatment = "soft", template = "classic", includedRoomLabels, manualMediaId, routeMapStyle, savingsDisplay } = {}) {
   let model = await loadFeaturedCruisePackModel(id, {
     index,
     treatment,
     template: normaliseTemplate(template),
-    manualMediaId: manualMediaId || null
+    manualMediaId: manualMediaId || null,
+    routeMapStyle: normaliseRouteMapStyle(routeMapStyle),
+    savingsDisplay: normaliseSavingsDisplay(savingsDisplay)
   });
   applyRoomSelection(model, includedRoomLabels);
   if (model.readiness?.status === "blocked") {
@@ -187,6 +191,8 @@ async function handlePreview(body) {
   }
   const treatment = normaliseTreatment(body.treatment);
   const template = normaliseTemplate(body.template);
+  const routeMapStyle = normaliseRouteMapStyle(body.route_map_style);
+  const savingsDisplay = normaliseSavingsDisplay(body.savings_display);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
 
   try {
@@ -204,7 +210,9 @@ async function handlePreview(body) {
       index: 1,
       treatment,
       template,
-      manualMediaId: manualMediaId || null
+      manualMediaId: manualMediaId || null,
+      routeMapStyle,
+      savingsDisplay
     });
     const availableOffers = [...(model.offers || [])];
     applyRoomSelection(model, includedRoomLabels);
@@ -240,6 +248,10 @@ async function handlePreview(body) {
       warnings: model.readiness.warnings || [],
       treatment: model.treatment,
       template: model.template,
+      route_map_style: model.routeMapStyle,
+      savings_display: model.savingsDisplay,
+      savings_available: Boolean(model.staffFare?.savings?.available),
+      template_has_map: templateHasMap(model.template),
       preview: true,
       correlation_id: correlationId,
       background: {
@@ -327,6 +339,8 @@ async function handleDownloadIssue(body) {
   }
   const treatment = normaliseTreatment(body.treatment);
   const template = normaliseTemplate(body.template);
+  const routeMapStyle = normaliseRouteMapStyle(body.route_map_style);
+  const savingsDisplay = normaliseSavingsDisplay(body.savings_display);
   let ids = Array.isArray(body.featured_cruise_ids)
     ? body.featured_cruise_ids.map((id) => String(id || "").trim()).filter(Boolean)
     : [];
@@ -346,6 +360,8 @@ async function handleDownloadIssue(body) {
       index: i + 1,
       treatment,
       template,
+      routeMapStyle,
+      savingsDisplay,
       includedRoomLabels: opts.includedRoomLabels,
       manualMediaId: opts.manualMediaId
     });
@@ -383,11 +399,15 @@ async function handleDownloadCruise(body) {
   const newsletterNumber = Number(body.newsletter_number) || 0;
   const treatment = normaliseTreatment(body.treatment);
   const template = normaliseTemplate(body.template);
+  const routeMapStyle = normaliseRouteMapStyle(body.route_map_style);
+  const savingsDisplay = normaliseSavingsDisplay(body.savings_display);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
   const result = await buildPackForCruise(id, {
     index: Math.max(1, Math.trunc(Number(body.index) || 1)),
     treatment,
     template,
+    routeMapStyle,
+    savingsDisplay,
     includedRoomLabels,
     manualMediaId
   });

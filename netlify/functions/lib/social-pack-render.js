@@ -10,7 +10,7 @@ const {
   renderOfferSvg,
   renderCtaSvg
 } = require("./social-pack-svg");
-const { normaliseTemplate } = require("./social-pack-template");
+const { normaliseTemplate, isPromoTemplate } = require("./social-pack-template");
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20000;
@@ -445,6 +445,10 @@ function buildSlidePlan(model) {
  * scale the raster only (preview vs export).
  */
 async function renderCruisePack(model, options = {}) {
+  if (isPromoTemplate(model.template)) {
+    const { renderPromoPack } = require("./social-pack-promo");
+    return renderPromoPack(model, options);
+  }
   const plan = buildSlidePlan(model);
   const slides = {};
   const svgs = {};

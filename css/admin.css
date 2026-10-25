@@ -7937,8 +7937,20 @@ body.admin-loading-active {
 }
 
 .social-pack-template-prompt-card {
-  width: min(480px, 100%);
+  width: min(640px, 100%);
   text-align: center;
+}
+
+.social-pack-choice-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.social-pack-template-prompt-card .social-pack-choice-stack {
+  align-items: center;
 }
 
 .social-pack-overlay {

@@ -26,7 +26,13 @@ const {
   resolveSocialBackground,
   buildDestinationPickerSections
 } = require("./social-pack-destination");
-const { normaliseTemplate } = require("./social-pack-template");
+const {
+  normaliseTemplate,
+  isPromoTemplate,
+  templateHasMap
+} = require("./social-pack-template");
+const { normaliseRouteMapStyle } = require("./route-map-style");
+const { normaliseSavingsDisplay, selectStaffFare } = require("./social-pack-savings");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -98,7 +104,7 @@ function pickPrimaryInclusion(cruise, inclusions) {
 
 function assessReadiness(model) {
   const warnings = [];
-  if (!model.backgroundUrl && !model.heroUrl) {
+  if (!model.backgroundUrl && !model.heroUrl && !model.imageOptional) {
     return {
       status: "blocked",
       label: "Cannot generate — no safe destination image",
@@ -123,6 +129,9 @@ function assessReadiness(model) {
 
   if (!model.offers?.length) {
     warnings.push("no_public_price");
+    if (model.promoTemplate) {
+      return { status: "ready", label: "Ready", warnings };
+    }
     return {
       status: "ready_enquiry",
       label: "No public room prices are available for this cruise.",
@@ -160,6 +169,8 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const manualMediaId = options.manualMediaId || options.social_media_id || null;
   const treatment = String(options.treatment || "soft").toLowerCase();
   const template = normaliseTemplate(options.template);
+  const promo = isPromoTemplate(template);
+  const pricingSelect = promo ? `${PUBLIC_PRICING_SELECT},airline_price` : PUBLIC_PRICING_SELECT;
 
   const rows = await supabase(
     `/rest/v1/featured_cruises?id=eq.${encodeURIComponent(id)}&select=id,headline,destination_strip,departure_date,return_date,departure_port,arrival_port,nights,short_editorial,itinerary_summary,public_slug,publication_status,newsletter_number,display_order,hero_media_id,hero_image_url,hero_image_alt,route_map_media_id,route_map_image_url,route_map_png_path,route_map_status,cruise_line_id,cruise_ship_id,alcohol_package,wifi,gratuities,all_tours,all_dining,laundry,onboard_credit,other_information,ci_cruise_lines(name,logo_url),ci_cruise_ships(name,hero_image_url)&limit=1`
@@ -167,10 +178,10 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const cruise = Array.isArray(rows) ? rows[0] : null;
   if (!cruise) throw Object.assign(new Error("Featured cruise not found."), { statusCode: 404 });
 
-  // Public-safe pricing only — never select airline_price, airfare, or category.
-  // One social price card per cabin that has a public 101cruise price.
+  // Classic packs never select airline_price. Promotional templates append the
+  // staff fare only when that template needs retail-versus-staff savings.
   const pricingRows = await supabase(
-    `/rest/v1/featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(id)}&select=${PUBLIC_PRICING_SELECT}&order=display_order.asc`
+    `/rest/v1/featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(id)}&select=${pricingSelect}&order=display_order.asc`
   );
 
   let stops = [];
@@ -185,6 +196,18 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
     }));
   } catch {
     stops = [];
+  }
+
+  let routeObject = null;
+  if (templateHasMap(template)) {
+    try {
+      const routeRows = await supabase(
+        `/rest/v1/featured_cruise_marine_routes?featured_cruise_id=eq.${encodeURIComponent(id)}&select=route_data&limit=1`
+      );
+      routeObject = Array.isArray(routeRows) ? routeRows[0]?.route_data || null : null;
+    } catch {
+      routeObject = null;
+    }
   }
 
   const heroMedia = await loadMedia(cruise.hero_media_id);
@@ -303,6 +326,13 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
     ),
     treatment,
     template,
+    promoTemplate: promo,
+    imageOptional: promo,
+    routeMapStyle: normaliseRouteMapStyle(options.routeMapStyle),
+    savingsDisplay: normaliseSavingsDisplay(options.savingsDisplay),
+    staffFare: promo ? selectStaffFare(pricingRows || []) : null,
+    routeObject,
+    shipHeroUrl: cruise.ci_cruise_ships?.hero_image_url || null,
     // Approved pack treatments (locked):
     // main → mild master soften; pricing → clear photo; CTA → strong blur
     slideTreatments: {
@@ -338,14 +368,28 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
 async function hydrateMedia(model) {
   const bgUrl = model.backgroundUrl || model.heroUrl;
   if (!bgUrl) {
-    throw Object.assign(new Error("Cannot generate — no safe destination image."), {
-      statusCode: 400,
-      calm: true
-    });
+    if (!model.imageOptional) {
+      throw Object.assign(new Error("Cannot generate — no safe destination image."), {
+        statusCode: 400,
+        calm: true
+      });
+    }
+    model.backgroundDataUri = null;
+    model.heroDataUri = null;
+  } else {
+    const background = await fetchImageAsDataUri(bgUrl);
+    model.backgroundDataUri = background.dataUri;
+    model.heroDataUri = background.dataUri;
   }
-  const background = await fetchImageAsDataUri(bgUrl);
-  model.backgroundDataUri = background.dataUri;
-  model.heroDataUri = background.dataUri;
+
+  if (model.shipHeroUrl) {
+    try {
+      const ship = await fetchImageAsDataUri(model.shipHeroUrl);
+      model.shipHeroDataUri = ship.dataUri;
+    } catch {
+      model.shipHeroDataUri = null;
+    }
+  }
 
   if (model.cruiseLineLogoUrl) {
     try {

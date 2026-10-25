@@ -15,6 +15,9 @@
   let messageTone = "";
   let treatment = "soft";
   let packTemplate = "classic";
+  let routeMapStyle = "classic";
+  let savingsDisplay = "percentage";
+  let savingsAvailable = false;
   let socialMediaId = null;
   let imagePickerOpen = false;
   let imagePickerTab = "recommended";
@@ -25,9 +28,35 @@
   let lastDownloadUrl = null;
   let packTemplateChosen = false;
 
+  const PACK_TEMPLATES = [
+    ["classic", "Classic"],
+    ["premium_dark", "Premium Dark"],
+    ["route_deal", "Route Deal"],
+    ["price_shock", "Price Shock"],
+    ["destination_journey", "Destination Journey"],
+    ["ship_journey", "Ship + Journey"]
+  ];
+
+  function templateHasMap(value) {
+    return value === "route_deal" || value === "ship_journey";
+  }
+
+  function templateShowsSavings(value) {
+    return ["route_deal", "price_shock", "destination_journey", "ship_journey"].includes(value);
+  }
+
+  function packRequestFields() {
+    return {
+      treatment,
+      template: packTemplate,
+      route_map_style: routeMapStyle,
+      savings_display: savingsDisplay
+    };
+  }
+
   function ensureTemplateChosen() {
     if (packTemplateChosen) return true;
-    message = "Choose Classic or Premium Dark before generating previews.";
+    message = "Choose a Social Pack template before generating previews.";
     messageTone = "error";
     rerender();
     return false;
@@ -207,6 +236,9 @@
     socialMediaId = null;
     treatment = "soft";
     packTemplate = "classic";
+    routeMapStyle = "classic";
+    savingsDisplay = "percentage";
+    savingsAvailable = false;
     packTemplateChosen = false;
     imagePickerOpen = false;
     roomSelections = {};
@@ -309,8 +341,7 @@
           body: JSON.stringify({
             action: "preview",
             featured_cruise_id: id,
-            treatment,
-            template: packTemplate,
+            ...packRequestFields(),
             social_media_id: socialMediaId,
             included_room_labels: includedRoomsFor(id)
           })
@@ -338,12 +369,16 @@
         if (data.background?.media_id) {
           socialMediaId = data.background.media_id;
         }
+        savingsAvailable = Boolean(data.savings_available);
         const warnings = data.warnings || [];
-        if (warnings.includes("no_public_price") || !(data.offers || []).length) {
+        const promo = templateShowsSavings(packTemplate);
+        if (!promo && (warnings.includes("no_public_price") || !(data.offers || []).length)) {
           message = "No public room prices are available for this cruise.";
           messageTone = "error";
         } else {
-          message = "Preview ready. Downloads use full 1080×1350 resolution.";
+          message = promo
+            ? "Preview ready. Downloads include full square (1080×1080) and portrait (1080×1350)."
+            : "Preview ready. Downloads use full 1080×1350 resolution.";
           messageTone = "success";
         }
       });
@@ -363,9 +398,26 @@
   }
 
   async function setPackTemplate(value) {
-    packTemplate = String(value || "classic").toLowerCase();
-    if (!["classic", "premium_dark"].includes(packTemplate)) packTemplate = "classic";
+    const next = String(value || "classic").toLowerCase();
+    packTemplate = PACK_TEMPLATES.some(([key]) => key === next) ? next : "classic";
     packTemplateChosen = true;
+    if (!templateShowsSavings(packTemplate)) savingsAvailable = false;
+    message = "";
+    messageTone = "";
+    if (previewId) await regeneratePreview();
+    else rerender();
+  }
+
+  async function setRouteMapStyle(value) {
+    routeMapStyle = value === "social" ? "social" : "classic";
+    message = "";
+    messageTone = "";
+    if (previewId) await regeneratePreview();
+    else rerender();
+  }
+
+  async function setSavingsDisplay(value) {
+    savingsDisplay = value === "dollar" ? "dollar" : "percentage";
     message = "";
     messageTone = "";
     if (previewId) await regeneratePreview();
@@ -506,8 +558,7 @@
         newsletter_number: issueNumber,
         featured_cruise_id: cruiseId,
         index,
-        treatment,
-        template: packTemplate,
+        ...packRequestFields(),
         social_media_id: cruiseId === previewId ? socialMediaId : null,
         included_room_labels: includedRoomsFor(cruiseId),
         cruise_options: buildCruiseOptions([cruiseId])
@@ -546,8 +597,7 @@
                 newsletter_number: issueNumber,
                 featured_cruise_id: ids[0],
                 index: 1,
-                treatment,
-                template: packTemplate,
+                ...packRequestFields(),
                 social_media_id: ids[0] === previewId ? socialMediaId : null,
                 included_room_labels: includedRoomsFor(ids[0])
               })
@@ -655,8 +705,7 @@
                 1,
                 cruises.findIndex((c) => c.id === previewId) + 1
               ),
-              treatment,
-              template: packTemplate,
+              ...packRequestFields(),
               social_media_id: socialMediaId,
               included_room_labels: includedRoomsFor(previewId)
             })
@@ -817,25 +866,55 @@
       </div>`;
   }
 
+  function renderChoiceGroup(label, options, current, handler, visible = true) {
+    if (!visible) return "";
+    return `
+      <div class="social-pack-treatment" role="group" aria-label="${esc(label)}">
+        <span class="admin-small">${esc(label)}</span>
+        ${options
+          .map(
+            ([value, text]) =>
+              `<button type="button" class="media-filter-chip ${
+                current === value ? "is-active" : ""
+              }" onclick="SocialPackAdmin.${handler}('${value}')" ${busy ? "disabled" : ""}>${esc(text)}</button>`
+          )
+          .join("")}
+      </div>`;
+  }
+
   function renderTemplateSelector() {
     const prompt = packTemplateChosen
       ? ""
       : `<p class="admin-small admin-error">Choose a template before previewing or downloading.</p>`;
     return `
       ${prompt}
-      <div class="social-pack-treatment" role="group" aria-label="Pack template">
-        <span class="admin-small">Template</span>
-        ${[
-          ["classic", "Classic"],
-          ["premium_dark", "Premium Dark"]
-        ]
-          .map(
-            ([value, label]) =>
-              `<button type="button" class="media-filter-chip ${
-                packTemplateChosen && packTemplate === value ? "is-active" : ""
-              }" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${busy ? "disabled" : ""}>${label}</button>`
-          )
-          .join("")}
+      <div class="social-pack-choice-stack">
+        ${renderChoiceGroup(
+          "Social Pack Template",
+          PACK_TEMPLATES,
+          packTemplateChosen ? packTemplate : "",
+          "setPackTemplate"
+        )}
+        ${renderChoiceGroup(
+          "Route Map Style",
+          [
+            ["classic", "Classic"],
+            ["social", "Social"]
+          ],
+          routeMapStyle,
+          "setRouteMapStyle",
+          packTemplateChosen && templateHasMap(packTemplate)
+        )}
+        ${renderChoiceGroup(
+          "Savings Display",
+          [
+            ["percentage", "Percentage"],
+            ["dollar", "Dollar Saving"]
+          ],
+          savingsDisplay,
+          "setSavingsDisplay",
+          packTemplateChosen && templateShowsSavings(packTemplate) && savingsAvailable
+        )}
       </div>`;
   }
 
@@ -933,9 +1012,15 @@
                         )}/${esc(String(bg.candidate_count ?? ""))}</p>`
                       : ""
                   }
-                  <p class="admin-small">Preview is reduced resolution for Admin. Downloads remain full 1080×1350.</p>
+                  <p class="admin-small">${
+                    templateShowsSavings(packTemplate)
+                      ? "Preview is reduced. Downloads include full square (1080×1080) and portrait (1080×1350)."
+                      : "Preview is reduced resolution for Admin. Downloads remain full 1080×1350."
+                  }</p>
                   ${
-                    activeCruise && !(activeCruise.offers || []).length
+                    activeCruise &&
+                    !templateShowsSavings(packTemplate) &&
+                    !(activeCruise.offers || []).length
                       ? `<div class="admin-message admin-error">No public room prices are available for this cruise.</div>`
                       : ""
                   }
@@ -976,10 +1061,14 @@
         <div class="social-pack-template-prompt-card admin-card">
           <p class="admin-nav-eyebrow">Social Pack</p>
           <h4>Choose a template</h4>
-          <p class="admin-muted">Pick Classic or Premium Dark before previewing or downloading.</p>
-          <div class="admin-actions-row" style="justify-content:center;margin-top:16px">
-            <button type="button" class="admin-button black" onclick="SocialPackAdmin.setPackTemplate('classic')" ${busy ? "disabled" : ""}>Classic</button>
-            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.setPackTemplate('premium_dark')" ${busy ? "disabled" : ""}>Premium Dark</button>
+          <p class="admin-muted">Pick a Social Pack template before previewing or downloading. Classic and Premium Dark stay as they are.</p>
+          <div class="social-pack-choice-stack" style="margin-top:16px">
+            ${PACK_TEMPLATES.map(
+              ([value, label]) =>
+                `<button type="button" class="media-filter-chip" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${
+                  busy ? "disabled" : ""
+                }>${esc(label)}</button>`
+            ).join("")}
           </div>
         </div>
       </div>
@@ -1045,6 +1134,8 @@
     stepPreview,
     setTreatment,
     setPackTemplate,
+    setRouteMapStyle,
+    setSavingsDisplay,
     openImagePicker,
     closeImagePicker,
     setImagePickerTab,
