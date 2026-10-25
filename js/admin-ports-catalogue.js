@@ -621,8 +621,27 @@
         } else {
           result = await api("update", { id: selectedId, port: payload });
         }
-        const port = result.port;
+        let port = result.port;
         if (!port?.id) throw new Error("Port was not returned after save.");
+
+        let coordinateMessage = "";
+        if (hasMissingCoords(port)) {
+          try {
+            const geo = await coordinateApi([port.id]);
+            const resolved = (geo.results || []).find((row) => row.id === port.id && row.ok);
+            if (resolved?.port?.id) {
+              port = { ...port, ...resolved.port };
+              coordinateMessage = " Coordinates found automatically.";
+            } else if (resolved?.latitude != null && resolved?.longitude != null) {
+              port = { ...port, latitude: resolved.latitude, longitude: resolved.longitude };
+              coordinateMessage = " Coordinates found automatically.";
+            } else {
+              coordinateMessage = " Coordinates still need review.";
+            }
+          } catch (_geoError) {
+            coordinateMessage = " Coordinates still need review.";
+          }
+        }
 
         const idx = ports.findIndex((p) => p.id === port.id);
         if (idx >= 0) ports[idx] = port;
@@ -637,7 +656,12 @@
         selectedId = port.id;
         draft = portToDraft(port);
         syncItineraryPortsCache();
-        if (!quiet) setMessage(`Saved “${port.display_name || port.canonical_name}”.`, "success");
+        if (!quiet) {
+          setMessage(
+            `Saved “${port.display_name || port.canonical_name}”.${coordinateMessage}`,
+            coordinateMessage.includes("review") ? "info" : "success"
+          );
+        }
         return port;
       } catch (error) {
         setMessage(error.message || "Could not save port.", "error");
