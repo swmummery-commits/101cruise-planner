@@ -300,6 +300,74 @@
     }
   }
 
+  async function coordinateApi(portIds) {
+    const headers =
+      typeof global.adminAuthHeaders === "function"
+        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
+        : { "Content-Type": "application/json" };
+    const response = await fetch("/.netlify/functions/geocode-ports", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ port_ids: portIds })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(data.message || data.error || \`Coordinate lookup failed (HTTP \${response.status})\`);
+      err.statusCode = response.status;
+      throw err;
+    }
+    return data;
+  }
+
+  async function bulkFindMissingCoordinates() {
+    if (bulkRunning) return;
+    const missing = ports.filter(hasMissingCoords);
+    if (!missing.length) {
+      setMessage("Every port already has coordinates.", "success");
+      rerender();
+      return;
+    }
+
+    const confirmed = window.confirm(
+      \`Find coordinates for \${missing.length} port\${missing.length === 1 ? "" : "s"} missing them?\\n\\nHigh-confidence matches will be saved. Ambiguous or malformed ports will be left for review.\`
+    );
+    if (!confirmed) return;
+
+    bulkRunning = true;
+    const ids = missing.map((port) => port.id);
+    let updated = 0;
+    let unresolved = 0;
+    let failed = 0;
+    setMessage(\`Looking up coordinates for \${ids.length} port\${ids.length === 1 ? "" : "s"}…\`, "running");
+    rerender();
+
+    try {
+      for (let i = 0; i < ids.length; i += 20) {
+        const batch = ids.slice(i, i + 20);
+        const data = await coordinateApi(batch);
+        updated += Number(data.updated) || 0;
+        unresolved += Number(data.unresolved) || 0;
+        failed += Number(data.failed) || 0;
+        setMessage(
+          \`Coordinate lookup in progress… \${Math.min(i + batch.length, ids.length)} of \${ids.length} checked; \${updated} saved.\`,
+          "running"
+        );
+        rerender();
+      }
+      await ensureLoaded({ force: true, quiet: true });
+      const remaining = ports.filter(hasMissingCoords).length;
+      setMessage(
+        \`Coordinate lookup complete: \${updated} saved, \${remaining} still need review\${failed ? \`, \${failed} lookup error\${failed === 1 ? "" : "s"}\` : ""}.\`,
+        remaining || failed ? "info" : "success"
+      );
+    } catch (error) {
+      setMessage(error.message || "Coordinate lookup failed.", "error");
+    } finally {
+      bulkRunning = false;
+      rerender();
+    }
+  }
+
   async function api(action, extra = {}) {
     const headers =
       typeof global.adminAuthHeaders === "function"
@@ -864,6 +932,7 @@
               <option value="has" ${coordsFilter === "has" ? "selected" : ""}>Has coords</option>
             </select>
             <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.startCreate()" ${saving || loading || bulkRunning ? "disabled" : ""}>Add port</button>
+            <button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.bulkFindMissingCoordinates()" ${saving || loading || bulkRunning ? "disabled" : ""}>${bulkRunning ? "Bulk search running…" : "Find missing coordinates"}</button>
             <button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.bulkFindMissingPortImages()" ${saving || loading || bulkRunning || imageLoading ? "disabled" : ""}>${bulkRunning ? "Bulk search running…" : "Find missing port images"}</button>
           </div>
           <div class="admin-small"><span id="portsListCount">${loading ? "Hang tight! Just getting your info." : `${filtered.length} of ${ports.length} ports`}</span></div>
@@ -910,6 +979,7 @@
     applyPortImageCandidateByIndex,
     approveReviewedPortImage,
     replaceAutoApprovedPortImage,
+    bulkFindMissingCoordinates,
     bulkFindMissingPortImages
   };
 })(typeof window !== "undefined" ? window : globalThis);
