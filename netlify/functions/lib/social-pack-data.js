@@ -32,7 +32,7 @@ const {
   templateHasMap
 } = require("./social-pack-template");
 const { normaliseRouteMapStyle } = require("./route-map-style");
-const { normaliseSavingsDisplay, selectStaffFare } = require("./social-pack-savings");
+const { normaliseSavingsDisplay, selectPromoFare } = require("./social-pack-savings");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -170,7 +170,7 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const treatment = String(options.treatment || "soft").toLowerCase();
   const template = normaliseTemplate(options.template);
   const promo = isPromoTemplate(template);
-  const pricingSelect = promo ? `${PUBLIC_PRICING_SELECT},airline_price` : PUBLIC_PRICING_SELECT;
+  const pricingSelect = PUBLIC_PRICING_SELECT;
 
   const rows = await supabase(
     `/rest/v1/featured_cruises?id=eq.${encodeURIComponent(id)}&select=id,headline,destination_strip,departure_date,return_date,departure_port,arrival_port,nights,short_editorial,itinerary_summary,public_slug,publication_status,newsletter_number,display_order,hero_media_id,hero_image_url,hero_image_alt,route_map_media_id,route_map_image_url,route_map_png_path,route_map_status,cruise_line_id,cruise_ship_id,alcohol_package,wifi,gratuities,all_tours,all_dining,laundry,onboard_credit,other_information,ci_cruise_lines(name,logo_url),ci_cruise_ships(name,hero_image_url)&limit=1`
@@ -178,8 +178,9 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const cruise = Array.isArray(rows) ? rows[0] : null;
   if (!cruise) throw Object.assign(new Error("Featured cruise not found."), { statusCode: 404 });
 
-  // Classic packs never select airline_price. Promotional templates append the
-  // staff fare only when that template needs retail-versus-staff savings.
+  // Social packs are public marketing assets. Only brochure/retail and
+  // 101 Cruise prices are selected. Airline/staff pricing must never leave
+  // the pricing table through this workflow.
   const pricingRows = await supabase(
     `/rest/v1/featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(id)}&select=${pricingSelect}&order=display_order.asc`
   );
@@ -330,7 +331,7 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
     imageOptional: promo,
     routeMapStyle: normaliseRouteMapStyle(options.routeMapStyle),
     savingsDisplay: normaliseSavingsDisplay(options.savingsDisplay),
-    staffFare: promo ? selectStaffFare(pricingRows || []) : null,
+    promoFare: promo ? selectPromoFare(pricingRows || []) : null,
     routeObject,
     shipHeroUrl: cruise.ci_cruise_ships?.hero_image_url || null,
     // Approved pack treatments (locked):
