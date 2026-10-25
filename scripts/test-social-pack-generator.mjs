@@ -601,17 +601,18 @@ async function main() {
     assert(/data-social-pack-demo/.test(adminSrc), "template chips expose hover demos");
     assert(/social-pack-type-vision/.test(adminCss), "hover vision card styles");
     [
-      ["classic", "classic.svg"],
-      ["premium_dark", "premium-dark.svg"],
-      ["route_deal", "route-deal.svg"],
-      ["price_shock", "price-shock.svg"],
-      ["destination_journey", "destination-journey.svg"],
-      ["ship_journey", "ship-journey.svg"]
-    ].forEach(([key, file]) => {
+      ["classic", "Mediterranean"],
+      ["premium_dark", "ROME"],
+      ["route_deal", "Sapphire Princess"],
+      ["price_shock", "SAVE 34%"],
+      ["destination_journey", "Hawaii"],
+      ["ship_journey", "Oceania Cruises"]
+    ].forEach(([key, marker]) => {
       assert(adminSrc.includes(`${key}: {`), `demo graphic listed for ${key}`);
-      assert(adminSrc.includes(`/images/social-pack-demos/${file}`), `demo src for ${key}`);
-      assert(fs.existsSync(path.join(root, "images/social-pack-demos", file)), `demo file ${file}`);
+      assert(adminSrc.includes(marker), `inline demo artwork for ${key}`);
     });
+    assert(adminSrc.includes("social-pack-type-vision-art"), "hover card injects inline SVG");
+    assert(!/img src="\$\{esc\(demo\.src\)\}"/.test(adminSrc), "demo no longer depends on a remote image file");
     assert(/slidePreviewClass\(name\)/.test(adminSrc), "square/portrait preview class helper");
     assert(/figure class="\$\{slidePreviewClass\(name\)\}"/.test(adminSrc), "preview figures keep native format");
     assert(/\.social-pack-slides img \{[\s\S]*object-fit: contain;/.test(adminCss), "preview shows the full graphic");

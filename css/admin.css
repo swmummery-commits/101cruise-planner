@@ -7952,7 +7952,7 @@ body.admin-loading-active {
 .social-pack-type-vision {
   position: fixed;
   z-index: 12000;
-  width: 260px;
+  width: 300px;
   padding: 10px;
   border-radius: 12px;
   background: #ffffff;
@@ -7965,12 +7965,17 @@ body.admin-loading-active {
   display: none;
 }
 
-.social-pack-type-vision img {
+.social-pack-type-vision-art,
+.social-pack-type-vision-art svg {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 8px;
   background: #f4f5f6;
+}
+
+.social-pack-type-vision-art {
+  overflow: hidden;
   border: 1px solid #e5e7eb;
 }
 

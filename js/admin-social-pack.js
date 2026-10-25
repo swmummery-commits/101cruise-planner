@@ -39,34 +39,34 @@
 
   const TEMPLATE_DEMOS = {
     classic: {
-      src: "/images/social-pack-demos/classic.svg",
       title: "Classic",
-      note: "Photo poster with destination, ship, and room prices."
+      note: "Photo poster with destination, ship, and room prices.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" role="img" aria-hidden="true"><rect width="320" height="400" fill="#1a3b4a"/><rect width="320" height="210" fill="#4aa3b5"/><circle cx="250" cy="58" r="28" fill="#f3d9a4" opacity=".85"/><rect x="0" y="168" width="320" height="42" fill="#071018" opacity=".28"/><text x="20" y="196" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="800">Mediterranean</text><rect x="0" y="210" width="320" height="190" fill="#f6f3ec"/><text x="20" y="244" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="800">Oceania Marina</text><text x="20" y="268" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="11">Barcelona  ·  Rome  ·  10 nights</text><rect x="20" y="286" width="86" height="46" rx="6" fill="#fff" stroke="#d7ddd8"/><rect x="114" y="286" width="86" height="46" rx="6" fill="#fff" stroke="#d7ddd8"/><text x="28" y="306" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">INSIDE</text><text x="28" y="324" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="800">$2,180</text><text x="122" y="306" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">BALCONY</text><text x="122" y="324" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="800">$2,860</text><rect x="0" y="384" width="320" height="16" fill="#8dd9bf"/><text x="20" y="373" fill="#245c4e" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">101CRUISE.COM.AU</text></svg>`
     },
     premium_dark: {
-      src: "/images/social-pack-demos/premium-dark.svg",
       title: "Premium Dark",
-      note: "Dark cinematic poster with a large route and fare."
+      note: "Dark cinematic poster with a large route and fare.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" role="img" aria-hidden="true"><rect width="320" height="400" fill="#0b1220"/><rect width="320" height="400" fill="#173246" opacity=".35"/><text x="20" y="36" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text><text x="20" y="118" fill="#fff" font-family="Georgia,'Times New Roman',serif" font-size="28" font-weight="800">ROME</text><text x="20" y="154" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="700">→ BARCELONA</text><text x="20" y="186" fill="#c8cdd4" font-family="Helvetica,Arial,sans-serif" font-size="12">Oceania Sirena  ·  11 nights</text><rect x="20" y="210" width="280" height="1" fill="#dde2e8" opacity=".25"/><text x="20" y="236" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Civitavecchia</text><text x="20" y="256" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Cagliari</text><text x="20" y="276" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="12">Malaga</text><rect x="20" y="300" width="160" height="44" rx="4" fill="#111827" stroke="#8dd9bf"/><text x="32" y="318" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">AIRLINE STAFF FARE</text><text x="32" y="336" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="800">$2,480</text><rect x="0" y="384" width="320" height="16" fill="#8dd9bf"/></svg>`
     },
     route_deal: {
-      src: "/images/social-pack-demos/route-deal.svg",
       title: "Route Deal",
-      note: "Map-led square fare graphic."
+      note: "Map-led square fare graphic.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-hidden="true"><rect width="320" height="320" fill="#fff"/><rect width="320" height="168" fill="#d7ebe4"/><circle cx="58" cy="72" r="6" fill="#173246"/><circle cx="168" cy="46" r="6" fill="#173246"/><circle cx="248" cy="92" r="6" fill="#173246"/><path d="M58 72 C110 40 150 38 168 46 C200 58 220 86 248 92" fill="none" stroke="#173246" stroke-width="3"/><rect x="16" y="128" width="110" height="22" rx="11" fill="#173246"/><text x="71" y="143" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">PRINCESS</text><rect x="228" y="12" width="80" height="24" rx="12" fill="#173246"/><text x="268" y="28" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="800">SAVE 28%</text><text x="20" y="200" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="20" font-weight="800">Sapphire Princess</text><text x="20" y="222" fill="#243140" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="600">Honolulu  →  Vancouver</text><text x="20" y="242" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="10">12 May 2026   |   15 nights</text><text x="20" y="276" fill="#173246" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="800">$2,280</text><text x="20" y="294" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="9">from</text><rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/></svg>`
     },
     price_shock: {
-      src: "/images/social-pack-demos/price-shock.svg",
       title: "Price Shock",
-      note: "Dark square with a large staff fare."
+      note: "Dark square with a large staff fare.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-hidden="true"><rect width="320" height="320" fill="#12181d"/><text x="20" y="36" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="800">101CRUISE</text><text x="300" y="36" text-anchor="end" fill="#c5ced4" font-family="Helvetica,Arial,sans-serif" font-size="9">Princess  ·  Sapphire</text><text x="160" y="118" text-anchor="middle" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">AIRLINE STAFF FARE</text><text x="160" y="176" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="46" font-weight="800">$1,890</text><line x1="118" y1="198" x2="202" y2="198" stroke="#9aa6ae" stroke-width="2"/><text x="160" y="204" text-anchor="middle" fill="#9aa6ae" font-family="Helvetica,Arial,sans-serif" font-size="14">$2,860</text><rect x="118" y="218" width="84" height="24" rx="12" fill="#f80020"/><text x="160" y="234" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">SAVE 34%</text><text x="20" y="276" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="700">HONOLULU  →  VANCOUVER</text><text x="20" y="296" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11">Honolulu  ·  Juneau  ·  Vancouver</text><rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/></svg>`
     },
     destination_journey: {
-      src: "/images/social-pack-demos/destination-journey.svg",
       title: "Destination Journey",
-      note: "Destination photo with the fare overlaid."
+      note: "Destination photo with the fare overlaid.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-hidden="true"><defs><linearGradient id="djDemo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa3b5"/><stop offset=".45" stop-color="#1d4d5c"/><stop offset="1" stop-color="#081018"/></linearGradient></defs><rect width="320" height="320" fill="url(#djDemo)"/><circle cx="240" cy="70" r="36" fill="#f3d9a4" opacity=".55"/><text x="20" y="36" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text><text x="20" y="188" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="24" font-weight="800">Hawaii</text><text x="20" y="212" fill="#f4f7f8" font-family="Helvetica,Arial,sans-serif" font-size="12">Honolulu  ·  Maui  ·  Kauai</text><text x="20" y="248" fill="#8dd9bf" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1.2">AIRLINE STAFF FARE</text><text x="20" y="284" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="800">$2,280</text><rect x="216" y="248" width="84" height="24" rx="12" fill="#f80020"/><text x="258" y="264" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">SAVE 22%</text><rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/></svg>`
     },
     ship_journey: {
-      src: "/images/social-pack-demos/ship-journey.svg",
       title: "Ship + Journey",
-      note: "Ship photo, route map, and fare."
+      note: "Ship photo, route map, and fare.",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-hidden="true"><rect width="320" height="320" fill="#f6f3ec"/><rect width="320" height="112" fill="#395a68"/><rect x="40" y="48" width="240" height="38" rx="18" fill="#d9e4e8"/><text x="20" y="28" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text><text x="20" y="140" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="800">Marina</text><text x="20" y="158" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="11">Oceania Cruises</text><rect x="20" y="172" width="280" height="58" rx="8" fill="#d7ebe4"/><circle cx="70" cy="201" r="5" fill="#173246"/><circle cx="160" cy="190" r="5" fill="#173246"/><circle cx="250" cy="206" r="5" fill="#173246"/><path d="M70 201 C110 176 140 176 160 190 C200 210 220 212 250 206" fill="none" stroke="#173246" stroke-width="2.5"/><text x="20" y="250" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="11">Barcelona  ·  Palma  ·  Rome</text><text x="20" y="278" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1">AIRLINE STAFF FARE</text><text x="20" y="302" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="800">$2,480</text><rect x="216" y="274" width="84" height="24" rx="12" fill="#f80020"/><text x="258" y="290" text-anchor="middle" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">SAVE 19%</text><rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/></svg>`
     }
   };
 
@@ -1185,7 +1185,7 @@
 
   function positionTemplateVision(el, anchor) {
     const rect = anchor.getBoundingClientRect();
-    const width = Math.min(280, window.innerWidth - 24);
+    const width = Math.min(300, window.innerWidth - 24);
     el.style.width = `${width}px`;
     const cardH = el.offsetHeight || 360;
     let left = rect.left;
@@ -1202,7 +1202,7 @@
     if (!demo) return;
     const el = visionCard();
     el.innerHTML = `
-      <img src="${esc(demo.src)}" alt="">
+      <div class="social-pack-type-vision-art">${demo.svg}</div>
       <strong>${esc(demo.title)}</strong>
       <span>${esc(demo.note)}</span>
       <em>Sample layout — not this cruise</em>`;
