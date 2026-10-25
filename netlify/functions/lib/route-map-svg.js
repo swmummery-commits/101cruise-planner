@@ -220,7 +220,7 @@ function socialBrandFooter(width, mapHeight, footer, branding) {
     <rect x="0" y="${mapHeight}" width="${width}" height="${footer}" fill="#F7F4EE"/>
     <rect x="0" y="${mapHeight}" width="${width}" height="6" fill="#8DD9BF"/>
     ${meta}
-    <text x="${width - 36}" y="${textY}" text-anchor="end" font-family="Noto Sans, Helvetica, Arial, sans-serif" font-size="${brandSize}" font-weight="800" letter-spacing="1.2" fill="#F80020">101 CRUISE</text>
+    <text x="${width - 36}" y="${textY}" text-anchor="end" font-family="Noto Sans, Helvetica, Arial, sans-serif" font-size="${Math.max(16, brandSize - 2)}" font-weight="800" letter-spacing="0.3" fill="#F80020">101cruise.com.au</text>
   </g>`;
 }
 

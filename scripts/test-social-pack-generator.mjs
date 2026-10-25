@@ -380,6 +380,8 @@ async function main() {
     const mainSvg = renderMainCruiseSvg(model);
     const offerSvg = renderOfferSvg(model, 0);
     const ctaSvg = renderCtaSvg(model);
+    assert(mainSvg.includes("101cruise.com.au"), "main brand url");
+    assert(ctaSvg.includes("101cruise.com.au"), "cta brand url");
     assert(mainSvg.includes("#8DD9BF"), "green footer main");
     assert(mainSvg.includes("fill-opacity"), "treatment overlay present");
     assert(!mainSvg.includes(airlineToken), "no airline in main");
@@ -611,6 +613,9 @@ async function main() {
       assert(adminSrc.includes(`${key}: {`), `demo graphic listed for ${key}`);
       assert(adminSrc.includes(marker), `inline demo artwork for ${key}`);
     });
+    assert(adminSrc.includes("101cruise.com.au"), "demo brand url");
+    assert(adminSrc.includes("/assets/101cruise-logo.png"), "demo uses 101cruise logo file");
+    assert(!/101CRUISE(?! PRICE)/.test(adminSrc.replace(/101cruise\.com\.au/g, "")), "demos no longer use 101CRUISE wordmark");
     assert(adminSrc.includes("social-pack-type-vision-art"), "hover card injects inline SVG");
     assert(!/img src="\$\{esc\(demo\.src\)\}"/.test(adminSrc), "demo no longer depends on a remote image file");
     assert(/slidePreviewClass\(name\)/.test(adminSrc), "square/portrait preview class helper");
@@ -633,6 +638,7 @@ async function main() {
     const mainLayout = layoutMainTextGroup(templateModel);
     assert(mainLayout.headlineY > 300, "main text block moved downward");
     assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
+    assert(pdMain.includes("101cruise.com.au"), "premium dark brand url");
     assert(pdMain.includes('height="88"'), "cruise-line logo enlarged");
     assert(/L [^"]+ 1350/.test(pdMain), "cruise-line shield sits on slide bottom");
     assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");

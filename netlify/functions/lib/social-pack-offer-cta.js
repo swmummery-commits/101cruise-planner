@@ -421,10 +421,11 @@ function angledRoomPill(label, { x = null, y = 210 } = {}) {
 }
 
 function brandLockupFull(model, { y, size = 200 } = {}) {
-  if (model.brandLogoDataUri) {
-    return `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`;
-  }
-  return `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>`;
+  const mark = model.brandLogoDataUri
+    ? `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`
+    : `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>`;
+  return `${mark}
+    <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="20" font-weight="700" letter-spacing="0.3">101cruise.com.au</text>`;
 }
 
 function inclusionSealLines(inclusion) {
@@ -544,7 +545,7 @@ function renderOfferSvg(model, offerIndex = 0) {
 /** Final CTA — League Spartan + Feeling Passionate script artwork */
 function renderCtaSvg(model) {
   const brandSize = 220;
-  const brandY = H - FOOTER_H - brandSize - 36;
+  const brandY = H - FOOTER_H - brandSize - 56;
   const href = model.backgroundDataUri || model.heroDataUri;
   let bg = `<rect width="${W}" height="${H}" fill="#0b1220"/>`;
   if (href) {

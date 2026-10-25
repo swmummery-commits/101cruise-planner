@@ -2,7 +2,8 @@
   <rect width="320" height="320" fill="#f6f3ec"/>
   <rect width="320" height="112" fill="#395a68"/>
   <rect x="40" y="48" width="240" height="38" rx="18" fill="#d9e4e8"/>
-  <text x="20" y="28" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="800">101CRUISE</text>
+  <image href="/assets/101cruise-logo.png" x="20" y="15" width="16" height="16" preserveAspectRatio="xMidYMid meet"/>
+  <text x="40" y="28" fill="#fff" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">101cruise.com.au</text>
   <text x="20" y="140" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="18" font-weight="800">Marina</text>
   <text x="20" y="158" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="11">Oceania Cruises</text>
   <rect x="20" y="172" width="280" height="58" rx="8" fill="#d7ebe4"/>

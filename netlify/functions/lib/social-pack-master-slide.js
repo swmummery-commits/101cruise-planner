@@ -126,16 +126,13 @@ function cruiseLineLogo(model) {
 }
 
 function brandLockup(model, { y, size = 200 } = {}) {
-  // Logo only — URL is already in the mark; do not repeat 101CRUISE.COM.AU as text.
-  if (model.brandLogoDataUri) {
-    return `
-      <g>
-        <image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
-      </g>`;
-  }
+  const mark = model.brandLogoDataUri
+    ? `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`
+    : `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="#F80020"/>`;
   return `
     <g>
-      <rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="#F80020"/>
+      ${mark}
+      <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="20" font-weight="700" letter-spacing="0.3">101cruise.com.au</text>
     </g>`;
 }
 
@@ -320,7 +317,7 @@ function renderMasterConceptB(model) {
   const ports = curatedPorts(model);
   const left = 88;
   const brandSize = 200;
-  const brandY = H - FOOTER_H - brandSize - 20;
+  const brandY = H - FOOTER_H - brandSize - 48;
   const body = `
     ${masterBackground(model, { concept: "b" })}
     ${cruiseLineLogo(model)}
@@ -339,7 +336,7 @@ function renderMasterConceptB(model) {
 function renderMasterConceptC(model) {
   const ports = curatedPorts(model);
   const brandSize = 180;
-  const brandY = H - FOOTER_H - brandSize - 20;
+  const brandY = H - FOOTER_H - brandSize - 48;
   const body = `
     ${masterBackground(model, { concept: "c" })}
     ${cruiseLineLogo(model)}

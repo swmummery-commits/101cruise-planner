@@ -170,8 +170,20 @@ function struck(x, y, label, size, { fill = "#8B939A", anchor = "start" } = {}) 
   `;
 }
 
-function brandLockup(x, y, size, { fill = RED, anchor = "start" } = {}) {
-  return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="${FAMILY}" font-size="${size}" font-weight="800" letter-spacing="1.4" fill="${fill}">101 CRUISE</text>`;
+const BRAND_SITE = "101cruise.com.au";
+
+function brandLockup(model, x, y, size, { fill = RED, anchor = "start" } = {}) {
+  const href = model && model.brandLogoDataUri;
+  const logoSize = Math.round(size * 1.35);
+  if (href) {
+    const logoY = Math.round(y - logoSize * 0.78);
+    const textX = Math.round(x + logoSize + 10);
+    return `
+      <image href="${href}" x="${x}" y="${logoY}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet"/>
+      <text x="${textX}" y="${y}" text-anchor="start" font-family="${FAMILY}" font-size="${size}" font-weight="800" letter-spacing="0.3" fill="${fill}">${BRAND_SITE}</text>
+    `;
+  }
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="${FAMILY}" font-size="${size}" font-weight="800" letter-spacing="0.3" fill="${fill}">${BRAND_SITE}</text>`;
 }
 
 function greenBar(width, height) {
@@ -309,7 +321,7 @@ function renderRouteDealSvg(model, format, mapHref) {
            ${struck(retailX, priceY - 6, retail, 26, { fill: "#8B939A" })}`
         : ""
     }
-    ${brandLockup(pad, height - 58, square ? 28 : 32)}
+    ${brandLockup(model, pad, height - 58, square ? 24 : 26)}
     <rect x="0" y="${height - 10}" width="${width}" height="10" fill="${GREEN}"/>
   </svg>`;
 }
@@ -335,7 +347,7 @@ function renderPriceShockSvg(model, format) {
   const portY = square ? 760 : 980;
   return `${svgOpen(width, height, "Price Shock")}
     <rect width="${width}" height="${height}" fill="${INK}"/>
-    ${brandLockup(pad, square ? 78 : 92, square ? 26 : 30, { fill: GREEN })}
+    ${brandLockup(model, pad, square ? 78 : 92, square ? 22 : 24, { fill: GREEN })}
     <text x="${width - pad}" y="${square ? 74 : 88}" text-anchor="end" font-family="${FAMILY}" font-size="18" font-weight="600" fill="#C5CED4">${escapeXml(lineShip(model))}</text>
     <text x="${width / 2}" y="${priceY - priceSize - 24}" text-anchor="middle" font-family="${FAMILY}" font-size="20" font-weight="700" letter-spacing="2" fill="${GREEN}">AIRLINE STAFF FARE</text>
     <text x="${width / 2}" y="${priceY}" text-anchor="middle" font-family="${FAMILY}" font-size="${priceSize}" font-weight="800" fill="${WHITE}">${escapeXml(price)}</text>
@@ -380,7 +392,7 @@ function renderDestinationJourneySvg(model, format) {
       ${coverImage(href, 0, 0, width, height, model.backgroundWidth || model.heroWidth, model.backgroundHeight || model.heroHeight)}
       <rect width="${width}" height="${height}" fill="url(#dj-fade)"/>
     </g>
-    ${brandLockup(pad, 78, 28, { fill: WHITE })}
+    ${brandLockup(model, pad, 78, 22, { fill: WHITE })}
     <text x="${width - pad}" y="74" text-anchor="end" font-family="${FAMILY}" font-size="18" font-weight="600" fill="#E7EEF2">${escapeXml(lineShip(model))}</text>
     ${textBlock(headline, pad, textTop, headSize, { fill: WHITE, weight: 800, gap: 4 })}
     ${textBlock(ports, pad, portsY, portSize, { fill: "#F4F7F8", weight: 600, gap: 8 })}
@@ -420,7 +432,7 @@ function renderShipJourneySvg(model, format, mapHref) {
       ${coverImage(href, 0, 0, width, photoH, model.shipHeroWidth || model.backgroundWidth, model.shipHeroHeight || model.backgroundHeight)}
       <rect width="${width}" height="${photoH}" fill="#081018" fill-opacity="0.18"/>
     </g>
-    ${brandLockup(pad, 64, 26, { fill: WHITE })}
+    ${brandLockup(model, pad, 64, 20, { fill: WHITE })}
     <text x="${pad}" y="${photoH + (square ? 58 : 68)}" font-family="${FAMILY}" font-size="${shipSize}" font-weight="800" fill="${INK}">${escapeXml(ship)}</text>
     <text x="${pad}" y="${photoH + (square ? 92 : 108)}" font-family="${FAMILY}" font-size="20" font-weight="600" fill="${MUTED}">${escapeXml(model.lineName || "")}</text>
     ${mapFrame(mapHref, pad, mapY, mapW, mapH)}

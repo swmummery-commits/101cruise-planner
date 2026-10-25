@@ -374,9 +374,9 @@ test("M Social route map is an additional style", () => {
   assert(/data-role="destination"/.test(portrait.svg), "destination marker");
   assert(/data-role="via"/.test(portrait.svg), "intermediate dots");
   assert(!/1\.\s+Barcelona/.test(portrait.svg), "social labels omit sequence numbers");
-  assert(/101 CRUISE/.test(portrait.svg), "101 branding on standalone social map");
+  assert(/101cruise\.com\.au/.test(portrait.svg), "101 branding on standalone social map");
   assert(/#1A3344/.test(portrait.svg), "dark route line");
-  assert(portrait.svg.indexOf("101 CRUISE") > 0);
+  assert(portrait.svg.indexOf("101cruise.com.au") > 0);
 
   const square = renderRouteMapSvg(route, { style: "social", format: "square", presentation: "inset" });
   assert(square.ok && square.meta.width === 1080 && square.meta.height === 1080, "social square canvas");

@@ -94,11 +94,13 @@ function premiumDarkBackground(model) {
     </g>`;
 }
 
-function brandLogo(model, { y, size = 130 } = {}) {
-  if (model.brandLogoDataUri) {
-    return `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`;
-  }
-  return `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>`;
+function brandLogo(model, { y, size = 130, showUrl = false, urlFill = WHITE } = {}) {
+  const mark = model.brandLogoDataUri
+    ? `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`
+    : `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>`;
+  if (!showUrl) return mark;
+  return `${mark}
+    <text x="540" y="${y + size + 24}" text-anchor="middle" fill="${urlFill}" font-family="${FAMILY}" font-size="20" font-weight="700" letter-spacing="0.3">101cruise.com.au</text>`;
 }
 
 function nineSquareMotif(cx, cy, { size = 30 } = {}) {
@@ -660,7 +662,7 @@ function renderPremiumDarkMainSvg(model) {
 
   const body = `
     ${masterBackground(model, { concept: "a" })}
-    ${brandLogo(model, { y: 36, size: 130 })}
+    ${brandLogo(model, { y: 36, size: 108, showUrl: true })}
     ${brandDivider(198)}
     ${mainRouteHeadline(model, { y: layout.headlineY, size: ROUTE_FONT_SIZE })}
     ${nightsDatesLine(model, { y: layout.nightsDatesY, size: 36 })}
@@ -679,7 +681,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
   if (!offer) {
     const body = `
       ${premiumDarkBackground(model)}
-      ${brandLogo(model, { y: 48, size: 130 })}
+      ${brandLogo(model, { y: 48, size: 108, showUrl: true })}
       ${brandDivider(210)}
       <text x="540" y="480" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
       <text x="540" y="540" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="22" font-weight="500">Public pricing will appear when available</text>
@@ -729,7 +731,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 
   const body = `
     ${premiumDarkBackground(model)}
-    ${brandLogo(model, { y: logoY, size: 130 })}
+    ${brandLogo(model, { y: logoY, size: 108, showUrl: true })}
     ${brandDivider(dividerY)}
     ${routeBlock}
     ${brochureBlock}
@@ -800,7 +802,7 @@ function renderPremiumDarkCtaSvg(model) {
     </g>
     ${scriptBlock}
     <text x="540" y="${emailY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${emailSize}" font-weight="400">paul@101cruise.com.au</text>
-    ${brandLogo(model, { y: brandY, size: brandSize })}
+    ${brandLogo(model, { y: brandY, size: brandSize, showUrl: true })}
     ${greenFooter()}
   `;
   return frame(body);

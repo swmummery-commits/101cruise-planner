@@ -4,6 +4,7 @@
  */
 
 import { createRequire } from "module";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -35,8 +36,13 @@ function test(name, fn) {
   }
 }
 
+const brandLogoDataUri = `data:image/png;base64,${fs
+  .readFileSync(path.join(root, "assets/101cruise-logo.png"))
+  .toString("base64")}`;
+
 const model = {
   template: "route_deal",
+  brandLogoDataUri,
   lineName: "Example Line",
   shipName: "Example Pursuit",
   departurePort: "Singapore",
@@ -88,9 +94,10 @@ test("route deal follows map-then-panel hierarchy", () => {
   assert(portrait.includes("$18,956"), "retail fare");
   assert(portrait.includes("SAVE 85%"), "percentage badge");
   assert(square.includes("SAVE $"), "dollar badge follows the display choice");
-  assert(portrait.includes("101 CRUISE"), "101 branding");
+  assert(portrait.includes("101cruise.com.au"), "101 branding");
+  assert(portrait.includes(brandLogoDataUri), "uses 101cruise logo file");
   assert(portrait.includes("EXAMPLE LINE"), "cruise line chip");
-  assert(portrait.includes('font-size="32"'), "101 wordmark is larger than the cruise-line chip");
+  assert(portrait.includes('font-size="26"'), "101 wordmark is larger than the cruise-line chip");
   assert(portrait.includes('font-size="15"'), "cruise line chip stays small");
   assert(!/6 STAR|Cruise Club|AZAMARA/i.test(portrait), "does not copy the reference");
 });
@@ -108,7 +115,7 @@ test("price shock keeps the fare as the hero", () => {
   const svg = renderPriceShockSvg({ ...model, template: "price_shock", savingsDisplay: "percentage" }, "portrait");
   assert(svg.includes("$2,799"));
   assert(svg.includes("SAVE 85%"));
-  assert(svg.includes("101 CRUISE"));
+  assert(svg.includes("101cruise.com.au"));
 });
 
 const failed = results.filter((row) => !row.ok);

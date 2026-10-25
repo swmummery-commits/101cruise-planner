@@ -13,6 +13,7 @@
   <text x="20" y="222" fill="#243140" font-family="Helvetica,Arial,sans-serif" font-size="12" font-weight="600">Honolulu  ’  Vancouver</text>
   <text x="20" y="242" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="10">12 May 2026   |   15 nights</text>
   <text x="20" y="276" fill="#173246" font-family="Helvetica,Arial,sans-serif" font-size="26" font-weight="800">$2,280</text>
-  <text x="20" y="294" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="9">from</text>
+  <image href="/assets/101cruise-logo.png" x="148" y="281" width="16" height="16" preserveAspectRatio="xMidYMid meet"/>
+  <text x="168" y="294" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">101cruise.com.au</text>
   <rect x="0" y="310" width="320" height="10" fill="#8dd9bf"/>
 </svg>

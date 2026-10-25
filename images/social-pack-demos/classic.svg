@@ -14,5 +14,6 @@
   <text x="122" y="306" fill="#5e6b74" font-family="Helvetica,Arial,sans-serif" font-size="8" font-weight="700">BALCONY</text>
   <text x="122" y="324" fill="#12181d" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="800">$2,860</text>
   <rect x="0" y="384" width="320" height="16" fill="#8dd9bf"/>
-  <text x="20" y="373" fill="#245c4e" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">101CRUISE.COM.AU</text>
+  <image href="/assets/101cruise-logo.png" x="20" y="360" width="16" height="16" preserveAspectRatio="xMidYMid meet"/>
+  <text x="40" y="373" fill="#245c4e" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="800">101cruise.com.au</text>
 </svg>

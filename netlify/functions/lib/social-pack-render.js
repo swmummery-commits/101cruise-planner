@@ -216,8 +216,7 @@ function prepareCruiseLineLogoForBanner(dataUri) {
 }
 
 /**
- * Crop the 101cruise mark to the red grid only — drop the baked-in
- * 101CRUISE.COM.AU wordmark under the square so it is not shown twice.
+ * Crop the 101cruise mark to the red grid only.
  * Runtime crop only; does not alter assets/101cruise-logo.png on disk.
  */
 function prepareBrandLogoMark(dataUri) {

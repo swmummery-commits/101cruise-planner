@@ -92,12 +92,12 @@ function brandLogoFooter(model, { y = H - 150, size = 72 } = {}) {
   if (model.brandLogoDataUri) {
     return `
       <image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
-      <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="2">101CRUISE.COM.AU</text>
+      <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="0.4">101cruise.com.au</text>
     `;
   }
   return `
     <rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>
-    <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="2">101CRUISE.COM.AU</text>
+    <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="0.4">101cruise.com.au</text>
   `;
 }
 
