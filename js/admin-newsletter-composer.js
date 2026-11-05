@@ -1794,9 +1794,10 @@
                     <span class="admin-small">Departure ${esc(formatDate(cruise.departure_date))}</span>
                   </span>
                 </button>
-                <div class="admin-actions-row">
+                <div class="newsletter-issue-card-actions">
                   <button type="button" class="admin-button secondary small" onclick="editFeaturedCruise('${id}')">Open</button>
                   <button type="button" class="admin-button black small" onclick="NewsletterIssueComposer.addCruiseToIssue('${id}')" ${issueBusy || issueNumber == null ? "disabled" : ""}>${issueNumber == null ? "Start issue first" : "Add to this issue"}</button>
+                  <button type="button" class="admin-button danger small" onclick="deleteFeaturedCruise('${id}')" ${issueBusy ? "disabled" : ""}>Delete</button>
                 </div>
               </article>`;
             })
@@ -1961,7 +1962,10 @@
             <span class="admin-small">Departure ${esc(formatDate(cruise.departure_date))}${publicHint ? ` · ${publicHint}` : ""}</span>
           </span>
         </button>
-        <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.removeCruise('${id}')" ${issueBusy ? "disabled" : ""}>Remove</button>
+        <div class="newsletter-issue-card-actions">
+          <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.removeCruise('${id}')" ${issueBusy ? "disabled" : ""}>Remove</button>
+          <button type="button" class="admin-button danger small" onclick="deleteFeaturedCruise('${id}')" ${issueBusy ? "disabled" : ""}>Delete</button>
+        </div>
       </article>
     `;
   }

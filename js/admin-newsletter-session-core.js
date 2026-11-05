@@ -107,6 +107,11 @@
     );
   }
 
+  function shouldWriteCruiseRecord({ cruiseId, headline } = {}) {
+    if (cruiseId) return true;
+    return Boolean(String(headline || "").trim());
+  }
+
   function draftHasSaveableContent(draft, pricing) {
     const row = draft || {};
     if (String(row.headline || "").trim()) return true;
@@ -259,6 +264,7 @@
     isSessionFailureMessage,
     nextAutosaveDelay,
     publicationChanged,
+    shouldWriteCruiseRecord,
     draftHasSaveableContent,
     localDraftIsFresh,
     saveStatusText,

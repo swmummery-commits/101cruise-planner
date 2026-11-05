@@ -13329,9 +13329,29 @@ async function performFeaturedCruiseSave(options = {}) {
 
   captureFeaturedDraftFromDom({ schedule: false });
   const draft = featuredFormDraft || {};
-  if (quiet && editingFeaturedCruiseId && !String(draft.headline || "").trim()) {
-    featuredAutosavePaused = true;
-    setFeaturedAutosaveStatus("failed", "A headline is required before this cruise is updated.");
+  const headlineText = String(draft.headline || "").trim();
+  const writeCruise = newsletterSessionCore()?.shouldWriteCruiseRecord
+    ? newsletterSessionCore().shouldWriteCruiseRecord({ cruiseId: editingFeaturedCruiseId, headline: headlineText })
+    : Boolean(editingFeaturedCruiseId || headlineText);
+  if (!writeCruise) {
+    persistFeaturedLocalDraftNow();
+    if (quiet) {
+      setFeaturedAutosaveStatus("local");
+      return;
+    }
+    featuredCruiseMessage = "Add a headline before this cruise is added to the newsletter. What you have typed is kept in this browser.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  if (!headlineText && editingFeaturedCruiseId) {
+    persistFeaturedLocalDraftNow();
+    if (quiet) {
+      featuredAutosavePaused = true;
+      setFeaturedAutosaveStatus("failed", "A headline is required before this cruise is updated.");
+      return;
+    }
+    reportSaveIssue("A headline is required before this cruise is updated.");
     return;
   }
   const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
@@ -13350,26 +13370,7 @@ async function performFeaturedCruiseSave(options = {}) {
   const createPublicPage = Boolean(publicSlug);
   const isPublishing = preservePublication ? false : Boolean(publicSlug);
 
-  let headline = String(draft.headline || "").trim();
-  if (!headline) {
-    if (isPublishing) {
-      reportSaveIssue("Headline is required before publishing.");
-      return;
-    }
-    // Drafts must still satisfy DB NOT NULL headline — use a clear placeholder.
-    const fromPorts =
-      String(draft.departure_port || "").trim() ||
-      String(draft.itinerary_summary || "")
-        .split("|")[0]
-        ?.trim() ||
-      "";
-    headline = fromPorts ? `Draft — ${fromPorts}` : "Untitled draft";
-    if (!quiet) {
-      draft.headline = headline;
-      const headlineEl = document.getElementById("fcHeadline");
-      if (headlineEl) headlineEl.value = headline;
-    }
-  }
+  const headline = headlineText;
 
   const newsletterRaw = newsletterNumber != null && newsletterNumber !== "" ? String(newsletterNumber) : "";
   if (newsletterRaw !== "") {
@@ -13744,7 +13745,9 @@ async function performFeaturedCruiseSave(options = {}) {
 }
 
 async function deleteFeaturedCruise(id) {
-  if (!window.confirm("Delete this cruise? Its pricing rows will also be deleted.")) return;
+  const cruise = (featuredCruises || []).find((row) => row.id === id);
+  const name = cruise?.headline || "this cruise";
+  if (!window.confirm(`Delete “${name}”? Its room prices will also be deleted.`)) return;
   return withAdminBusy(
     async () => {
   featuredCruiseSaving = true;
@@ -13754,12 +13757,15 @@ async function deleteFeaturedCruise(id) {
   try {
     const { error } = await supabaseClient.from("featured_cruises").delete().eq("id", id);
     if (error) throw new Error(error.message);
+    removeFeaturedDraftIdentity(`cruise:${id}`);
     await loadFeaturedCruises();
-    await releaseFeaturedEditLock();
-    showFeaturedCruiseForm = false;
-    editingFeaturedCruiseId = null;
-    featuredFormPricing = [];
-    featuredFormDraft = null;
+    if (editingFeaturedCruiseId === id) {
+      await releaseFeaturedEditLock();
+      showFeaturedCruiseForm = false;
+      editingFeaturedCruiseId = null;
+      featuredFormPricing = [];
+      featuredFormDraft = null;
+    }
     featuredCruiseMessage = "Cruise deleted.";
     featuredCruiseMessageTone = "success";
   } catch (error) {

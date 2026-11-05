@@ -16,6 +16,7 @@ const {
   nextAutosaveDelay,
   publicationChanged,
   draftHasSaveableContent,
+  shouldWriteCruiseRecord,
   localDraftIsFresh,
   saveStatusText,
   draftIdentity,
@@ -103,6 +104,16 @@ assert(
   "a price row is enough to keep",
   draftHasSaveableContent({}, [{ room_label: "Balcony", cruise_101_price: "1299" }]) === true
 );
+assert(
+  "a price without a headline does not create a cruise",
+  shouldWriteCruiseRecord({ cruiseId: "", headline: "" }) === false
+);
+assert(
+  "a headline creates one cruise that later saves update",
+  shouldWriteCruiseRecord({ cruiseId: "", headline: "Rome to Athens" }) === true &&
+    shouldWriteCruiseRecord({ cruiseId: "cruise-a", headline: "" }) === true
+);
+assert("the editor does not invent an untitled draft cruise", !/Untitled draft/.test(adminJs));
 assert("week-old draft can be restored", localDraftIsFresh(now - 2 * 24 * 60 * 60 * 1000, now));
 assert("ancient draft is not restored", !localDraftIsFresh(now - 8 * 24 * 60 * 60 * 1000, now));
 
