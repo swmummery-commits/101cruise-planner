@@ -24,6 +24,10 @@ const {
   localDraftConflictsWithDatabase,
   saveGenerationIsStale,
   saveFailureKind,
+  isPersistedRowId,
+  serverUpdatedAtIsOwnWrite,
+  userMessageForSaveFailure,
+  shouldRetryProtectedSave,
   AUTOSAVE_DEBOUNCE_MS,
   SESSION_REFRESH_LEAD_MS
 } = sessionCore;
@@ -133,7 +137,7 @@ assert("failed delete rolls back the new price rows", /rollbackFilter/.test(fnJs
 assert("admin no longer refreshes 60 seconds early on every call", !/60_000/.test(adminJs.slice(adminJs.indexOf("function adminAccessTokenNeedsRefresh"), adminJs.indexOf("async function ensureAdminSession"))));
 assert("admin refresh is single-flight", /adminSessionRefreshInflight/.test(adminJs));
 assert("admin stops the library auto-refresh timer", /stopAutoRefresh/.test(adminJs));
-assert("cruise save retries once after 401", /response\.status === 401/.test(adminJs));
+assert("cruise save retries once after 401", /shouldRetryProtectedSave/.test(adminJs));
 assert("quiet autosave keeps publication fields from the stored cruise", /preservePublication/.test(adminJs));
 assert("quiet autosave does not close the form", /keepOpen/.test(adminJs));
 assert("leaving the page flushes the browser draft", /pagehide/.test(adminJs));
@@ -147,9 +151,13 @@ assert("60 minutes idle expires a one-hour token", accessTokenNeedsRefresh(issue
 assert("several hours idle expires the token", accessTokenNeedsRefresh(issued, now + 5 * hour) === true);
 
 assert("local backup is not described as a database save", saveStatusText("local") !== "All changes saved");
-assert("database confirmation uses All changes saved", saveStatusText("saved") === "All changes saved");
-assert("session status asks the editor to sign in", saveStatusText("session") === "Session expired, sign in to continue");
-assert("failed save offers retry", saveStatusText("failed") === "Save failed, retry available");
+assert("database confirmation uses All changes saved", saveStatusText("saved") === "All changes saved.");
+assert("unsaved editor work is labelled as unsaved", saveStatusText("local") === "Unsaved changes.");
+assert("a save in progress says Saving", saveStatusText("saving") === "Saving...");
+assert("session status asks the editor to sign in", saveStatusText("session") === "Session expired. Sign in to continue.");
+assert("a failed save says the changes are preserved", saveStatusText("failed") === "Unable to save. Your changes are preserved.");
+assert("a network failure uses the preserved-changes message", userMessageForSaveFailure("network") === saveStatusText("offline"));
+assert("validation keeps its own explanation", userMessageForSaveFailure("validation") === "");
 
 const cruiseA = draftIdentity({ cruiseId: "cruise-a" });
 const cruiseB = draftIdentity({ clientKey: "local-b" });
@@ -187,9 +195,14 @@ assert(
   ) === false
 );
 assert(
-  "the itinerary follow-up write is remembered as this session",
-  /mapPatch\?\.cruise\?\.updated_at/.test(adminJs)
+  "this editor's own cruise write is not treated as another session",
+  serverUpdatedAtIsOwnWrite("2026-10-08T01:00:00.000Z", "2026-10-08T02:00:00.000Z", "2026-10-08T02:00:00+00:00") === true
 );
+assert(
+  "a different session's write is still a conflict",
+  serverUpdatedAtIsOwnWrite("2026-10-08T01:00:00.000Z", "2026-10-08T01:00:00.000Z", "2026-10-08T03:00:00.000Z") === false
+);
+assert("the save remembers the updated time it just wrote", /featuredDraftOwnUpdatedAt/.test(adminJs));
 assert("a newer edit makes an in-flight save stale", saveGenerationIsStale(4, 5) === true);
 assert("the current edit can still be saved", saveGenerationIsStale(5, 5) === false);
 assert("network failures can be retried", saveFailureKind("Failed to fetch", 0) === "network");
@@ -198,5 +211,27 @@ assert("validation failures are not retried forever", saveFailureKind("Headline 
 assert("drafts are stored per cruise", /localDrafts\.v2/.test(adminJs));
 assert("autosave checks the edit generation", /saveGenerationIsStale/.test(adminJs));
 assert("published slug is left unchanged on autosave", /preservePublication/.test(adminJs));
+
+function fakeJwt(expSeconds) {
+  const payload = Buffer.from(JSON.stringify({ exp: expSeconds })).toString("base64url");
+  return `aaa.${payload}.sig`;
+}
+assert(
+  "a token with no expires_at still refreshes when the jwt is due",
+  accessTokenNeedsRefresh({ access_token: fakeJwt(Math.floor(now / 1000) + 30) }, now) === true
+);
+assert(
+  "a token with no expires_at is kept when the jwt is fresh",
+  accessTokenNeedsRefresh({ access_token: fakeJwt(Math.floor(now / 1000) + 30 * 60) }, now) === false
+);
+assert("temporary pricing ids are not persisted row ids", isPersistedRowId("price-123") === false);
+assert("a room uuid is a persisted row id", isPersistedRowId("11111111-1111-4111-8111-111111111111") === true);
+assert("the first 401 can be retried after a refresh", shouldRetryProtectedSave(0, 401) === true);
+assert("a second 401 is not retried again", shouldRetryProtectedSave(1, 401) === false);
+assert("the newsletter editor does not let the auth library refresh on its own", /autoRefreshToken:\s*false/.test(adminJs));
+assert("cruise and rooms are saved in one request", /action:\s*"save_bundle"/.test(adminJs));
+assert("a dead session is refreshed before the cruise write", /await ensureAdminSession\(\)/.test(adminJs));
+assert("an explicit session failure keeps the sign-in recovery path", /noteFeaturedSessionPaused\(/.test(adminJs));
+assert("sign-in reopens the newsletter editor when a draft is waiting", /openFeaturedResumeIfNeeded/.test(adminJs));
 
 console.log("test-newsletter-session-recovery.mjs: all checks passed");

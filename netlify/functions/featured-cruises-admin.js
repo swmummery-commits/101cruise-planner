@@ -10,6 +10,7 @@
 
 const { requireAdmin } = require("./admin-auth");
 const { planPricingReplacement } = require("./lib/pricing-replace-plan");
+const { executeCruiseSaveBundle } = require("./lib/cruise-save-bundle");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -68,9 +69,20 @@ async function supabase(restPath, options = {}) {
   return data;
 }
 
-function missingColumnMatch(message) {
-  const match = String(message || "").match(/Could not find the '([^']+)' column of 'featured_cruises'/i);
+function missingColumnMatch(message, table = "featured_cruises") {
+  const match = String(message || "").match(
+    new RegExp(`Could not find the '([^']+)' column of '${table}'`, "i")
+  );
   return match?.[1] || null;
+}
+
+function isMissingClientKeyColumn(error) {
+  return missingColumnMatch(error?.message, "featured_cruises") === "editor_client_key";
+}
+
+function isDuplicateClientKey(error) {
+  const text = String(error?.message || "");
+  return /editor_client_key/i.test(text) && /duplicate|unique/i.test(text);
 }
 
 async function saveCruiseRow({ id, cruise, userId }) {
@@ -166,6 +178,168 @@ async function replacePricing({ featuredCruiseId, pricing, preserveExistingIfEmp
   return { inserted: insertPayload.length, preserved: false, deleted: plan.deleteIds.length };
 }
 
+async function withMissingColumnRetry(table, payload, write) {
+  let working = { ...(payload || {}) };
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      return await write(working);
+    } catch (error) {
+      const missing = missingColumnMatch(error.message, table);
+      if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
+        delete working[missing];
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error(`Could not write ${table} because required database columns are missing.`);
+}
+
+async function insertRows(table, rows) {
+  let working = (rows || []).map((row) => ({ ...row }));
+  if (!working.length) return [];
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      const created = await supabase(table, {
+        method: "POST",
+        body: working,
+        prefer: "return=representation"
+      });
+      return Array.isArray(created) ? created : created ? [created] : [];
+    } catch (error) {
+      const missing = missingColumnMatch(error.message, table);
+      if (!missing) throw error;
+      let removed = false;
+      working = working.map((row) => {
+        if (!Object.prototype.hasOwnProperty.call(row, missing)) return row;
+        const copy = { ...row };
+        delete copy[missing];
+        removed = true;
+        return copy;
+      });
+      if (!removed) throw error;
+    }
+  }
+  throw new Error(`Could not write ${table} because required database columns are missing.`);
+}
+
+async function findCruiseByClientKey(clientSaveKey) {
+  const key = String(clientSaveKey || "").trim();
+  if (!key) return null;
+  try {
+    const rows = await supabase(
+      `featured_cruises?editor_client_key=eq.${encodeURIComponent(key)}&select=*&limit=1`,
+      { method: "GET" }
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+  } catch (error) {
+    if (isMissingClientKeyColumn(error)) return null;
+    throw error;
+  }
+}
+
+function bundleIo() {
+  return {
+    findCruiseByClientKey,
+    getCruise: async (id) => {
+      const rows = await supabase(`featured_cruises?id=eq.${encodeURIComponent(id)}&select=*`, {
+        method: "GET"
+      });
+      return Array.isArray(rows) ? rows[0] || null : null;
+    },
+    saveCruise: async ({ id, cruise, userId, clientSaveKey }) => {
+      const body = { ...(cruise || {}) };
+      if (clientSaveKey) body.editor_client_key = clientSaveKey;
+      try {
+        const result = await saveCruiseRow({ id: id || null, cruise: body, userId });
+        return { row: result.cruise, created: !id, stripped: result.stripped || [] };
+      } catch (error) {
+        if (!id && clientSaveKey && isDuplicateClientKey(error)) {
+          const existing = await findCruiseByClientKey(clientSaveKey);
+          if (existing?.id) {
+            const result = await saveCruiseRow({ id: existing.id, cruise: body, userId });
+            return { row: result.cruise, created: false, stripped: result.stripped || [] };
+          }
+        }
+        if (!id && clientSaveKey && isMissingClientKeyColumn(error)) {
+          delete body.editor_client_key;
+          const result = await saveCruiseRow({ id: null, cruise: body, userId });
+          return { row: result.cruise, created: true, stripped: result.stripped || [] };
+        }
+        throw error;
+      }
+    },
+    updateCruise: async (id, patch) => {
+      const result = await saveCruiseRow({ id, cruise: patch, userId: null });
+      return result.cruise;
+    },
+    deleteCruise: async (id) => {
+      await supabase(`featured_cruises?id=eq.${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
+    },
+    listPricing: async (cruiseId) => {
+      const rows = await supabase(
+        `featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(cruiseId)}&select=*&order=display_order.asc`,
+        { method: "GET" }
+      );
+      return Array.isArray(rows) ? rows : [];
+    },
+    insertPricing: async (rows) => insertRows("featured_cruise_pricing", rows),
+    updatePricing: async (id, patch) => {
+      return withMissingColumnRetry("featured_cruise_pricing", patch, async (body) => {
+        const rows = await supabase(`featured_cruise_pricing?id=eq.${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body,
+          prefer: "return=representation"
+        });
+        return Array.isArray(rows) ? rows[0] : rows;
+      });
+    },
+    deletePricing: async (ids) => {
+      const list = (ids || []).filter(Boolean);
+      if (!list.length) return;
+      const filter = list.map((id) => encodeURIComponent(id)).join(",");
+      await supabase(`featured_cruise_pricing?id=in.(${filter})`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
+    },
+    listStops: async (cruiseId) => {
+      const rows = await supabase(
+        `featured_cruise_itinerary_stops?featured_cruise_id=eq.${encodeURIComponent(cruiseId)}&select=*&order=display_order.asc`,
+        { method: "GET" }
+      );
+      return Array.isArray(rows) ? rows : [];
+    },
+    insertStops: async (rows) => insertRows("featured_cruise_itinerary_stops", rows),
+    deleteStops: async (ids) => {
+      const list = (ids || []).filter(Boolean);
+      if (!list.length) return;
+      const filter = list.map((id) => encodeURIComponent(id)).join(",");
+      await supabase(`featured_cruise_itinerary_stops?id=in.(${filter})`, {
+        method: "DELETE",
+        prefer: "return=minimal"
+      });
+    }
+  };
+}
+
+async function saveBundle(body, user) {
+  const result = await executeCruiseSaveBundle({
+    io: bundleIo(),
+    id: body.id || null,
+    cruise: body.cruise,
+    pricing: body.pricing,
+    stops: body.stops,
+    userId: body.user_id || user?.id || null,
+    preserveExistingIfEmpty: Boolean(body.preserve_existing_if_empty),
+    clientSaveKey: body.client_save_key || null
+  });
+  return result;
+}
+
 async function patchCruise({ id, patch }) {
   const cruiseId = String(id || "").trim();
   if (!cruiseId) throw Object.assign(new Error("id is required."), { statusCode: 400 });
@@ -213,12 +387,21 @@ exports.handler = async function handler(event) {
       return jsonResponse(200, { success: true, ...result });
     }
 
+    if (action === "save_bundle") {
+      const result = await saveBundle(body, user);
+      return jsonResponse(200, { success: true, ...result });
+    }
+
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {
     console.error("featured-cruises-admin error", error);
     return jsonResponse(error.statusCode || 500, {
       success: false,
-      error: error.message || "Could not save featured cruise"
+      error: error.message || "Could not save featured cruise",
+      failed_step: error.step || null,
+      rolled_back: Boolean(error.rolledBack),
+      cruise_id: error.cruiseId || null,
+      updated_at: error.updatedAt || null
     });
   }
 };
@@ -226,3 +409,4 @@ exports.handler = async function handler(event) {
 module.exports.saveCruiseRow = saveCruiseRow;
 module.exports.replacePricing = replacePricing;
 module.exports.patchCruise = patchCruise;
+module.exports.saveBundle = saveBundle;

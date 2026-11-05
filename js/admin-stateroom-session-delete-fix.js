@@ -20,6 +20,14 @@
   }
 
   async function refreshAdminSession() {
+    if (typeof global.refreshAdminSessionSingleFlight === "function") {
+      try {
+        const refreshed = await global.refreshAdminSessionSingleFlight();
+        return Boolean(!refreshed?.error && refreshed?.data?.session?.access_token);
+      } catch (_) {
+        return false;
+      }
+    }
     const client = global.supabaseClient;
     if (!client?.auth?.refreshSession) return false;
     try {

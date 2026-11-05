@@ -7,6 +7,16 @@
 
   const I = () => global.FeaturedCruiseItinerary;
 
+  function isSessionLinkError(error) {
+    if (error?.code === "session_expired") return true;
+    if (typeof global.NewsletterSessionCore?.isSessionFailureMessage === "function") {
+      return global.NewsletterSessionCore.isSessionFailureMessage(error?.message);
+    }
+    return /session expired|sign in again|sign in to continue|jwt expired|invalid refresh token/i.test(
+      String(error?.message || "")
+    );
+  }
+
   let stops = [];
   let portsCache = [];
   let portsLoaded = false;
@@ -508,6 +518,7 @@
       working.matchDecision = "create_new";
       return working;
     } catch (error) {
+      if (isSessionLinkError(error)) throw error;
       // Keep entered text so the cruise can still be saved; port link can be fixed later.
       working.port_id = null;
       working.port = null;
@@ -643,7 +654,7 @@
       if (linkWarnings.length) {
         portListMessage = `${portListMessage} ${linkWarnings[0]}${
           linkWarnings.length > 1 ? ` (+${linkWarnings.length - 1} more)` : ""
-        } Cruise fields can still be saved.`;
+        } The cruise and its room prices can still be saved.`;
         portListMessageTone = "error";
       }
 
@@ -656,8 +667,15 @@
       if (!I()?.buildPortsJoinedFromStops?.(stops) && built.stops.length) {
         stops = I().normalizeStopOrder(built.stops);
       }
-      portListMessage = `${error.message || "Could not finish matching the port list."} Entered ports were kept so you can continue.`;
-      portListMessageTone = "error";
+      if (isSessionLinkError(error)) {
+        portListMessage = global.NewsletterSessionCore?.saveStatusText?.("session")
+          || "Session expired. Sign in to continue.";
+        portListMessageTone = "error";
+        if (typeof global.noteFeaturedSessionPaused === "function") global.noteFeaturedSessionPaused();
+      } else {
+        portListMessage = `${error.message || "Could not finish matching the port list."} Entered ports were kept so you can continue.`;
+        portListMessageTone = "error";
+      }
     } finally {
       portListBusy = false;
       rerender();
@@ -851,6 +869,7 @@
           nextStops.push(working);
           continue;
         } catch (error) {
+          if (isSessionLinkError(error)) throw error;
           warnings.push(`Could not link “${entered}”: ${error.message}`);
           working.port_id = null;
           working.port = null;
@@ -929,6 +948,7 @@
           nextStops.push(working);
           continue;
         } catch (error) {
+          if (isSessionLinkError(error)) throw error;
           warnings.push(`Could not link “${entered}”: ${error.message}`);
           working.port_id = null;
           working.port = null;

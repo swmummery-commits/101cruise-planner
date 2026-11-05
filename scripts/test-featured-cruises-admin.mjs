@@ -27,12 +27,14 @@ const migration = read("supabase/migrations/20260813_featured_cruises_admin_acce
 assert("featured-cruises-admin function exists", /exports\.handler/.test(fnJs));
 assert("save_cruise action", /action === "save_cruise"/.test(fnJs));
 assert("replace_pricing action", /action === "replace_pricing"/.test(fnJs));
+assert("save_bundle action", /action === "save_bundle"/.test(fnJs));
+assert("bundle save rolls back a partial write", /rolledBack/.test(read("netlify/functions/lib/cruise-save-bundle.js")));
 assert("requires admin JWT", /requireAdmin/.test(fnJs));
 assert("uses service role writes", /SUPABASE_SERVICE_ROLE_KEY/.test(fnJs));
 
 assert("admin.js calls featured-cruises-admin", /featured-cruises-admin/.test(adminJs));
-assert("admin.js uses featuredCruisesAdminApi for cruise row", /featuredCruisesAdminApi\([\s\S]*?save_cruise/.test(adminJs));
-assert("admin.js uses featuredCruisesAdminApi for pricing", /featuredCruisesAdminApi\([\s\S]*?replace_pricing/.test(adminJs));
+assert("admin.js saves the cruise and its rooms together", /featuredCruisesAdminApi\([\s\S]*?save_bundle/.test(adminJs));
+assert("admin.js does not strip room ids before the save", /isPersistedRowId/.test(adminJs));
 
 assert("migration defines is_active_admin()", /CREATE OR REPLACE FUNCTION public\.is_active_admin/.test(migration));
 assert("migration updates featured_cruises insert policy", /Admins can insert featured_cruises/.test(migration));

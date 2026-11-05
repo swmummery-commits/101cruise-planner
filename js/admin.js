@@ -1,7 +1,15 @@
 const SUPABASE_URL = "https://xikbibxyinttllxamgao.supabase.co";
 const SUPABASE_KEY = "sb_publishable_MEFg6spz5_Uod7sZGU8whw_UvOQDW60";
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    detectSessionInUrl: true,
+    // The newsletter editor refreshes on one timer. Leaving the library timer
+    // on restarts it whenever the tab wakes and rotates the refresh token twice.
+    autoRefreshToken: false
+  }
+});
 // Expose for Newsletter Issue Composer and other classic-script modules (let/const are not on window).
 window.supabaseClient = supabaseClient;
 const app = document.getElementById("cruise-admin-app");
@@ -155,6 +163,7 @@ let showFeaturedNewsletterPreview = false;
 const FEATURED_LOCAL_DRAFT_KEY = "101cruise.featuredCruise.localDraft.v1";
 let featuredDraftClientKey = "";
 let featuredDraftBaseUpdatedAt = null;
+let featuredDraftOwnUpdatedAt = null;
 let featuredEditGeneration = 0;
 let featuredDraftStorageWarning = "";
 let featuredResumeAttempted = false;
@@ -446,6 +455,7 @@ async function adminSignIn() {
 
   await loadAdminData();
   ensureBookingDocumentsHashListener();
+  openFeaturedResumeIfNeeded();
   renderAdmin();
   applyBookingDocumentsHashRoute();
 }
@@ -520,7 +530,10 @@ async function refreshAdminSessionSingleFlight() {
     adminSessionRefreshInflight = (async () => {
       stopCompetingSessionRefresh();
       const first = await supabaseClient.auth.refreshSession();
-      if (!first?.error && first?.data?.session?.access_token) return first;
+      if (!first?.error && first?.data?.session?.access_token && !adminAccessTokenNeedsRefresh(first.data.session)) {
+        return first;
+      }
+      if (first?.error) await new Promise((resolve) => setTimeout(resolve, 300));
       const { data } = await supabaseClient.auth.getSession();
       if (data?.session?.access_token && !adminAccessTokenNeedsRefresh(data.session, Date.now())) {
         return { data, error: null };
@@ -538,9 +551,7 @@ async function ensureAdminSession() {
   if (!adminAccessTokenNeedsRefresh(data?.session)) return data?.session || null;
   const refreshed = await refreshAdminSessionSingleFlight();
   if (refreshed?.error || !refreshed?.data?.session?.access_token) {
-    const err = new Error(
-      "Admin session expired. Your unsaved cruise is still in this browser. Sign in again to store it."
-    );
+    const err = new Error("Session expired. Sign in to continue.");
     err.code = "session_expired";
     throw err;
   }
@@ -551,9 +562,7 @@ async function adminAuthHeaders(extra = {}) {
   const session = await ensureAdminSession();
   const token = session?.access_token || "";
   if (!token) {
-    const err = new Error(
-      "Admin session expired. Your unsaved cruise is still in this browser. Sign in again to store it."
-    );
+    const err = new Error("Session expired. Sign in to continue.");
     err.code = "session_expired";
     throw err;
   }
@@ -589,7 +598,14 @@ function startAdminSessionKeeper() {
   window.addEventListener("beforeunload", (event) => {
     try { persistFeaturedLocalDraftNow(); } catch (_error) { /* ignore */ }
     if (!showFeaturedCruiseForm) return;
-    if (featuredAutosaveState !== "local" && featuredAutosaveState !== "saving-local" && featuredAutosaveState !== "saving" && featuredAutosaveState !== "failed" && featuredAutosaveState !== "offline") return;
+    if (
+      featuredAutosaveState !== "local" &&
+      featuredAutosaveState !== "saving-local" &&
+      featuredAutosaveState !== "saving" &&
+      featuredAutosaveState !== "failed" &&
+      featuredAutosaveState !== "offline" &&
+      featuredAutosaveState !== "session"
+    ) return;
     event.preventDefault();
     event.returnValue = "";
   });
@@ -600,11 +616,21 @@ function startAdminSessionKeeper() {
   });
 }
 
+function openFeaturedResumeIfNeeded() {
+  if (!readFeaturedResumeMarker()) return;
+  activeTab = "featured-cruises";
+}
+
 function noteFeaturedSessionPaused() {
+  const already = featuredAutosaveState === "session";
   featuredAutosavePaused = true;
   try { persistFeaturedLocalDraftNow(); } catch (_error) { /* ignore */ }
   writeFeaturedResumeMarker();
+  featuredCruiseMessage = newsletterSessionCore()?.saveStatusText?.("session")
+    || "Session expired. Sign in to continue.";
+  featuredCruiseMessageTone = "error";
   setFeaturedAutosaveStatus("session");
+  if (!already && showFeaturedCruiseForm && !featuredCruiseSaving) renderAdmin();
 }
 
 function setFeaturedAutosaveStatus(state, detail) {
@@ -644,8 +670,10 @@ async function featuredCruisesAdminApi(body) {
     return { response, data };
   };
 
+  let attempt = 0;
   let { response, data } = await send();
-  if (response.status === 401) {
+  if (newsletterSessionCore()?.shouldRetryProtectedSave?.(attempt, response.status)) {
+    attempt += 1;
     try {
       await refreshAdminSessionSingleFlight();
       ({ response, data } = await send());
@@ -654,8 +682,21 @@ async function featuredCruisesAdminApi(body) {
     }
   }
   if (!response.ok) {
-    const err = new Error(data.error || `Featured cruise save failed (HTTP ${response.status})`);
+    const technical = data.error || `Featured cruise save failed (HTTP ${response.status})`;
+    console.error("featured cruise save failed", {
+      technical,
+      step: data.failed_step || null,
+      rolledBack: data.rolled_back === true
+    });
+    const kind = newsletterSessionCore()?.saveFailureKind?.(technical, response.status) || "permanent";
+    const friendly = newsletterSessionCore()?.userMessageForSaveFailure?.(kind) || technical;
+    const err = new Error(kind === "validation" ? technical : friendly);
     err.statusCode = response.status;
+    err.technical = technical;
+    err.rolledBack = data.rolled_back === true;
+    err.cruiseId = data.cruise_id || null;
+    err.updatedAt = data.updated_at || null;
+    if (kind === "session") err.code = "session_expired";
     throw err;
   }
   return data;
@@ -6335,7 +6376,7 @@ async function adminSettingsApi(action, payload = {}) {
 
   let { response, data } = await run();
   if (response.status === 401) {
-    await supabaseClient.auth.refreshSession().catch(() => null);
+    await refreshAdminSessionSingleFlight().catch(() => null);
     ({ response, data } = await run());
   }
   if (!response.ok || data.success === false) {
@@ -6597,6 +6638,7 @@ async function initAdmin() {
   await loadAdminData();
   await loadStateroomTypesForPricing({ rerender: false });
   applyCiLineAdminUrlState();
+  openFeaturedResumeIfNeeded();
   renderAdmin();
   syncCiLineAdminUrl();
   if (editingCiLineId && !ciLineCreating) {
@@ -8189,6 +8231,7 @@ function applyCiBulkClassAssignmentResults(results) {
 
 window.applyCiBulkClassAssignmentResults = applyCiBulkClassAssignmentResults;
 window.adminAuthHeaders = adminAuthHeaders;
+window.refreshAdminSessionSingleFlight = refreshAdminSessionSingleFlight;
 window.setCiAutosaveStatus = setCiAutosaveStatus;
 
 function openCiSameClassFacilitiesCopyModal() {
@@ -9973,6 +10016,25 @@ function normalizeFeaturedPricingOrder(rows) {
   }));
 }
 
+function applyReturnedPricingIds(savedRows) {
+  const remaining = (savedRows || []).map((row) => ({ ...row }));
+  featuredFormPricing = featuredFormPricing.map((row) => {
+    const label = String(row.room_label || "").trim();
+    if (!label) return row;
+    const order = Number(row.display_order) || 0;
+    let index = remaining.findIndex((saved) => {
+      return String(saved.room_label || "").trim() === label && Number(saved.display_order) === order;
+    });
+    if (index < 0) {
+      index = remaining.findIndex((saved) => String(saved.room_label || "").trim() === label);
+    }
+    if (index < 0) return row;
+    const match = remaining.splice(index, 1)[0];
+    if (!match?.id) return row;
+    return { ...row, id: match.id };
+  });
+}
+
 function renumberFeaturedPricingOrders() {
   featuredFormPricing = normalizeFeaturedPricingOrder(featuredFormPricing);
 }
@@ -10360,6 +10422,7 @@ async function editFeaturedCruise(id, { skipLock = false } = {}) {
     const nights = existing.nights != null ? Number(existing.nights) : null;
     const departure = existing.departure_date || "";
     editingFeaturedCruiseId = id;
+    featuredDraftOwnUpdatedAt = existing.updated_at || null;
     featuredRouteMapGenResult = null;
     featuredRouteMapGenProgress = "";
     featuredRouteMapGenerating = false;
@@ -13228,26 +13291,38 @@ async function performFeaturedCruiseSave(options = {}) {
   const keepOpen = quiet || options.keepOpen === true;
   const preservePublication = quiet || options.preservePublication === true;
   const reportSaveIssue = (message, tone = "error") => {
-    if (quiet) {
-      const kind = newsletterSessionCore()?.saveFailureKind?.(message) || (sessionFailureText(message) ? "session" : "permanent");
-      if (kind === "session") {
-        noteFeaturedSessionPaused();
-        return;
+    const kind = newsletterSessionCore()?.saveFailureKind?.(message) || (sessionFailureText(message) ? "session" : "permanent");
+    const technical = /column|postgres|pgrst|jwt|schema cache|constraint|duplicate key|syntax error/i.test(String(message || ""));
+    const friendly = kind === "session"
+      ? (newsletterSessionCore()?.saveStatusText?.("session") || "Session expired. Sign in to continue.")
+      : kind === "validation" || (kind === "permanent" && !technical)
+        ? message
+        : (newsletterSessionCore()?.userMessageForSaveFailure?.(kind) || message);
+    if (friendly !== message) console.warn("featured cruise save issue", message);
+    if (kind === "session") {
+      noteFeaturedSessionPaused();
+      if (!quiet) {
+        featuredCruiseMessage = friendly;
+        featuredCruiseMessageTone = "error";
       }
+      return;
+    }
+    if (quiet) {
       if (kind === "network") {
         featuredAutosaveFailures += 1;
-        setFeaturedAutosaveStatus(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "failed", message);
+        setFeaturedAutosaveStatus(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "failed", friendly);
         persistFeaturedLocalDraftNow();
         scheduleFeaturedCruiseAutosave();
         return;
       }
       featuredAutosavePaused = true;
-      setFeaturedAutosaveStatus("failed", message);
+      setFeaturedAutosaveStatus("failed", friendly);
       persistFeaturedLocalDraftNow();
       return;
     }
-    featuredCruiseMessage = message;
+    featuredCruiseMessage = friendly;
     featuredCruiseMessageTone = tone;
+    setFeaturedAutosaveStatus(kind === "network" ? "offline" : "failed", friendly);
     persistFeaturedLocalDraftNow();
     renderAdmin();
   };
@@ -13375,8 +13450,9 @@ async function performFeaturedCruiseSave(options = {}) {
       }
       // Do not read/write inclusion columns on featured_cruise_pricing.
       // Pricing display_order controls the order used by newsletters, landing pages and future customer-facing outputs.
+      const persistedRoomId = newsletterSessionCore()?.isPersistedRowId?.(row.id) ? row.id : undefined;
       pricingPayload.push({
-        id: row.id || undefined,
+        id: persistedRoomId,
         room_label: roomLabel,
         category,
         brochure_price: brochure,
@@ -13402,8 +13478,10 @@ async function performFeaturedCruiseSave(options = {}) {
 
   const runFeaturedSave = async () => {
   try {
+    await ensureAdminSession();
     // Resolve port matches / create provisional ports before writing the cruise row.
-    // Port link failures no longer block save — cruise + entered port text are kept.
+    // A dead session stops here, before any cruise or room row is written.
+    // Other port-link failures do not block the cruise: entered port text is kept.
     let prepared = null;
     try {
       prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
@@ -13412,6 +13490,7 @@ async function performFeaturedCruiseSave(options = {}) {
         allowIncomplete: quiet || !isPublishing
       });
     } catch (prepError) {
+      if (prepError?.code === "session_expired" || sessionFailureText(prepError?.message)) throw prepError;
       console.warn("itinerary prepare left existing ports in place", prepError);
       prepared = {
         ok: true,
@@ -13500,13 +13579,6 @@ async function performFeaturedCruiseSave(options = {}) {
       String(featuredNewsletterDefaultsBaseline.newsletter_publication_date || "") !==
         String(newsletterDate || "");
 
-    const missingColumnMatch = (message) => {
-      const match = String(message || "").match(
-        /Could not find the '([^']+)' column of 'featured_cruises'/i
-      );
-      return match?.[1] || null;
-    };
-
     if (quiet && options.generation != null && newsletterSessionCore()?.saveGenerationIsStale?.(options.generation, featuredEditGeneration)) {
       scheduleFeaturedCruiseAutosave();
       return;
@@ -13518,11 +13590,18 @@ async function performFeaturedCruiseSave(options = {}) {
         .eq("id", editingFeaturedCruiseId)
         .maybeSingle();
       if (freshError) throw new Error(freshError.message || "Could not check whether this cruise is still current.");
+      const serverUpdatedAt = freshRow?.updated_at || null;
+      const ownWrite = newsletterSessionCore()?.serverUpdatedAtIsOwnWrite?.(
+        featuredDraftBaseUpdatedAt,
+        featuredDraftOwnUpdatedAt,
+        serverUpdatedAt
+      );
       if (
-        freshRow?.updated_at &&
+        serverUpdatedAt &&
+        !ownWrite &&
         newsletterSessionCore()?.localDraftConflictsWithDatabase?.(
           { editingFeaturedCruiseId, baseUpdatedAt: featuredDraftBaseUpdatedAt },
-          freshRow.updated_at
+          serverUpdatedAt
         )
       ) {
         featuredAutosavePaused = true;
@@ -13535,43 +13614,36 @@ async function performFeaturedCruiseSave(options = {}) {
       }
     }
 
-    const saveCruiseRow = async (basePayload) => {
-      let working = { ...basePayload };
-      const stripped = [];
-      for (let attempt = 0; attempt < 10; attempt += 1) {
-        try {
-          const result = await featuredCruisesAdminApi({
-            action: "save_cruise",
-            id: editingFeaturedCruiseId || null,
-            cruise: working,
-            user_id: currentUser?.id || null
-          });
-          const savedRow = result.cruise || {};
-          const cruiseId = editingFeaturedCruiseId || savedRow.id;
-          if (!cruiseId) throw new Error("Featured cruise save returned no id.");
-          if (Array.isArray(result.stripped) && result.stripped.length) {
-            stripped.push(...result.stripped);
-          }
-          return { cruiseId, savedRow, stripped };
-        } catch (error) {
-          const missing = missingColumnMatch(error.message);
-          if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
-            delete working[missing];
-            stripped.push(missing);
-            continue;
-          }
-          throw error;
-        }
-      }
-      throw new Error("Could not save cruise because required database columns are missing.");
-    };
-
-    const { cruiseId, savedRow, stripped } = await saveCruiseRow(payload);
+    const stopRows = window.FeaturedCruiseItinerary?.stopsToDbRows?.(
+      window.FeaturedItineraryEditor?.getStops?.() || [],
+      editingFeaturedCruiseId || null
+    );
+    const bundle = await featuredCruisesAdminApi({
+      action: "save_bundle",
+      id: editingFeaturedCruiseId || null,
+      cruise: payload,
+      pricing: pricingPayload,
+      stops: Array.isArray(stopRows) && stopRows.length ? stopRows : null,
+      preserve_existing_if_empty: preservePublication && pricingPayload.length === 0,
+      client_save_key: featuredDraftClientKey || null,
+      user_id: currentUser?.id || null
+    });
+    const savedRow = bundle.cruise || {};
+    const cruiseId = savedRow.id || editingFeaturedCruiseId;
+    if (!cruiseId) throw new Error("Featured cruise save returned no id.");
+    if (Array.isArray(bundle.warnings) && bundle.warnings.length) portWarnings.push(...bundle.warnings);
+    if (Array.isArray(bundle.stripped) && bundle.stripped.length) {
+      console.warn("featured_cruises save omitted missing columns", bundle.stripped);
+    }
+    applyReturnedPricingIds(bundle.pricing);
+    const previousIdentity = currentFeaturedDraftIdentity();
+    const wasNew = !editingFeaturedCruiseId;
+    editingFeaturedCruiseId = cruiseId;
+    featuredDraftBaseUpdatedAt = savedRow.updated_at || featuredDraftBaseUpdatedAt;
+    featuredDraftOwnUpdatedAt = savedRow.updated_at || featuredDraftOwnUpdatedAt;
 
     if (payload.hero_media_id && savedRow && "hero_media_id" in savedRow && savedRow.hero_media_id !== payload.hero_media_id) {
-      throw new Error(
-        "Hero image did not save. Confirm the Media Library migration has been applied (hero_media_id column)."
-      );
+      portWarnings.push("The hero image was not stored with this cruise.");
     }
     if (
       payload.route_map_media_id &&
@@ -13579,62 +13651,8 @@ async function performFeaturedCruiseSave(options = {}) {
       "route_map_media_id" in savedRow &&
       savedRow.route_map_media_id !== payload.route_map_media_id
     ) {
-      throw new Error(
-        "Route map did not save. Confirm the Media Library migration has been applied (route_map_media_id column)."
-      );
+      portWarnings.push("The route map was not stored with this cruise.");
     }
-    if (stripped.length) {
-      console.warn("featured_cruises save omitted missing columns", stripped);
-    }
-
-    // Do not modify featured_cruise_ports in this workflow.
-    let itineraryPortWarning = "";
-    if (window.FeaturedItineraryEditor?.persistStops) {
-      // Re-run prepare with cruise id so provisional ports get source_featured_cruise_id.
-      const preparedWithId = await window.FeaturedItineraryEditor.prepareStopsForSave({
-        featuredCruiseId: cruiseId,
-        confirmCreateNew: !quiet,
-        allowIncomplete: quiet || !isPublishing
-      });
-      if (preparedWithId && !preparedWithId.ok && preparedWithId.needsMatchDecision && isPublishing) {
-        throw new Error(
-          `Cruise saved, but itinerary ports need confirmation: ${(preparedWithId.errors || []).join(" ")}`
-        );
-      }
-      if (preparedWithId?.warnings?.length) {
-        portWarnings.push(...preparedWithId.warnings);
-      }
-      try {
-        await window.FeaturedItineraryEditor.persistStops(cruiseId);
-      } catch (itinError) {
-        itineraryPortWarning = itinError.message || "Itinerary stops could not be saved.";
-      }
-      // Persist derived summary/signature again if map fields changed after port creates.
-      const refreshedMap = window.FeaturedItineraryEditor.computeMapFields({
-        ...draft,
-        route_map_media_id: payload.route_map_media_id,
-        route_map_image_url: payload.route_map_image_url
-      });
-      const mapPatch = await featuredCruisesAdminApi({
-        action: "patch_cruise",
-        id: cruiseId,
-        patch: {
-          itinerary_summary: refreshedMap.itinerary_summary || itinerarySummary,
-          route_map_status: refreshedMap.route_map_status,
-          route_map_itinerary_signature: refreshedMap.route_map_itinerary_signature
-        }
-      });
-      // This second write moves updated_at. Remember that time, or the next
-      // save looks like another session changed the cruise.
-      if (mapPatch?.cruise?.updated_at) savedRow.updated_at = mapPatch.cruise.updated_at;
-    }
-
-    await featuredCruisesAdminApi({
-      action: "replace_pricing",
-      featured_cruise_id: cruiseId,
-      pricing: pricingPayload.map(({ id, ...rest }) => rest),
-      preserve_existing_if_empty: preservePublication && pricingPayload.length === 0
-    });
 
     if (!quiet && newsletterChanged) {
       const { error: defaultsError } = await supabaseClient.from("featured_cruise_newsletter_defaults").upsert({
@@ -13660,30 +13678,27 @@ async function performFeaturedCruiseSave(options = {}) {
     } else {
       await loadFeaturedCruises();
     }
-    const previousIdentity = currentFeaturedDraftIdentity();
-    const wasNew = !editingFeaturedCruiseId;
-    editingFeaturedCruiseId = cruiseId;
-    featuredDraftBaseUpdatedAt = savedRow?.updated_at || featuredDraftBaseUpdatedAt;
     if (wasNew && !featuredEditLockToken) {
       const locked = await acquireFeaturedEditLock(cruiseId).catch(() => null);
       if (locked?.ok) startFeaturedEditLockHeartbeat();
     }
-    if (itineraryPortWarning) {
-      featuredAutosavePaused = true;
-      const incomplete = `The cruise record was saved, but the itinerary was not. ${itineraryPortWarning}`;
-      setFeaturedAutosaveStatus("failed", incomplete);
-      persistFeaturedLocalDraftNow();
-      if (!quiet) {
-        featuredCruiseMessage = incomplete;
-        featuredCruiseMessageTone = "error";
-      }
-    } else if (keepOpen) {
+    const warningBits = [...new Set(portWarnings.filter(Boolean))];
+    if (keepOpen) {
       removeFeaturedDraftIdentity(previousIdentity);
       removeFeaturedDraftIdentity(currentFeaturedDraftIdentity());
       clearFeaturedResumeMarker();
       featuredAutosaveFailures = 0;
       featuredAutosavePaused = false;
-      setFeaturedAutosaveStatus("saved");
+      if (warningBits.length) {
+        const portNote = `Cruise and room prices are saved. Some ports still need linking: ${warningBits[0]}${
+          warningBits.length > 1 ? ` (+${warningBits.length - 1} more)` : ""
+        }`;
+        featuredCruiseMessage = portNote;
+        featuredCruiseMessageTone = "error";
+        setFeaturedAutosaveStatus("failed", portNote);
+      } else {
+        setFeaturedAutosaveStatus("saved");
+      }
     } else {
       await releaseFeaturedEditLock();
       showFeaturedCruiseForm = false;
@@ -13697,29 +13712,26 @@ async function performFeaturedCruiseSave(options = {}) {
       clearFeaturedResumeMarker();
       featuredAutosaveState = "";
       featuredAutosaveDetail = "";
-      const warningBits = [...new Set(portWarnings.filter(Boolean))];
       if (warningBits.length) {
-        featuredCruiseMessage = `Cruise saved. Some ports still need linking: ${warningBits[0]}${
+        featuredCruiseMessage = `Cruise and room prices are saved. Some ports still need linking: ${warningBits[0]}${
           warningBits.length > 1 ? ` (+${warningBits.length - 1} more)` : ""
         }`;
         featuredCruiseMessageTone = "error";
       } else {
-        featuredCruiseMessage = isPublishing ? "Cruise saved." : "Cruise saved (no public page — slug is empty).";
+        featuredCruiseMessage = "All changes saved.";
         featuredCruiseMessageTone = "success";
       }
     }
   } catch (error) {
-    const message = error.message || "Could not save cruise.";
-    if (quiet) {
-      reportSaveIssue(message);
-    } else {
-      featuredCruiseMessage = message;
-      featuredCruiseMessageTone = "error";
-      persistFeaturedLocalDraftNow();
+    if (error?.cruiseId && !editingFeaturedCruiseId) editingFeaturedCruiseId = error.cruiseId;
+    if (error?.updatedAt) {
+      featuredDraftBaseUpdatedAt = error.updatedAt;
+      featuredDraftOwnUpdatedAt = error.updatedAt;
     }
+    reportSaveIssue(error?.technical || error?.message || "Could not save cruise.");
   } finally {
     featuredCruiseSaving = false;
-    if (!quiet) renderAdmin();
+    if (!quiet || featuredAutosaveState === "session") renderAdmin();
   }
   };
 

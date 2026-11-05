@@ -11,13 +11,57 @@
   const SESSION_REFRESH_LEAD_MS = 4 * 60 * 1000;
   const LOCAL_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+  function decodeJwtPayload(token) {
+    const part = String(token || "").split(".")[1];
+    if (!part) return null;
+    try {
+      const padded = part.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((part.length + 3) % 4);
+      const json = typeof atob === "function"
+        ? atob(padded)
+        : Buffer.from(padded, "base64").toString("utf8");
+      return JSON.parse(json);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function accessTokenExpiryMs(session) {
+    const fromField = Number(session?.expires_at || 0);
+    const fieldMs = fromField > 0 ? fromField * 1000 : 0;
+    const exp = Number(decodeJwtPayload(session?.access_token)?.exp || 0);
+    const jwtMs = exp > 0 ? exp * 1000 : 0;
+    if (fieldMs && jwtMs) return Math.min(fieldMs, jwtMs);
+    return fieldMs || jwtMs || 0;
+  }
+
   function accessTokenNeedsRefresh(session, nowMs, leadMs) {
     const token = session?.access_token || "";
     if (!token) return true;
-    const expiresAt = Number(session?.expires_at || 0);
-    if (!expiresAt) return false;
+    const expiry = accessTokenExpiryMs(session);
+    if (!expiry) return false;
     const lead = Number.isFinite(Number(leadMs)) ? Number(leadMs) : SESSION_REFRESH_LEAD_MS;
-    return expiresAt * 1000 <= Number(nowMs) + lead;
+    return expiry <= Number(nowMs) + lead;
+  }
+
+  function isPersistedRowId(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      String(value || "").trim()
+    );
+  }
+
+  function refreshRaceError(error) {
+    const text = String(error?.message || error || "").toLowerCase();
+    if (!text) return false;
+    return (
+      text.includes("already used") ||
+      text.includes("invalid refresh token") ||
+      text.includes("session missing") ||
+      text.includes("refresh_token")
+    );
+  }
+
+  function shouldRetryProtectedSave(attempt, statusCode) {
+    return Number(attempt) === 0 && Number(statusCode) === 401;
   }
 
   function createRefreshGate(refreshFn) {
@@ -87,13 +131,13 @@
   }
 
   const SAVE_STATUS_TEXT = {
-    "saving-local": "Saving locally",
-    local: "Saved locally, waiting for database",
-    saving: "Saving to database",
-    saved: "All changes saved",
-    offline: "Offline, changes preserved locally",
-    session: "Session expired, sign in to continue",
-    failed: "Save failed, retry available"
+    "saving-local": "Saving...",
+    local: "Unsaved changes.",
+    saving: "Saving...",
+    saved: "All changes saved.",
+    offline: "Unable to save. Your changes are preserved.",
+    session: "Session expired. Sign in to continue.",
+    failed: "Unable to save. Your changes are preserved."
   };
 
   function saveStatusText(state) {
@@ -153,6 +197,20 @@
     return !sameDatabaseInstant(draft.baseUpdatedAt, serverUpdatedAt);
   }
 
+  function serverUpdatedAtIsOwnWrite(baseUpdatedAt, ownUpdatedAt, serverUpdatedAt) {
+    if (!serverUpdatedAt) return false;
+    if (ownUpdatedAt && sameDatabaseInstant(ownUpdatedAt, serverUpdatedAt)) return true;
+    if (baseUpdatedAt && sameDatabaseInstant(baseUpdatedAt, serverUpdatedAt)) return true;
+    return false;
+  }
+
+  function userMessageForSaveFailure(kind) {
+    if (kind === "session") return SAVE_STATUS_TEXT.session;
+    if (kind === "network") return SAVE_STATUS_TEXT.offline;
+    if (kind === "validation") return "";
+    return SAVE_STATUS_TEXT.failed;
+  }
+
   function saveGenerationIsStale(startedGeneration, currentGeneration) {
     return Number(startedGeneration) !== Number(currentGeneration);
   }
@@ -193,6 +251,10 @@
     LEGACY_DRAFT_KEY: "101cruise.featuredCruise.localDraft.v1",
     RESUME_KEY: "101cruise.featuredCruise.resume.v1",
     accessTokenNeedsRefresh,
+    accessTokenExpiryMs,
+    isPersistedRowId,
+    refreshRaceError,
+    shouldRetryProtectedSave,
     createRefreshGate,
     isSessionFailureMessage,
     nextAutosaveDelay,
@@ -204,6 +266,9 @@
     draftRecordForStorage,
     normalizeDraftStore,
     localDraftConflictsWithDatabase,
+    serverUpdatedAtIsOwnWrite,
+    sameDatabaseInstant,
+    userMessageForSaveFailure,
     saveGenerationIsStale,
     saveFailureKind
   };
