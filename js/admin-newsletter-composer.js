@@ -860,7 +860,50 @@
     );
   }
 
-  function buildPrintRecordHtml(cruises) {
+  function formatPortsForPrint(value) {
+    return String(value || "")
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  async function loadPrintPortsByCruiseId(cruises) {
+    const map = {};
+    const ids = cruises.map((cruise) => cruise.id).filter(Boolean);
+    for (const id of ids) map[id] = "";
+    const client = global.supabaseClient;
+    const api = global.FeaturedCruiseItinerary;
+    if (client && ids.length) {
+      const { data, error } = await client
+        .from("featured_cruise_itinerary_stops")
+        .select(
+          "featured_cruise_id, display_order, stop_type, entered_port_text, port_id, ports(display_name, canonical_name, city, region, country)"
+        )
+        .in("featured_cruise_id", ids)
+        .order("display_order", { ascending: true });
+      if (error) {
+        console.warn("print record ports load skipped", error.message);
+      } else if (api?.mapStopFromDb && api?.buildPortsJoinedFromStops) {
+        const grouped = {};
+        for (const row of data || []) {
+          if (!grouped[row.featured_cruise_id]) grouped[row.featured_cruise_id] = [];
+          grouped[row.featured_cruise_id].push(row);
+        }
+        for (const id of ids) {
+          const rows = grouped[id] || [];
+          if (!rows.length) continue;
+          map[id] = api.buildPortsJoinedFromStops(rows.map((row) => api.mapStopFromDb(row)));
+        }
+      }
+    }
+    for (const cruise of cruises) {
+      if (!map[cruise.id]) map[cruise.id] = String(cruise.itinerary_summary || "").trim();
+    }
+    return map;
+  }
+
+  function buildPrintRecordHtml(cruises, portsByCruiseId = {}) {
     const shared = global.NewsletterCruiseShared;
     const cruiseBlocks = cruises
       .map((cruise, index) => {
@@ -884,6 +927,7 @@
               })
               .join("")
           : `<tr><td colspan="4">No cabin pricing entered</td></tr>`;
+        const portsLabel = formatPortsForPrint(portsByCruiseId[cruise.id]) || "—";
 
         return `
           <section class="cruise">
@@ -896,6 +940,10 @@
               <div>
                 <dt>Cruise dates</dt>
                 <dd>${esc(cruiseDateRange(cruise))}${nightsLabel ? ` (${esc(nightsLabel)})` : ""}</dd>
+              </div>
+              <div class="ports">
+                <dt>Ports</dt>
+                <dd>${esc(portsLabel)}</dd>
               </div>
             </dl>
             <table>
@@ -1096,7 +1144,8 @@
       issueMessageTone = "running";
       rerender();
       await ensurePricingLoaded(cruises);
-      const html = buildPrintRecordHtml(cruises);
+      const portsByCruiseId = await loadPrintPortsByCruiseId(cruises);
+      const html = buildPrintRecordHtml(cruises, portsByCruiseId);
       openPrintRecordDocument(html);
       issueMessage =
         "Cruise record opened. Use Print / Save as PDF in the dialog (or the button on that page).";
