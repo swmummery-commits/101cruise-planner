@@ -204,8 +204,8 @@
   timeout = 300
 
 [functions."reconcile-booking-documents"]
-  # Daily Base44 booking document mirror reconciliation — 04:00 UTC (12:00 Perth).
-  schedule = "0 4 * * *"
+  # Daily Base44 booking document mirror reconciliation — 10:00 UTC (18:00 Perth).
+  schedule = "0 10 * * *"
   timeout = 300
 
 # itinerary-exceptions-digest schedule removed — journey-map extraction retired.

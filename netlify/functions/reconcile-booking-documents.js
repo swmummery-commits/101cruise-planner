@@ -1,6 +1,6 @@
 /**
  * Daily Base44 booking document reconciliation (Netlify Scheduled Function).
- * Schedule: 04:00 UTC daily
+ * Schedule: 10:00 UTC daily (6 pm Perth time)
  */
 
 const { fetchBase44Booking, cacheBookingInSupabase, supabaseRest } = require("./booking-service");
