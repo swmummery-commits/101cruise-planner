@@ -56,7 +56,15 @@ exports.handler = async function (event) {
             upserted: documentSync.upserted,
             skipped_conflict: documentSync.skipped_conflict,
             skipped_other_source: documentSync.skipped_other_source,
-            error_count: (documentSync.errors || []).length
+            failed: Number(documentSync.failed || 0),
+            interrupted: Boolean(documentSync.interrupted),
+            error_count: (documentSync.errors || []).length,
+            status: (
+              documentSync.partial ||
+              documentSync.interrupted ||
+              Number(documentSync.failed || 0) > 0 ||
+              (documentSync.errors || []).length > 0
+            ) ? 'partial' : 'fresh'
           }
         : null,
       itinerary_processing: null

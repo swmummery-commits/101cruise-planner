@@ -1686,7 +1686,14 @@ async function loadBookingDocumentsWorkspace() {
     }
 
     await loadCrmDocuments();
-    bookingDocumentsMessage = `Booking ${bookingReference} loaded.`;
+    const sync = data.document_sync;
+    if (sync?.status === "partial") {
+      const failed = Number(sync.failed || sync.error_count || 0);
+      bookingDocumentsMessage = `Booking ${bookingReference} loaded, but document mirroring is incomplete${failed ? ` (${failed} file issue(s))` : ""}. This library is not fully refreshed.`;
+      crmDocumentsMessage = bookingDocumentsMessage;
+    } else {
+      bookingDocumentsMessage = `Booking ${bookingReference} loaded.`;
+    }
   } catch (error) {
     console.error("Booking documents load failed", error);
     crmSyncResult = null;
@@ -1816,7 +1823,10 @@ async function loadCrmDocuments() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
     crmDocuments = data.documents || [];
-    crmDocumentsMessage = `${crmDocuments.length} document${crmDocuments.length === 1 ? "" : "s"} loaded.`;
+    const hidden = Number(data.incomplete_hidden || 0);
+    crmDocumentsMessage = hidden > 0
+      ? `${crmDocuments.length} document${crmDocuments.length === 1 ? "" : "s"} loaded. ${hidden} file${hidden === 1 ? "" : "s"} still copying and hidden until the mirror finishes. This is not a full refresh.`
+      : `${crmDocuments.length} document${crmDocuments.length === 1 ? "" : "s"} loaded.`;
   } catch (error) {
     crmDocuments = [];
     crmDocumentsMessage = `Error: ${error.message || error}`;
@@ -1973,11 +1983,11 @@ async function syncCrmBooking() {
     }
 
     const sync = data.document_sync;
-    const syncNote = sync
-      ? ` Documents: ${sync.upserted || 0} synced` +
-        (sync.error_count ? `, ${sync.error_count} sync error(s)` : "") +
-        "."
-      : "";
+    const syncNote = sync?.status === "partial"
+      ? ` Document mirroring is incomplete (${Number(sync.failed || sync.error_count || 0)} file issue(s)). The library is not fully refreshed.`
+      : sync
+        ? ` Documents: ${sync.upserted || 0} synced.`
+        : "";
     crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote} Use Booking Documents to manage the document library.`;
   } catch (error) {
     console.error("CRM sync failed", error);

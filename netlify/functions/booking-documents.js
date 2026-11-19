@@ -10,7 +10,8 @@ const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
 const {
   BUCKET,
   createDefaultStorageClient,
-  normaliseDocumentType
+  normaliseDocumentType,
+  isIncompleteMirror
 } = require('./lib/booking-document-sync');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -197,7 +198,7 @@ exports.handler = async function (event) {
           { method: 'GET' }
         );
         const row = rows?.[0];
-        if (!row) {
+        if (!row || isIncompleteMirror(row)) {
           return jsonResponse(404, { success: false, error: 'Document not found.' });
         }
         const fileUrl = await resolveFileUrl(row, storageClient);
@@ -211,10 +212,12 @@ exports.handler = async function (event) {
         { method: 'GET' }
       );
 
-      const documents = (rows || []).map((row) => ({
-        ...publicDocumentView(row),
-        file_unavailable: !row.storage_path
-      }));
+      const documents = (rows || [])
+        .filter((row) => !isIncompleteMirror(row))
+        .map((row) => ({
+          ...publicDocumentView(row),
+          file_unavailable: !row.storage_path
+        }));
 
       return jsonResponse(200, { success: true, documents });
     }
@@ -235,14 +238,19 @@ exports.handler = async function (event) {
       const rows = await rest(`booking_documents?or=(${filters.join(',')})&order=uploaded_at.desc`, { method: 'GET' });
       const { supabaseUrl, serviceKey } = getConfig();
       const storageClient = createDefaultStorageClient(supabaseUrl, serviceKey);
+      const listed = (rows || []).filter((row) => !isIncompleteMirror(row));
       const documents = await Promise.all(
-        (rows || []).map(async (row) => ({
+        listed.map(async (row) => ({
           ...publicDocumentView(row, { includeInternal: true }),
           file_url: await resolveFileUrl(row, storageClient),
           editable: row.source_system === 'admin'
         }))
       );
-      return jsonResponse(200, { success: true, documents });
+      return jsonResponse(200, {
+        success: true,
+        documents,
+        incomplete_hidden: (rows || []).length - listed.length
+      });
     }
 
     if (action === 'create_upload') {

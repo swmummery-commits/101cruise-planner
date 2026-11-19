@@ -460,14 +460,15 @@ assert(!isBookingConfirmationType("Travel Insurance"), "18: insurance not confir
   assert(extractCalls === 1, "26: only confirmation triggers extraction");
 }
 
-/* API layers do not filter CRM documents by visibility */
+/* The unified customer library enforces visibility in the handler. */
 {
   const customerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/customer-documents.js"), "utf8"));
   const bookingSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/booking-documents.js"), "utf8"));
   const plannerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "js/planner.js"), "utf8"));
   assert(!customerSrc.includes("document_visible_to_customer=eq.true"), "27: customer list ignores visibility filter");
   assert(!bookingSrc.includes("document_visible_to_customer=eq.true"), "27: booking list ignores visibility filter");
-  assert(!customerSrc.includes("document_visible_to_customer === false"), "27: customer download ignores visibility check");
+  assert(customerSrc.includes("row.document_visible_to_customer === false"), "27: unified customer download rejects hidden documents");
+  assert(customerSrc.includes("row.document_visible_to_customer !== false"), "27: unified customer list excludes hidden documents");
   assert(!bookingSrc.includes("document_visible_to_customer === false"), "27: booking download ignores visibility check");
   assert(!plannerSrc.includes("document_visible_to_customer === false"), "27: planner ignores document visibility filter");
 }

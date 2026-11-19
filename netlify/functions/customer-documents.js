@@ -1,7 +1,8 @@
 const crypto = require('crypto');
 const {
   createDefaultStorageClient,
-  normaliseDocumentType
+  normaliseDocumentType,
+  isIncompleteMirror
 } = require('./lib/booking-document-sync');
 const {
   fetchBase44Booking,
@@ -161,59 +162,60 @@ function mapCustomerDocument(row) {
   };
 }
 
-function withTimeout(promise, timeoutMs, label) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      const error = new Error(`${label || 'Operation'} timed out`);
-      error.code = 'operation_timeout';
-      reject(error);
-    }, timeoutMs);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
 async function deferItineraryProcessing() {
-  // Opening Documents must never launch PDF/OpenAI itinerary extraction. That is
-  // separate background work and must not block the customer document list.
+  // Opening Documents must never launch PDF/OpenAI itinerary extraction. The
+  // shared mirror helper also runs extraction only after every file is stored.
   return { ok: true, reason: 'deferred_from_customer_documents' };
 }
 
-async function syncLatestCrmDocuments(session) {
+function safeSyncMessage(value) {
+  return String(value || '').replace(/https?:\/\/\S+/gi, '[url]').slice(0, 300);
+}
+
+async function syncLatestCrmDocuments(session, correlationId) {
   const bookingReference = String(session.booking_reference || '').trim().toUpperCase();
   const bookingId = String(session.booking_id || '').trim();
   if (!bookingReference && !bookingId) {
-    return { ok: false, reason: 'missing_booking_identity' };
+    return { ok: false, reason: 'missing_booking_identity', summary: null };
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DOCUMENT_SYNC_BUDGET_MS);
   try {
-    const syncWork = async () => {
-      const { booking, source } = await fetchBase44Booking({
-        booking_reference: bookingReference,
-        booking_id: bookingId,
-        timeoutMs: DOCUMENT_FETCH_TIMEOUT_MS
-      });
-      return syncDocumentsForBooking(booking, source, {
-        processTextItinerary: deferItineraryProcessing
-      });
-    };
-
-    const summary = await withTimeout(
-      syncWork(),
-      DOCUMENT_SYNC_BUDGET_MS,
-      'Customer document sync'
-    );
-    return { ok: true, summary };
+    const { booking, source } = await fetchBase44Booking({
+      booking_reference: bookingReference,
+      booking_id: bookingId,
+      timeoutMs: DOCUMENT_FETCH_TIMEOUT_MS
+    });
+    if (controller.signal.aborted) {
+      return {
+        ok: false,
+        reason: 'partial',
+        summary: { interrupted: true, partial: true, failed: 0, discovered: 0, inserted: 0, updated: 0, archived: 0 }
+      };
+    }
+    const summary = await syncDocumentsForBooking(booking, source, {
+      processTextItinerary: deferItineraryProcessing,
+      signal: controller.signal,
+      correlationId
+    });
+    const partial = Boolean(summary?.partial || summary?.interrupted || Number(summary?.failed || 0) > 0);
+    return { ok: !partial, reason: partial ? 'partial' : 'fresh', summary };
   } catch (error) {
     // A CRM refresh is useful but never more important than showing documents
     // that are already securely mirrored. The next load can self-heal again.
-    console.warn('Customer document live sync deferred', {
-      bookingReference,
-      bookingId,
+    console.warn(JSON.stringify({
+      event: 'customer_document_sync',
+      stage: 'deferred',
+      correlation_id: correlationId,
+      booking_reference: bookingReference,
+      base44_booking_id: bookingId,
       code: error?.code || 'sync_failed',
-      message: error?.message || error
-    });
-    return { ok: false, reason: error?.code || 'sync_failed' };
+      message: safeSyncMessage(error?.message || error)
+    }));
+    return { ok: false, reason: error?.code || 'sync_failed', summary: null };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -231,6 +233,7 @@ async function listUnifiedDocuments(session) {
     { method: 'GET' }
   );
   const crmDocuments = (crmRows || [])
+    .filter((row) => !isIncompleteMirror(row))
     .filter((row) => row.document_visible_to_customer !== false)
     .map(mapCrmDocument);
   const customerDocuments = (customerRows || []).map(mapCustomerDocument);
@@ -256,33 +259,32 @@ exports.handler = async function(event) {
     const action = body.action;
 
     if (action === 'list_all') {
-      // Always capture the last known secure mirror first. A slow CRM/file sync
-      // can no longer turn a valid document library into a 504/blank screen.
-      const existing = await listUnifiedDocuments(session);
-      const syncResult = await syncLatestCrmDocuments(session);
-
-      if (!syncResult.ok) {
-        return jsonResponse(200, {
-          success: true,
-          ...existing,
-          sync_status: 'deferred',
-          sync_reason: syncResult.reason
-        });
-      }
-
-      // Re-read after a successful lightweight sync so newly added/removed CRM
-      // documents are reflected immediately.
+      // Mirror first, then read the durable library. The sync stops at a
+      // checkpoint when the budget ends, so a slow file cannot freeze the
+      // function between upload and the booking_documents insert.
+      const headers = event.headers || {};
+      const correlationId = String(
+        headers['x-nf-request-id'] ||
+        headers['X-Nf-Request-Id'] ||
+        crypto.randomUUID()
+      );
+      const syncResult = await syncLatestCrmDocuments(session, correlationId);
       const unified = await listUnifiedDocuments(session);
+      const status = syncResult.ok ? 'fresh' : (syncResult.reason === 'partial' ? 'partial' : 'deferred');
+      const summary = syncResult.summary || {};
       return jsonResponse(200, {
         success: true,
         ...unified,
-        sync_status: 'fresh',
+        sync_status: status,
+        ...(status === 'fresh' ? {} : { sync_reason: syncResult.reason }),
         sync_summary: {
-          discovered: Number(syncResult.summary?.discovered || 0),
-          inserted: Number(syncResult.summary?.inserted || 0),
-          updated: Number(syncResult.summary?.updated || 0),
-          archived: Number(syncResult.summary?.archived || 0),
-          failed: Number(syncResult.summary?.failed || 0)
+          discovered: Number(summary.discovered || 0),
+          inserted: Number(summary.inserted || 0),
+          updated: Number(summary.updated || 0),
+          archived: Number(summary.archived || 0),
+          failed: Number(summary.failed || 0),
+          interrupted: Boolean(summary.interrupted),
+          partial: status !== 'fresh'
         }
       });
     }
@@ -313,7 +315,7 @@ exports.handler = async function(event) {
           { method: 'GET' }
         );
         const row = rows?.[0];
-        if (!row || row.document_visible_to_customer === false) {
+        if (!row || isIncompleteMirror(row) || row.document_visible_to_customer === false) {
           return jsonResponse(404, { success: false, error: 'Document not found.' });
         }
         if (!row.storage_path) {

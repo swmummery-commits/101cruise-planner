@@ -175,6 +175,8 @@ exports.handler = async function reconcileBookingDocuments(event) {
     totals.next_cursor = cursor + batchSize;
     totals.has_more = (cacheRows || []).length === batchSize;
     totals.elapsed_ms = Date.now() - started;
+    totals.sync_status = totals.documents.failed > 0 || totals.errors.length ? 'partial' : 'fresh';
+    totals.partial = totals.sync_status === 'partial';
 
     return {
       statusCode: 200,

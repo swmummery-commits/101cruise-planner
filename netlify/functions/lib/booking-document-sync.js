@@ -224,8 +224,58 @@ function emptySummary() {
     failed_items: [],
     rows: [],
     text_itinerary_process: [],
-    complete_fetch: true
+    complete_fetch: true,
+    interrupted: false,
+    partial: false
   };
+}
+
+function isIncompleteMirror(row) {
+  if (!row || row.source_system !== "base44") return false;
+  if (row.storage_path) return false;
+  if (row.source_deleted_at) return false;
+  if (row.is_active === false) return true;
+  return row.document_visible_to_customer === false && row.is_active !== true;
+}
+
+function shouldExposeMirroredDocument(row) {
+  return Boolean(row) && !isIncompleteMirror(row);
+}
+
+function safeLogText(value) {
+  return String(value || "")
+    .replace(/https?:\/\/\S+/gi, "[url]")
+    .replace(/(?:bearer|apikey|api[_-]?key|service_role|token)\s*[:=]\s*\S+/gi, "[redacted]")
+    .slice(0, 300);
+}
+
+function logSyncStage(stage, fields = {}) {
+  const payload = { event: "booking_document_sync", stage };
+  for (const [key, value] of Object.entries(fields)) {
+    if (value == null || value === "") continue;
+    if (/url|secret|token|authorization|apikey|credential/i.test(key)) continue;
+    payload[key] = typeof value === "string" ? safeLogText(value) : value;
+  }
+  console.info(JSON.stringify(payload));
+}
+
+function isSyncInterrupt(error, signal) {
+  if (signal?.aborted) return true;
+  const name = String(error?.name || "");
+  const code = String(error?.code || "");
+  return name === "AbortError" || code === "sync_interrupted" || code === "ABORT_ERR";
+}
+
+const mirrorLocks = new Map();
+
+function withMirrorLock(key, fn) {
+  const previous = mirrorLocks.get(key) || Promise.resolve();
+  const run = previous.catch(() => {}).then(fn);
+  const tracked = run.finally(() => {
+    if (mirrorLocks.get(key) === tracked) mirrorLocks.delete(key);
+  });
+  mirrorLocks.set(key, tracked);
+  return tracked;
 }
 
 function isAdminConflict(existing) {
@@ -256,11 +306,15 @@ function needsFileMirror(existing, mapped) {
   return metadataChanged(existing, mapped);
 }
 
-async function defaultDownloadFile(url, fetchImpl = fetch) {
+async function defaultDownloadFile(url, fetchImpl = fetch, context = {}) {
   const headers = {};
   const apiKey = process.env.BASE44_API_KEY;
   if (apiKey) headers["x-api-key"] = apiKey;
-  const response = await fetchImpl(url, { headers, redirect: "follow" });
+  const response = await fetchImpl(url, {
+    headers,
+    redirect: "follow",
+    signal: context.signal
+  });
   if (!response.ok) {
     const error = new Error(`Download failed (HTTP ${response.status})`);
     error.code = "download_http";
@@ -274,7 +328,7 @@ async function defaultDownloadFile(url, fetchImpl = fetch) {
 function createDefaultStorageClient(supabaseUrl, serviceKey) {
   const base = `${String(supabaseUrl || "").replace(/\/$/, "")}/storage/v1`;
   return {
-    async upload(path, buffer, mimeType) {
+    async upload(path, buffer, mimeType, context = {}) {
       const response = await fetch(`${base}/object/${BUCKET}/${encodeURI(path)}`, {
         method: "POST",
         headers: {
@@ -283,7 +337,8 @@ function createDefaultStorageClient(supabaseUrl, serviceKey) {
           "Content-Type": mimeType || "application/octet-stream",
           "x-upsert": "true"
         },
-        body: buffer
+        body: buffer,
+        signal: context.signal
       });
       const text = await response.text();
       let data = null;
@@ -442,6 +497,8 @@ async function syncBookingDocuments(rest, booking, source = null, options = {}) 
   const processTextItineraryImpl = options.processTextItinerary || processTextItinerary;
   const downloadFile = options.downloadFile || defaultDownloadFile;
   const fetchImpl = options.fetchImpl || fetch;
+  const signal = options.signal || null;
+  const correlationId = options.correlationId || null;
   const completeFetch = options.completeFetch !== false;
   const supabaseUrl = options.supabaseUrl || process.env.SUPABASE_URL;
   const serviceKey = options.serviceKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -494,163 +551,296 @@ async function syncBookingDocuments(rest, booking, source = null, options = {}) 
 
   const seenSyncKeys = new Set();
   const nowIso = new Date().toISOString();
+  const extractionQueue = [];
+  const logContext = {
+    correlation_id: correlationId,
+    booking_reference: booking?.booking_reference || null,
+    base44_booking_id: booking?.base44_booking_id || null
+  };
 
-  for (const row of mapped) {
-    seenSyncKeys.add(row.sync_key);
-    try {
-      const existingRows = await rest(
-        `booking_documents?sync_key=eq.${encodeURIComponent(row.sync_key)}&select=*&limit=1`,
-        { method: "GET" }
-      );
-      const existing = Array.isArray(existingRows) ? existingRows[0] : null;
+  logSyncStage("sync_start", { ...logContext, discovered: mapped.length });
 
-      if (existing && existing.source_system && existing.source_system !== "base44") {
-        result.skipped_other_source += 1;
-        continue;
-      }
-
-      if (existing && isAdminConflict(existing) && existing.storage_path) {
-        result.skipped_conflict += 1;
-        await maybeProcessTextItinerary({
-          rest,
-          booking,
-          document: existing,
-          syncKey: row.sync_key,
-          filename: existing.filename || row.filename,
-          result,
-          processTextItineraryImpl,
-          storageClient
-        });
-        continue;
-      }
-
-      const payload = stripMirrorFields(
-        { ...row, last_seen_at: nowIso, synced_at: nowIso, is_active: true, source_deleted_at: null },
-        mirrorSchema
-      );
-      let status = "updated";
-
-      if (existing && !needsFileMirror(existing, row) && !metadataChanged(existing, row)) {
-        await rest(`booking_documents?id=eq.${encodeURIComponent(existing.id)}`, {
-          method: "PATCH",
-          headers: { Prefer: "return=representation" },
-          body: JSON.stringify(
-            stripMirrorFields(
-              {
-                last_seen_at: nowIso,
-                last_synced_at: nowIso,
-                is_active: true,
-                source_deleted_at: null,
-                document_visible_to_customer: true
-              },
-              mirrorSchema
-            )
-          )
-        });
-        result.unchanged += 1;
-        status = "unchanged";
-        const preserved = { ...existing, last_seen_at: nowIso, is_active: true };
-        await maybeProcessTextItinerary({
-          rest,
-          booking,
-          document: preserved,
-          syncKey: row.sync_key,
-          filename: preserved.filename || row.filename,
-          result,
-          processTextItineraryImpl,
-          storageClient
-        });
-        continue;
-      }
-
-      if (needsFileMirror(existing, row) && !skipFileMirror) {
-        if (allowMetadataOnly && !storageClient) {
-          payload.file_url = row.file_url;
-        } else {
-          const downloaded = await downloadFile(row.file_url, fetchImpl);
-          if (downloaded.size > MAX_FILE_SIZE) {
-            throw new Error("File exceeds maximum size (10 MB)");
-          }
-          const mimeType = downloaded.mimeType || guessMimeType(row.filename);
-          if (!ALLOWED_MIME.has(mimeType)) {
-            throw new Error(`Unsupported file type (${mimeType})`);
-          }
-          const contentHash = hashValue(downloaded.buffer);
-          const storagePath = buildStoragePath({
-            base44BookingId: row.base44_booking_id,
-            sourceFingerprint: row.source_fingerprint,
-            filename: row.filename
-          });
-          if (storageClient) {
-            await storageClient.upload(storagePath, downloaded.buffer, mimeType);
-            payload.storage_bucket = BUCKET;
-            payload.storage_path = storagePath;
-            payload.mime_type = mimeType;
-            payload.file_size = downloaded.size;
-            payload.content_hash = contentHash;
-            payload.file_url = null;
-          } else if (!allowMetadataOnly) {
-            throw new Error("Storage client unavailable");
-          } else {
-            payload.file_url = row.file_url;
-          }
-        }
-      } else if (existing) {
-        payload.storage_bucket = existing.storage_bucket || payload.storage_bucket;
-        payload.storage_path = existing.storage_path || payload.storage_path;
-        payload.mime_type = existing.mime_type || payload.mime_type;
-        payload.file_size = existing.file_size || payload.file_size;
-        payload.content_hash = existing.content_hash || payload.content_hash;
-        payload.file_url = existing.storage_path ? null : existing.file_url || row.file_url;
-      }
-
-      const data = await rest("booking_documents?on_conflict=sync_key", {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-        body: JSON.stringify(stripMirrorFields(payload, mirrorSchema))
-      });
-      const saved = Array.isArray(data) ? data[0] : data;
-      if (saved) {
-        result.rows.push(saved);
-        await maybeProcessTextItinerary({
-          rest,
-          booking,
-          document: saved,
-          syncKey: row.sync_key,
-          filename: row.filename,
-          result,
-          processTextItineraryImpl,
-          storageClient
-        });
-      }
-
-      if (status === "updated") {
-        if (existing) result.updated += 1;
-        else result.inserted += 1;
-        result.upserted += 1;
-      }
-    } catch (error) {
-      result.failed += 1;
-      const item = {
-        sync_key: row.sync_key,
-        filename: row.filename,
-        message: error.message || String(error),
-        code: error.code || "sync_error"
-      };
-      result.failed_items.push(item);
-      result.errors.push(item);
-      console.warn("[booking-document-sync] document failed", row.filename, item.message);
-    }
+  function queueExtraction(document, syncKey, filename) {
+    extractionQueue.push({ document, syncKey, filename });
   }
 
-  if (completeFetch) {
+  function recordDocumentFailure(row, error) {
+    result.failed += 1;
+    result.partial = true;
+    const interrupted = isSyncInterrupt(error, signal);
+    if (interrupted) result.interrupted = true;
+    const item = {
+      sync_key: row.sync_key,
+      filename: row.filename,
+      base44_document_id: row.base44_document_id || null,
+      message: safeLogText(error.message || error),
+      code: interrupted ? "sync_interrupted" : (error.code || "sync_error")
+    };
+    result.failed_items.push(item);
+    result.errors.push(item);
+    logSyncStage(interrupted ? "document_interrupted" : "document_failed", {
+      ...logContext,
+      sync_key: row.sync_key,
+      base44_document_id: row.base44_document_id || null,
+      filename: row.filename,
+      code: item.code,
+      message: item.message
+    });
+    return interrupted ? "stop" : "continue";
+  }
+
+  async function reservePendingMirror(row) {
+    const pending = stripMirrorFields(
+      {
+        ...row,
+        file_url: null,
+        storage_bucket: null,
+        storage_path: null,
+        mime_type: null,
+        file_size: null,
+        content_hash: null,
+        is_active: false,
+        document_visible_to_customer: false,
+        source_deleted_at: null,
+        last_seen_at: nowIso,
+        synced_at: nowIso,
+        last_synced_at: nowIso
+      },
+      mirrorSchema
+    );
+    const data = await rest("booking_documents?on_conflict=sync_key", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+      body: JSON.stringify(pending)
+    });
+    const saved = Array.isArray(data) ? data[0] : data;
+    logSyncStage("metadata_pending", {
+      ...logContext,
+      sync_key: row.sync_key,
+      base44_document_id: row.base44_document_id || null,
+      filename: row.filename
+    });
+    if (saved) return saved;
+    const rows = await rest(
+      `booking_documents?sync_key=eq.${encodeURIComponent(row.sync_key)}&select=*&limit=1`,
+      { method: "GET" }
+    );
+    if (!rows?.[0]) throw new Error("Document reservation could not be read");
+    return rows[0];
+  }
+
+  for (const row of mapped) {
+    if (signal?.aborted) {
+      result.interrupted = true;
+      result.partial = true;
+      logSyncStage("sync_interrupted", { ...logContext, sync_key: row.sync_key, filename: row.filename });
+      break;
+    }
+
+    seenSyncKeys.add(row.sync_key);
+    const outcome = await withMirrorLock(row.sync_key, async () => {
+      let uploadCommitted = false;
+      try {
+        const existingRows = await rest(
+          `booking_documents?sync_key=eq.${encodeURIComponent(row.sync_key)}&select=*&limit=1`,
+          { method: "GET" }
+        );
+        let existing = Array.isArray(existingRows) ? existingRows[0] : null;
+        if (!existing && !skipFileMirror && storageClient) {
+          existing = await reservePendingMirror(row);
+        }
+        const wasComplete = Boolean(existing && existing.storage_path && existing.is_active !== false);
+
+        if (existing && existing.source_system && existing.source_system !== "base44") {
+          result.skipped_other_source += 1;
+          return "continue";
+        }
+
+        if (existing && isAdminConflict(existing) && existing.storage_path) {
+          result.skipped_conflict += 1;
+          queueExtraction(existing, row.sync_key, existing.filename || row.filename);
+          return "continue";
+        }
+
+        const payload = stripMirrorFields(
+          { ...row, last_seen_at: nowIso, synced_at: nowIso, is_active: true, source_deleted_at: null },
+          mirrorSchema
+        );
+
+        if (existing && !needsFileMirror(existing, row) && !metadataChanged(existing, row)) {
+          await rest(`booking_documents?id=eq.${encodeURIComponent(existing.id)}`, {
+            method: "PATCH",
+            headers: { Prefer: "return=representation" },
+            body: JSON.stringify(
+              stripMirrorFields(
+                {
+                  last_seen_at: nowIso,
+                  last_synced_at: nowIso,
+                  is_active: true,
+                  source_deleted_at: null,
+                  document_visible_to_customer: true
+                },
+                mirrorSchema
+              )
+            )
+          });
+          result.unchanged += 1;
+          queueExtraction(
+            { ...existing, last_seen_at: nowIso, is_active: true, document_visible_to_customer: true },
+            row.sync_key,
+            existing.filename || row.filename
+          );
+          return "continue";
+        }
+
+        if (needsFileMirror(existing, row) && !skipFileMirror) {
+          if (allowMetadataOnly && !storageClient) {
+            payload.file_url = row.file_url;
+          } else {
+            if (signal?.aborted) {
+              const error = new Error("Document sync stopped before the file transfer");
+              error.code = "sync_interrupted";
+              throw error;
+            }
+            logSyncStage("download_start", {
+              ...logContext,
+              sync_key: row.sync_key,
+              base44_document_id: row.base44_document_id || null,
+              filename: row.filename
+            });
+            const downloaded = await downloadFile(row.file_url, fetchImpl, { signal, correlationId });
+            if (downloaded.size > MAX_FILE_SIZE) {
+              throw new Error("File exceeds maximum size (10 MB)");
+            }
+            const mimeType = downloaded.mimeType || guessMimeType(row.filename);
+            if (!ALLOWED_MIME.has(mimeType)) {
+              throw new Error(`Unsupported file type (${mimeType})`);
+            }
+            const contentHash = hashValue(downloaded.buffer);
+            const storagePath = buildStoragePath({
+              base44BookingId: row.base44_booking_id,
+              sourceFingerprint: row.source_fingerprint,
+              filename: row.filename
+            });
+            if (storageClient) {
+              if (signal?.aborted) {
+                const error = new Error("Document sync stopped before the file upload");
+                error.code = "sync_interrupted";
+                throw error;
+              }
+              await storageClient.upload(storagePath, downloaded.buffer, mimeType, { signal });
+              uploadCommitted = true;
+              payload.storage_bucket = BUCKET;
+              payload.storage_path = storagePath;
+              payload.mime_type = mimeType;
+              payload.file_size = downloaded.size;
+              payload.content_hash = contentHash;
+              payload.file_url = null;
+              logSyncStage("upload_ok", {
+                ...logContext,
+                sync_key: row.sync_key,
+                base44_document_id: row.base44_document_id || null,
+                filename: row.filename,
+                bytes: downloaded.size
+              });
+            } else if (!allowMetadataOnly) {
+              throw new Error("Storage client unavailable");
+            } else {
+              payload.file_url = row.file_url;
+            }
+          }
+        } else if (existing) {
+          payload.storage_bucket = existing.storage_bucket || payload.storage_bucket;
+          payload.storage_path = existing.storage_path || payload.storage_path;
+          payload.mime_type = existing.mime_type || payload.mime_type;
+          payload.file_size = existing.file_size || payload.file_size;
+          payload.content_hash = existing.content_hash || payload.content_hash;
+          payload.file_url = existing.storage_path ? null : existing.file_url || row.file_url;
+        }
+
+        const published = stripMirrorFields(
+          {
+            ...payload,
+            is_active: true,
+            document_visible_to_customer: true,
+            source_deleted_at: null
+          },
+          mirrorSchema
+        );
+        const data = await rest("booking_documents?on_conflict=sync_key", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify(published)
+        });
+        const saved = Array.isArray(data) ? data[0] : data;
+        if (saved) {
+          result.rows.push(saved);
+          queueExtraction(saved, row.sync_key, row.filename);
+        }
+        if (wasComplete) result.updated += 1;
+        else result.inserted += 1;
+        result.upserted += 1;
+        logSyncStage("metadata_committed", {
+          ...logContext,
+          sync_key: row.sync_key,
+          base44_document_id: row.base44_document_id || null,
+          filename: row.filename,
+          upload_committed: uploadCommitted
+        });
+        return "continue";
+      } catch (error) {
+        if (uploadCommitted) {
+          logSyncStage("metadata_commit_failed", {
+            ...logContext,
+            sync_key: row.sync_key,
+            base44_document_id: row.base44_document_id || null,
+            filename: row.filename,
+            message: safeLogText(error.message || error)
+          });
+        }
+        return recordDocumentFailure(row, error);
+      }
+    });
+    if (outcome === "stop") break;
+  }
+
+  if (completeFetch && !result.interrupted) {
     try {
       await archiveMissingDocuments({ rest, booking, seenSyncKeys, nowIso, result, mirrorSchema });
     } catch (archiveError) {
-      console.warn("[booking-document-sync] archive pass failed", archiveError.message || archiveError);
+      result.partial = true;
+      console.warn("[booking-document-sync] archive pass failed", safeLogText(archiveError.message || archiveError));
+    }
+  } else if (result.interrupted) {
+    result.complete_fetch = false;
+  }
+
+  if (!result.interrupted) {
+    for (const job of extractionQueue) {
+      await maybeProcessTextItinerary({
+        rest,
+        booking,
+        document: job.document,
+        syncKey: job.syncKey,
+        filename: job.filename,
+        result,
+        processTextItineraryImpl,
+        storageClient
+      });
     }
   }
 
+  result.partial = Boolean(result.partial || result.interrupted || result.failed > 0);
+  logSyncStage("sync_finished", {
+    ...logContext,
+    discovered: result.discovered,
+    inserted: result.inserted,
+    updated: result.updated,
+    unchanged: result.unchanged,
+    failed: result.failed,
+    interrupted: result.interrupted,
+    partial: result.partial
+  });
   return result;
 }
 
@@ -671,5 +861,7 @@ module.exports = {
   syncBookingDocuments,
   createDefaultStorageClient,
   resolveDocumentFileUrl,
-  hashValue
+  hashValue,
+  isIncompleteMirror,
+  shouldExposeMirroredDocument
 };

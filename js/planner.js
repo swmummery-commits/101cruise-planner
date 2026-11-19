@@ -4038,6 +4038,10 @@ async function renderDocuments() {
     if (customerMode) {
       const data = await customerDocumentsRequest("list_all");
       documents = sortDocuments(data.documents || []);
+      const syncNote = document.getElementById("documents-message");
+      if (syncNote && (data.sync_status === "partial" || data.sync_status === "deferred")) {
+        syncNote.textContent = "Some booking documents are still syncing, so this library may be incomplete. Open Documents again in a moment to refresh.";
+      }
     } else {
       let libraryDocuments = await listBookingLibraryDocuments();
       if (!libraryDocuments.length) {
