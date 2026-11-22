@@ -34,7 +34,7 @@
     filename: "",
     label: ""
   };
-  let hostedExport = { airline: "", general: "", filename: "", label: "" };
+  let hostedExport = { airline: "", general: "", filename: "", label: "", reviewStamp: "" };
   let copyFeedback = { airline_staff: "idle", general: "idle" };
   let issueCache = { key: "", airline: null, general: null };
   let addPickerOpen = false;
@@ -89,7 +89,7 @@
       filename: "",
       label: ""
     };
-    hostedExport = { airline: "", general: "", filename: "", label: "" };
+    hostedExport = { airline: "", general: "", filename: "", label: "", reviewStamp: "" };
     copyFeedback = { airline_staff: "idle", general: "idle" };
   }
 
@@ -1237,9 +1237,15 @@
     }));
   }
 
+  function clientReviewExportStamp() {
+    return typeof global.NewsletterClientReviewsAdmin?.exportStamp === "function"
+      ? String(global.NewsletterClientReviewsAdmin.exportStamp() || "")
+      : "";
+  }
+
   function cacheKey(outputMode) {
     const ids = cruisesForCurrentIssue().map((c) => c.id).join(",");
-    return `${issueNumber}|${issueTemplate}|${outputMode}|${ids}|${issuePricingLoadedFor}`;
+    return `${issueNumber}|${issueTemplate}|${outputMode}|${ids}|${issuePricingLoadedFor}|${clientReviewExportStamp()}`;
   }
 
   async function compose(outputMode, { soft = false } = {}) {
@@ -1564,6 +1570,7 @@
   }
 
   function hostedExportHtml(outputMode) {
+    if ((hostedExport.reviewStamp || "") !== clientReviewExportStamp()) return "";
     const html = outputMode === "airline_staff" ? hostedExport.airline : hostedExport.general;
     if (!html || !global.NewsletterMailchimpAssets?.assertNoSupabaseStorageUrls) return "";
     return global.NewsletterMailchimpAssets.assertNoSupabaseStorageUrls(html).ok ? html : "";
@@ -1574,6 +1581,7 @@
     else hostedExport.general = html;
     hostedExport.label = result?.label || hostedExport.label || "";
     hostedExport.filename = result?.filename || hostedExport.filename || "";
+    hostedExport.reviewStamp = clientReviewExportStamp();
   }
 
   function downloadHtmlFile(html, filename) {
