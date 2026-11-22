@@ -616,12 +616,13 @@
     }
     if (stop.port_id && stop.port) {
       const st = stop.port.status || "verified";
-      if (st === "verified") flags.push("Matched");
-      else if (st === "provisional") flags.push("Provisional");
-      else flags.push("Needs Review");
       const lat = stop.port.latitude;
       const lng = stop.port.longitude;
-      if (lat == null || lng == null || lat === "" || lng === "") {
+      const missing = lat == null || lng == null || lat === "" || lng === "";
+      if (st === "verified" || (st === "provisional" && !missing)) flags.push("Matched");
+      else if (st === "provisional") flags.push("Provisional");
+      else flags.push("Needs Review");
+      if (missing) {
         flags.push("Missing Coordinates");
       }
     } else if (String(stop.entered_port_text || "").trim()) {

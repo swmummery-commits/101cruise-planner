@@ -17,6 +17,20 @@ assert.equal(dirty("", "130.100", { latitude: 0, longitude: 130.1 }), true);
 assert.equal(dirty("", "", { latitude: null, longitude: null }), false);
 assert.equal(dirty("0", "130.2", { latitude: 0, longitude: 130.1 }), true);
 
+const saveUi = editor.slice(editor.indexOf("  function portNeedsCoordinates"),
+  editor.indexOf("  function renderCoordinateSaveState"));
+const { state, pending } = runInNewContext(saveUi + "\n({ state: coordinateSaveState, pending: coordinateSaves })", {
+  I: () => ({ isAtSeaStopType: () => false })
+});
+const stop = { port_id: "port", port: { latitude: 0, longitude: 130.1 } };
+assert.equal(state(stop, "0", "130.1").label, "✓ Saved");
+assert.equal(state(stop, "0", "131").disabled, false);
+pending.add("port");
+assert.equal(state(stop, "0", "131").label, "Saving…");
+assert.equal(state(stop, "0", "131").disabled, true);
+pending.delete("port");
+assert.equal(state(stop, "0", "131").label, "Save coordinates");
+
 const server = readFileSync(new URL("../netlify/functions/route-map-generate.js", import.meta.url), "utf8");
 const routeSource = server.slice(server.indexOf("async function ensureRouteObject"),
   server.indexOf("function mapAssetError"));

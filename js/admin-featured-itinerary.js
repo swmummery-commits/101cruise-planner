@@ -1094,12 +1094,28 @@
     return !same(latitude, port?.latitude) || !same(longitude, port?.longitude);
   }
 
-  function renderCoordinateSaveState(row, stop) {
-    const latitude = row.querySelector("[data-fc-itin='latitude']").value;
-    const longitude = row.querySelector("[data-fc-itin='longitude']").value;
+  const coordinateSaves = new Set();
+
+  function coordinateSaveState(stop, latitude, longitude) {
     const dirty = coordinateEditsAreDirty(latitude, longitude, stop.port);
-    row.querySelector("[data-coordinate-save]").disabled = !dirty;
-    row.querySelector("[data-coordinate-saved]").hidden = dirty || portNeedsCoordinates(stop);
+    const saving = coordinateSaves.has(stop.port_id);
+    const saved = !dirty && !portNeedsCoordinates(stop) && !saving;
+    return {
+      saving, saved,
+      disabled: saving || !dirty,
+      label: saving ? "Saving…" : saved ? "✓ Saved" : "Save coordinates"
+    };
+  }
+
+  function renderCoordinateSaveState(row, stop) {
+    const state = coordinateSaveState(stop,
+      row.querySelector("[data-fc-itin='latitude']").value,
+      row.querySelector("[data-fc-itin='longitude']").value);
+    const button = row.querySelector("[data-coordinate-save]");
+    button.disabled = state.disabled;
+    button.textContent = state.label;
+    row.querySelector("[data-coordinate-saved]").hidden = !state.saved;
+    row.querySelector("[data-coordinate-saving]").hidden = !state.saving;
   }
 
   function renderCoordinateFields(stop) {
@@ -1110,13 +1126,15 @@
     const missing = portNeedsCoordinates(stop);
     const dirty = coordinateEditsAreDirty(lat, lng, stop.port);
 
+    const state = coordinateSaveState(stop, lat, lng);
+
     // Always expose coordinates for provisional ports so the admin can verify/correct them.
     // Verified ports stay compact unless coordinates are missing or an edit/result message is active.
     if (!provisional && !missing && !dirty && stop._coordMessage == null && !stop._coordError) return "";
 
     return `
       <div class="fc-itin-coords" data-local-id="${esc(stop.localId)}">
-        <span class="fc-itin-coords-label">Coordinates${provisional ? " · provisional port" : ""}</span>
+        <span class="fc-itin-coords-label">Coordinates</span>
         <label class="fc-itin-coord">
           <span>Lat</span>
           <input data-fc-itin="latitude" oninput="FeaturedItineraryEditor.coordinateInput(this)" type="number" step="any" min="-90" max="90" value="${esc(lat === null || lat === undefined ? "" : String(lat))}" placeholder="-90 to 90" aria-label="Latitude">
@@ -1127,11 +1145,12 @@
         </label>
         <div class="admin-actions-row" style="gap:6px;flex-wrap:wrap">
           <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.findPortCoordinates('${esc(stop.localId)}')">${missing ? "Find coordinates" : "Find again"}</button>
-          <button type="button" class="admin-button secondary small" data-coordinate-save ${dirty ? "" : "disabled"} onclick="FeaturedItineraryEditor.savePortCoordinates('${esc(stop.localId)}')">Save coordinates</button>
+          <button type="button" class="admin-button secondary small" data-coordinate-save ${state.disabled ? "disabled" : ""} onclick="FeaturedItineraryEditor.savePortCoordinates('${esc(stop.localId)}')">${state.label}</button>
         </div>
         ${missing ? `<span class="admin-muted fc-itin-coord-msg">No coordinates are stored yet. Try automatic lookup or enter them manually.</span>` : ""}
         ${stop._coordError ? `<span class="admin-error fc-itin-coord-msg">${esc(stop._coordError)}</span>` : ""}
-        <span data-coordinate-saved class="admin-success fc-itin-coord-msg" ${dirty || missing ? "hidden" : ""}>Saved in the Ports catalogue.</span>
+        <span role="status" data-coordinate-saving class="admin-muted fc-itin-coord-msg" ${state.saving ? "" : "hidden"}>Saving to the Ports catalogue…</span>
+        <span role="status" data-coordinate-saved class="admin-success fc-itin-coord-msg" ${state.saved ? "" : "hidden"}>Saved in the Ports catalogue.</span>
       </div>
     `;
   }
@@ -1177,7 +1196,7 @@
   async function savePortCoordinates(localId) {
     captureFromDom();
     const stop = stops.find((s) => s.localId === localId);
-    if (!stop) return;
+    if (!stop || coordinateSaves.has(stop.port_id)) return;
     stop._coordError = "";
     stop._coordMessage = "";
     if (!stop.port_id) {
@@ -1205,6 +1224,9 @@
       rerender();
       return;
     }
+    if (!coordinateEditsAreDirty(lat, lng, stop.port)) return;
+    coordinateSaves.add(stop.port_id);
+    renderCoordinateSaveState(row.querySelector(".fc-itin-coords"), stop);
     try {
       const data = await portsCatalogueApi("update", {
         id: stop.port_id,
@@ -1215,22 +1237,23 @@
       const idx = portsCache.findIndex((p) => p.id === updated.id);
       if (idx >= 0) portsCache[idx] = updated;
       else portsCache.push(updated);
+      captureFromDom();
       for (const entry of stops) {
         if (entry.port_id !== updated.id) continue;
         const hadEdits = coordinateEditsAreDirty(entry._editLat ?? entry.port?.latitude,
           entry._editLng ?? entry.port?.longitude, entry.port);
         entry.port = { ...updated };
-        if (entry === stop || !hadEdits) {
+        if (!hadEdits || !coordinateEditsAreDirty(entry._editLat, entry._editLng, updated)) {
           delete entry._editLat;
           delete entry._editLng;
         }
       }
-      stop._coordMessage = "Coordinates saved to Ports catalogue.";
-      const set = ensureOpenStopSet();
-      if (!portNeedsCoordinates(stop)) set.delete(localId);
-      rerender();
+
     } catch (error) {
-      stop._coordError = error.message || "Could not save coordinates.";
+      const current = stops.find((entry) => entry.localId === localId);
+      if (current) current._coordError = error.message || "Could not save coordinates.";
+    } finally {
+      coordinateSaves.delete(stop.port_id);
       rerender();
     }
   }
@@ -1343,8 +1366,8 @@
               <input data-fc-itin="departure" type="text" value="${esc(stop.departure_time || "")}" placeholder="—" aria-label="Departure time">
             </label>
             <label class="fc-itin-overnight" title="Overnight">
-              <span>ON</span>
-              <input data-fc-itin="overnight" type="checkbox" ${stop.is_overnight ? "checked" : ""} ${atSea ? "disabled" : ""}>
+              <span>Overnight</span>
+              <input data-fc-itin="overnight" aria-label="Ship stays in port overnight" type="checkbox" ${stop.is_overnight ? "checked" : ""} ${atSea ? "disabled" : ""}>
             </label>
           </div>
           ${renderCoordinateFields(stop)}
@@ -1373,7 +1396,7 @@
         <h5>Itinerary Port Status</h5>
         <ul>
           <li><strong>${summary.verified}</strong> verified</li>
-          <li><strong>${summary.provisional}</strong> provisional</li>
+          <li><strong>${summary.provisional}</strong> awaiting catalogue verification</li>
           <li><strong>${summary.needsReview}</strong> needs review</li>
           <li><strong>${summary.unresolved}</strong> unresolved</li>
           <li><strong>${summary.missingCoordinates}</strong> missing coordinates</li>
@@ -1514,7 +1537,7 @@
         <ul>
           <li><strong>${readiness.totalStops}</strong> itinerary stops</li>
           <li><strong>${readiness.mapped}</strong> mapped ports</li>
-          <li><strong>${readiness.provisional}</strong> provisional port${readiness.provisional === 1 ? "" : "s"}</li>
+          <li><strong>${readiness.provisional}</strong> port${readiness.provisional === 1 ? "" : "s"} awaiting catalogue verification</li>
           <li><strong>${readiness.missingCoordinates}</strong> port${readiness.missingCoordinates === 1 ? "" : "s"} missing coordinates</li>
           <li>Map status: <strong>${esc(readiness.statusLabel)}</strong></li>
         </ul>
