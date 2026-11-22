@@ -547,15 +547,27 @@ async function refreshAdminSessionSingleFlight() {
 }
 
 async function ensureAdminSession() {
-  let { data } = await supabaseClient.auth.getSession();
-  if (!adminAccessTokenNeedsRefresh(data?.session)) return data?.session || null;
-  const refreshed = await refreshAdminSessionSingleFlight();
-  if (refreshed?.error || !refreshed?.data?.session?.access_token) {
-    const err = new Error("Session expired. Sign in to continue.");
-    err.code = "session_expired";
-    throw err;
+  const { data, error } = await supabaseClient.auth.getSession();
+  const session = data?.session;
+  if (!adminAccessTokenNeedsRefresh(session)) return session;
+  if (error && !isTerminalAdminSessionFailure(error)) {
+    throw new Error("Network error while refreshing your admin session. Please try again.");
   }
-  return refreshed.data.session;
+  const refreshed = session ? await refreshAdminSessionSingleFlight().catch((error) => ({ error })) : null;
+  if (!refreshed?.error && refreshed?.data?.session?.access_token) return refreshed.data.session;
+  if (refreshed?.error && !isTerminalAdminSessionFailure(refreshed.error)) {
+    if (newsletterSessionCore()?.accessTokenNeedsRefresh?.(session, Date.now(), 0) === false) return session;
+    throw new Error("Network error while refreshing your admin session. Please try again.");
+  }
+  const err = new Error("Session expired. Sign in to continue.");
+  err.code = "session_expired";
+  throw err;
+}
+
+function isTerminalAdminSessionFailure(error) {
+  return error?.name === "AuthSessionMissingError" ||
+    ["refresh_token_not_found", "refresh_token_already_used", "session_not_found",
+      "session_expired", "user_not_found", "user_banned"].includes(error?.code);
 }
 
 async function adminAuthHeaders(extra = {}) {
@@ -577,21 +589,26 @@ function startAdminSessionKeeper() {
   stopCompetingSessionRefresh();
   if (startAdminSessionKeeper.started) return;
   startAdminSessionKeeper.started = true;
-  const tick = () => {
-    supabaseClient.auth.getSession().then(({ data }) => {
-      if (!data?.session) return;
-      if (!adminAccessTokenNeedsRefresh(data.session)) return;
-      refreshAdminSessionSingleFlight()
-        .then((refreshed) => {
-          if (refreshed?.error) noteFeaturedSessionPaused();
-        })
-        .catch(() => noteFeaturedSessionPaused());
-    }).catch(() => {});
+  const tick = async () => {
+    if (!currentUser) return;
+    try {
+      await ensureAdminSession();
+      if (featuredAutosaveState === "session" || featuredAutosaveState === "offline") {
+        featuredCruiseMessage = "";
+        featuredAutosavePaused = false;
+        setFeaturedAutosaveStatus("local");
+        scheduleFeaturedCruiseAutosave();
+      }
+    } catch (error) {
+      if (error?.code === "session_expired" && showFeaturedCruiseForm) noteFeaturedSessionPaused();
+    }
   };
   setInterval(tick, 60_000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") tick();
+    else if (showFeaturedCruiseForm) persistFeaturedLocalDraftNow();
   });
+  window.addEventListener("focus", tick);
   window.addEventListener("pagehide", () => {
     try { persistFeaturedLocalDraftNow(); } catch (_error) { /* form may be closed */ }
   });
@@ -609,7 +626,8 @@ function startAdminSessionKeeper() {
     event.preventDefault();
     event.returnValue = "";
   });
-  window.addEventListener("online", () => {
+  window.addEventListener("online", async () => {
+    await tick();
     if (featuredAutosaveState !== "offline" && featuredAutosaveState !== "failed") return;
     featuredAutosavePaused = false;
     scheduleFeaturedCruiseAutosave();
@@ -12383,7 +12401,7 @@ async function waitForFeaturedRouteMapBackground({
   cruiseId,
   baselineGeneratedAt = null,
   requestedAt = Date.now(),
-  timeoutMs = 8 * 60 * 1000
+  timeoutMs = 60_000
 } = {}) {
   const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
   const started = Date.now();
@@ -12392,32 +12410,39 @@ async function waitForFeaturedRouteMapBackground({
   while (Date.now() - started < timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, 2500));
 
+    const remainingMs = timeoutMs - (Date.now() - started);
+    if (remainingMs <= 0) break;
     const response = await fetch("/.netlify/functions/route-map-generate", {
       method: "POST",
       headers,
+      signal: AbortSignal.timeout(Math.min(remainingMs, 8000)),
       body: JSON.stringify({
         action: "status",
         featured_cruise_id: cruiseId
       })
+    }).catch((error) => {
+      if (error?.name === "TimeoutError") return null;
+      throw error;
     });
+    if (!response) continue;
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       lastStatus = data;
+      if ([401, 403, 404].includes(response.status)) {
+        return {
+          ok: false,
+          errors: [{ code: "status_unavailable", message: "Could not check route map status. Reopen the cruise to check for the new map." }]
+        };
+      }
       continue;
     }
     lastStatus = data;
 
-    const generatedAt = data.generated_at || null;
-    const generatedMs = Date.parse(generatedAt || "");
+    const generatedMs = Date.parse(data.generated_at || "");
     const baselineMs = Date.parse(baselineGeneratedAt || "");
-    const isFresh =
-      Boolean(data.has_assets && generatedAt) &&
-      (
-        !baselineGeneratedAt ||
-        generatedAt !== baselineGeneratedAt ||
-        (Number.isFinite(generatedMs) && generatedMs >= requestedAt - 5000) ||
-        (Number.isFinite(generatedMs) && Number.isFinite(baselineMs) && generatedMs > baselineMs)
-      );
+    const isFresh = Boolean(data.has_assets) &&
+      generatedMs >= requestedAt - 5000 &&
+      (!Number.isFinite(baselineMs) || generatedMs > baselineMs);
 
     if (isFresh) return { ok: true, status: data };
   }
@@ -12429,7 +12454,7 @@ async function waitForFeaturedRouteMapBackground({
       {
         code: "background_generation_timeout",
         message:
-          "Route map generation is still running longer than expected. You do not need to click Generate again. Leave this cruise open and the map will appear when the background job finishes."
+          "A new route map could not be confirmed within 60 seconds. The background job may still finish. Reopen this cruise to check for the new map."
       }
     ]
   };
@@ -12452,23 +12477,18 @@ async function generateFeaturedRouteMap() {
     featuredRouteMapGenResult = null;
     featuredRouteMapSectionMessage = "";
     featuredRouteMapSectionMessageTone = "";
-    const progressSteps = [
-      "Saving itinerary…",
-      "Calculating sea route…",
-      "Rendering map…",
-      "Uploading PNG…"
-    ];
-    let stepIndex = 0;
-    featuredRouteMapGenProgress = progressSteps[0];
+    const baselineGeneratedAt = featuredFormDraft?.route_map_generated_at || null;
+    let requestedAt = Date.now();
+    const isNewMap = (row) => {
+      const generatedMs = Date.parse(row?.route_map_generated_at || "");
+      const baselineMs = Date.parse(baselineGeneratedAt || "");
+      return Boolean(row?.route_map_svg_path && row?.route_map_png_path) &&
+        generatedMs >= requestedAt - 5000 &&
+        (!Number.isFinite(baselineMs) || generatedMs > baselineMs);
+    };
+    featuredRouteMapGenProgress = "Saving itinerary…";
     renderAdmin();
     focusFeaturedRouteMapSection();
-
-    const progressTimer = setInterval(() => {
-      if (!featuredRouteMapGenerating) return;
-      stepIndex = Math.min(stepIndex + 1, progressSteps.length - 1);
-      featuredRouteMapGenProgress = progressSteps[stepIndex];
-      updateFeaturedRouteMapProgressInPlace();
-    }, 2500);
 
     try {
       window.FeaturedItineraryEditor?.captureFromDom?.();
@@ -12484,16 +12504,12 @@ async function generateFeaturedRouteMap() {
         console.warn("route map itinerary warnings", prepared.warnings);
       }
 
-      featuredRouteMapGenProgress = progressSteps[1];
-      updateFeaturedRouteMapProgressInPlace();
-
       const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
-      const baselineGeneratedAt = featuredFormDraft?.route_map_generated_at || null;
-      const requestedAt = Date.now();
 
       featuredRouteMapGenProgress = "Starting background route generation…";
       updateFeaturedRouteMapProgressInPlace();
 
+      requestedAt = Date.now();
       const response = await fetch("/.netlify/functions/route-map-generate-background", {
         method: "POST",
         headers,
@@ -12502,8 +12518,7 @@ async function generateFeaturedRouteMap() {
           featured_cruise_id: editingFeaturedCruiseId,
           style: featuredRouteMapStyle,
           format: featuredRouteMapStyle === "social" ? "portrait" : "landscape",
-          png_width: featuredRouteMapStyle === "social" ? 1620 : 2000,
-          force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
+          png_width: featuredRouteMapStyle === "social" ? 1620 : 2000
         })
       });
 
@@ -12536,7 +12551,7 @@ async function generateFeaturedRouteMap() {
             },
             { recovered: false }
           );
-        } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+        } else if (isNewMap(refreshed)) {
           applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
         } else {
           featuredRouteMapGenResult = {
@@ -12554,7 +12569,7 @@ async function generateFeaturedRouteMap() {
       }
     } catch (error) {
       const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
-      if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+      if (isNewMap(refreshed)) {
         applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
       } else {
         const timedOut = error && (error.name === "AbortError" || /aborted/i.test(String(error.message || "")));
@@ -12573,7 +12588,6 @@ async function generateFeaturedRouteMap() {
         featuredRouteMapSectionMessageTone = "";
       }
     } finally {
-      clearInterval(progressTimer);
       featuredRouteMapGenerating = false;
       if (featuredRouteMapGenResult?.ok) featuredRouteMapGenProgress = "Complete";
       renderAdmin();
@@ -13172,7 +13186,7 @@ function renderFeaturedCruiseForm() {
         <h4>Cruise Details</h4>
         <div class="admin-field featured-span-2" style="margin-bottom:12px">
           <label for="fcHeadline">Headline <span class="admin-required">*</span></label>
-          <input id="fcHeadline" type="text" value="${esc(draft.headline || "")}" required oninput="maybeRefreshFeaturedSlug()">
+          <input style="text-transform:capitalize" id="fcHeadline" type="text" value="${esc(draft.headline || "")}" required oninput="maybeRefreshFeaturedSlug()">
         </div>
         <div class="featured-ports-row">
           <div class="admin-field">

@@ -122,7 +122,7 @@
 
   function copyCell(review, { fullWidth }) {
     const headline = review.headline
-      ? `<div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.25;color:#111111;text-align:left;margin:0 0 12px;">${esc(review.headline)}</div>`
+      ? `<div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.25;color:#111111;text-align:left;margin:0 0 12px;">${esc(global.NewsletterHeadingCase?.headline(review.headline) ?? review.headline)}</div>`
       : "";
     const widthStyle = fullWidth ? "width:100%;" : "padding-left:24px;";
     return `<td class="cr101-review-col cr101-review-copy" valign="top" align="left" style="${widthStyle}vertical-align:top;text-align:left;">${headline}${paragraphs(review.text)}</td>`;
@@ -138,7 +138,7 @@
 
     const eyebrow = value.eyebrow
       ? `<tr>
-          <td colspan="${value.photos.length ? 2 : 1}" align="center" width="${MAX_WIDTH}" style="width:100%;padding:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#545454;text-align:center;">${esc(value.eyebrow)}</td>
+          <td colspan="${value.photos.length ? 2 : 1}" align="center" width="${MAX_WIDTH}" style="width:100%;padding:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#545454;text-align:center;">${esc(value.eyebrow.toUpperCase())}</td>
         </tr>`
       : "";
 

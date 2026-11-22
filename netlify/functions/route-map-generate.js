@@ -18,7 +18,7 @@
 const { requireAdmin } = require("./admin-auth");
 const { resolvePort: resolvePortCoordinates } = require("./geocode-ports");
 const { loadMarineRouteRow, saveMarineRouteRow, deleteMarineRouteRow } = require("./lib/marine-route-persist");
-const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
+const { generateMarineRouteForCruise, loadStructuredItinerary, buildRoutableStops, buildMarineItinerarySignature } = require("./lib/marine-route-itinerary");
 const { routeObjectEndpointsPlausible, routeObjectAvoidsLand } = require("./lib/marine-route");
 const { renderRouteMapSvg } = require("./lib/route-map-svg");
 const { normaliseRouteMapStyle } = require("./lib/route-map-style");
@@ -342,11 +342,17 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
     );
   }
 
-  if (!forceReroute) {
-    const existing = await loadMarineRouteRow(supabaseRequest, featuredCruiseId);
+  const [loadedItinerary, existing] = await Promise.all([
+    loadStructuredItinerary(supabaseGet, featuredCruiseId),
+    forceReroute ? null : loadMarineRouteRow(supabaseRequest, featuredCruiseId)
+  ]);
+  if (existing && loadedItinerary.ok) {
+    const current = buildRoutableStops(loadedItinerary.annotated);
+    const signature = current.errors.length ? null : buildMarineItinerarySignature(current.routableStops);
     timings.load_route_ms = Date.now() - t0;
     if (
-      existing?.route_data?.legs?.length &&
+      signature && signature === (existing.itinerary_signature || existing.route_data?.itinerary_signature) &&
+      existing.route_data?.legs?.length &&
       existing?.route_data?.stops?.length &&
       routeObjectIsRenderable(existing.route_data) &&
       routeObjectEndpointsPlausible(existing.route_data) &&
@@ -366,7 +372,8 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
 
   const t1 = Date.now();
   let generated = await generateMarineRouteForCruise(supabaseGet, featuredCruiseId, {
-    simplifyPreset: "final-map"
+    simplifyPreset: "final-map",
+    loadedItinerary
   });
   timings.generate_route_ms = Date.now() - t1;
 

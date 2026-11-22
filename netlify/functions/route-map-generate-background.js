@@ -13,5 +13,15 @@ exports.handler = async (event, context) => {
   // Reuse the exact same authenticated generation workflow. Netlify recognises
   // the -background suffix and lets this continue after returning HTTP 202 to
   // the caller.
-  return routeMap.handler(event, context);
+  const started = Date.now();
+  const response = await routeMap.handler(event, context);
+  const result = JSON.parse(response.body || "{}");
+  console.info("route_map_background_result", JSON.stringify({
+    request_id: context?.awsRequestId || null,
+    status: response.statusCode,
+    error_codes: (result.errors || []).map(({ code }) => code),
+    elapsed_ms: Date.now() - started,
+    timings: result.timings || null
+  }));
+  return response;
 };

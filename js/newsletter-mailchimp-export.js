@@ -767,14 +767,14 @@
 
     const destination = model.destinationStrip
       ? textRow(
-          escapeHtml(model.destinationStrip),
+          escapeHtml(global.NewsletterHeadingCase?.eyebrow(model.destinationStrip) ?? model.destinationStrip.toUpperCase()),
           `font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:${muted};text-align:center;padding:0;`
         ) + spacerRow(38)
       : "";
 
     const headline = model.headline
       ? textRow(
-          escapeHtml(model.headline),
+          escapeHtml(global.NewsletterHeadingCase?.headline(model.headline) ?? model.headline),
           `font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:${black};text-align:center;line-height:1.35;padding:0 12px;`
         ) + spacerRow(24)
       : "";

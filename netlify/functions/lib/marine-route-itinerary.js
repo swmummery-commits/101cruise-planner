@@ -421,7 +421,7 @@ async function loadStructuredItinerary(supabaseGet, featuredCruiseId) {
  * Does not persist.
  */
 async function generateMarineRouteForCruise(supabaseGet, featuredCruiseId, options = {}) {
-  const loaded = await loadStructuredItinerary(supabaseGet, featuredCruiseId);
+  const loaded = options.loadedItinerary || await loadStructuredItinerary(supabaseGet, featuredCruiseId);
   if (!loaded.ok) {
     return {
       ok: false,

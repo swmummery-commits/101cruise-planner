@@ -218,12 +218,12 @@
         </div>
         <div class="admin-field newsletter-setup-wide">
           <label for="newsletterCreateTease">Tease <span class="admin-helper-inline">up to 9 words</span></label>
-          <input id="newsletterCreateTease" type="text" value="${esc(values.tease)}" oninput="NewsletterSetup.captureCreateDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
+          <input style="text-transform:uppercase" id="newsletterCreateTease" type="text" value="${esc(values.tease)}" oninput="NewsletterSetup.captureCreateDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
           <span id="newsletterCreateTeaseCount" class="newsletter-word-count${countClass(teaseWords, null, 9)}">${teaseWords} / 9 words</span>
         </div>
         <div class="admin-field newsletter-setup-wide">
           <label for="newsletterCreateHeadline">Headline <span class="admin-helper-inline">8 to 16 words, optional</span></label>
-          <input id="newsletterCreateHeadline" type="text" value="${esc(values.headline)}" oninput="NewsletterSetup.captureCreateDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
+          <input style="text-transform:capitalize" id="newsletterCreateHeadline" type="text" value="${esc(values.headline)}" oninput="NewsletterSetup.captureCreateDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
           <span id="newsletterCreateHeadlineCount" class="newsletter-word-count${countClass(headlineWords, 8, 16)}">${headlineWords} / 8–16 words</span>
         </div>
         <div class="admin-field newsletter-setup-wide">
@@ -258,12 +258,12 @@
         <div class="newsletter-setup-grid">
           <div class="admin-field newsletter-setup-wide">
             <label for="newsletterWorkspaceTease">Tease <span class="admin-helper-inline">up to 9 words</span></label>
-            <input id="newsletterWorkspaceTease" type="text" value="${esc(editorial.tease)}" ${disabled} oninput="NewsletterSetup.captureEditorDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
+            <input style="text-transform:uppercase" id="newsletterWorkspaceTease" type="text" value="${esc(editorial.tease)}" ${disabled} oninput="NewsletterSetup.captureEditorDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
             <span id="newsletterWorkspaceTeaseCount" class="newsletter-word-count${countClass(teaseWords, null, 9)}">${teaseWords} / 9 words</span>
           </div>
           <div class="admin-field newsletter-setup-wide">
             <label for="newsletterWorkspaceHeadline">Headline <span class="admin-helper-inline">8 to 16 words, optional</span></label>
-            <input id="newsletterWorkspaceHeadline" type="text" value="${esc(editorial.headline)}" ${disabled} oninput="NewsletterSetup.captureEditorDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
+            <input style="text-transform:capitalize" id="newsletterWorkspaceHeadline" type="text" value="${esc(editorial.headline)}" ${disabled} oninput="NewsletterSetup.captureEditorDraft(); NewsletterSetup.refreshCounts()" autocomplete="off">
             <span id="newsletterWorkspaceHeadlineCount" class="newsletter-word-count${countClass(headlineWords, 8, 16)}">${headlineWords} / 8–16 words</span>
           </div>
           <div class="admin-field newsletter-setup-wide">
@@ -496,8 +496,8 @@
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;">
         <tr>
           <td align="center" style="padding:36px 28px 26px;">
-            ${tease ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#245C4E;margin:0 0 14px;">${esc(tease)}</div>` : ""}
-            ${headline ? `<div style="font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700;line-height:1.2;color:#111111;text-align:center;margin:0 0 20px;">${esc(headline)}</div>` : ""}
+            ${tease ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#245C4E;margin:0 0 14px;">${esc(global.NewsletterHeadingCase.eyebrow(tease))}</div>` : ""}
+            ${headline ? `<div style="font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700;line-height:1.2;color:#111111;text-align:center;margin:0 0 20px;">${esc(global.NewsletterHeadingCase.headline(headline))}</div>` : ""}
             ${intro ? `<div style="margin:0 auto;max-width:540px;">${paragraphs(intro)}</div>` : ""}
             ${airlineIntro ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:20px;border-collapse:separate;border-radius:14px;background-color:#D9F2E8;"><tr><td align="center" style="padding:18px 22px;"><div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#245C4E;margin-bottom:8px;">Airline Staff</div>${paragraphs(airlineIntro)}</td></tr></table>` : ""}
           </td>

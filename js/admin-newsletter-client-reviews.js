@@ -362,11 +362,11 @@
         <div class="nl-review-grid">
           <div class="admin-field">
             <label for="newsletterReviewEyebrow">Eyebrow title</label>
-            <input id="newsletterReviewEyebrow" type="text" value="${esc(review.eyebrow)}" ${disabled} oninput="NewsletterClientReviewsAdmin.captureEditorDraft()" autocomplete="off" placeholder="Client reviews">
+            <input style="text-transform:uppercase" id="newsletterReviewEyebrow" type="text" value="${esc(review.eyebrow)}" ${disabled} oninput="NewsletterClientReviewsAdmin.captureEditorDraft()" autocomplete="off" placeholder="Client reviews">
           </div>
           <div class="admin-field">
             <label for="newsletterReviewHeadline">Headline</label>
-            <input id="newsletterReviewHeadline" type="text" value="${esc(review.headline)}" ${disabled} oninput="NewsletterClientReviewsAdmin.captureEditorDraft()" autocomplete="off" placeholder="Short heading above the review">
+            <input style="text-transform:capitalize" id="newsletterReviewHeadline" type="text" value="${esc(review.headline)}" ${disabled} oninput="NewsletterClientReviewsAdmin.captureEditorDraft()" autocomplete="off" placeholder="Short heading above the review">
           </div>
           <div class="admin-field nl-review-wide">
             <label for="newsletterReviewText">Review text</label>

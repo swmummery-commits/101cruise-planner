@@ -5,6 +5,7 @@
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { planPricingReplacement } from "../netlify/functions/lib/pricing-replace-plan.js";
 import sessionCore from "../js/admin-newsletter-session-core.js";
@@ -244,5 +245,32 @@ assert("cruise and rooms are saved in one request", /action:\s*"save_bundle"/.te
 assert("a dead session is refreshed before the cruise write", /await ensureAdminSession\(\)/.test(adminJs));
 assert("an explicit session failure keeps the sign-in recovery path", /noteFeaturedSessionPaused\(/.test(adminJs));
 assert("sign-in reopens the newsletter editor when a draft is waiting", /openFeaturedResumeIfNeeded/.test(adminJs));
+
+const ensureSource = adminJs.slice(adminJs.indexOf("async function ensureAdminSession()"), adminJs.indexOf("async function adminAuthHeaders"));
+const nearExpiry = { access_token: "abc", expires_at: Date.now() / 1000 + 60 };
+const expired = { ...nearExpiry, expires_at: Date.now() / 1000 - 60 };
+const newSession = { ...nearExpiry, expires_at: Date.now() / 1000 + 3600 };
+function ensureWith(session, refreshResult, error = null) {
+  return runInNewContext(ensureSource + "\nensureAdminSession()", {
+    supabaseClient: { auth: { getSession: async () => ({ data: { session }, error }) } },
+    adminAccessTokenNeedsRefresh: (session) => accessTokenNeedsRefresh(session, Date.now()),
+    newsletterSessionCore: () => sessionCore,
+    refreshAdminSessionSingleFlight: async () => refreshResult
+  });
+}
+const transient = { name: "AuthRetryableFetchError", status: 503 };
+assert("transient refresh failure keeps a still usable token",
+  await ensureWith(nearExpiry, { error: transient }) === nearExpiry);
+const offlineError = await ensureWith(expired, { error: transient }).catch((error) => error);
+assert("transient refresh failure after expiry is retryable without sign-in",
+  saveFailureKind(offlineError.message) === "network" && !offlineError.code);
+assert("returning after idle accepts the renewed session",
+  await ensureWith(expired, { data: { session: newSession } }) === newSession);
+const revoked = await ensureWith(expired, { error: { code: "session_not_found" } }).catch((error) => error);
+assert("revoked sessions still require sign-in", revoked.code === "session_expired");
+const readFailed = await ensureWith(null, null, transient).catch((error) => error);
+assert("temporary session lookup failure does not request sign-in",
+  saveFailureKind(readFailed.message) === "network");
+assert("returning to the editor triggers session recovery", adminJs.includes('window.addEventListener("focus", tick)'));
 
 console.log("test-newsletter-session-recovery.mjs: all checks passed");
