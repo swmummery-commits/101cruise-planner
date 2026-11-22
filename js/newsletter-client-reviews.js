@@ -87,14 +87,14 @@
       .filter(Boolean)
       .map(
         (part, index, all) =>
-          `<p style="margin:0 0 ${index === all.length - 1 ? 0 : 14}px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#202020;text-align:left;">${esc(part).replace(/\n/g, "<br>")}</p>`
+          `<p style="margin:0 0 ${index === all.length - 1 ? 0 : 14}px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.65;color:#202020;text-align:left;">${esc(part).replace(/\n/g, "<br>")}</p>`
       )
       .join("");
   }
 
   function photoImg(photo, index, total) {
     const margin = index === total - 1 ? "0" : "0 0 12px";
-    return `<img class="cr101-review-photo" src="${esc(photo.url)}" alt="${esc(photo.alt)}" width="${PHOTO_COLUMN_PX}" border="0" style="display:block;width:100%;max-width:${PHOTO_COLUMN_PX}px;height:auto;border:0;border-radius:12px;margin:${margin};">`;
+    return `<img class="cr101-review-photo" src="${esc(photo.url)}" alt="${esc(photo.alt)}" width="${PHOTO_COLUMN_PX}" border="0" style="display:block;width:100%;max-width:${PHOTO_COLUMN_PX}px;height:auto;border:0;margin:${margin};">`;
   }
 
   function styleBlock() {
@@ -109,11 +109,8 @@
     .cr101-review-photos {
       padding-bottom: 16px !important;
     }
-    .cr101-review-gap {
-      display: none !important;
-      width: 0 !important;
-      max-height: 0 !important;
-      overflow: hidden !important;
+    .cr101-review-copy {
+      padding-left: 0 !important;
     }
     .cr101-review-photo {
       width: 100% !important;
@@ -127,7 +124,7 @@
     const headline = review.headline
       ? `<div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.25;color:#111111;text-align:left;margin:0 0 12px;">${esc(review.headline)}</div>`
       : "";
-    const widthStyle = fullWidth ? "width:100%;" : "";
+    const widthStyle = fullWidth ? "width:100%;" : "padding-left:24px;";
     return `<td class="cr101-review-col cr101-review-copy" valign="top" align="left" style="${widthStyle}vertical-align:top;text-align:left;">${headline}${paragraphs(review.text)}</td>`;
   }
 
@@ -141,7 +138,7 @@
 
     const eyebrow = value.eyebrow
       ? `<tr>
-          <td colspan="${value.photos.length ? 3 : 1}" align="center" width="${MAX_WIDTH}" style="width:100%;padding:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#245C4E;">${esc(value.eyebrow)}</td>
+          <td colspan="${value.photos.length ? 2 : 1}" align="center" width="${MAX_WIDTH}" style="width:100%;padding:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#545454;text-align:center;">${esc(value.eyebrow)}</td>
         </tr>`
       : "";
 
@@ -150,7 +147,6 @@
           <td class="cr101-review-col cr101-review-photos" valign="top" align="left" width="${PHOTO_COLUMN_PX}" style="width:33%;max-width:${PHOTO_COLUMN_PX}px;vertical-align:top;">
             ${value.photos.map((photo, index) => photoImg(photo, index, value.photos.length)).join("")}
           </td>
-          <td class="cr101-review-gap" width="18" style="width:18px;font-size:0;line-height:0;">&nbsp;</td>
           ${copyCell(value, { fullWidth: false })}
         </tr>`
       : `<tr>${copyCell(value, { fullWidth: true })}</tr>`;
@@ -158,7 +154,7 @@
     return `${styleBlock()}
 <table role="presentation" class="cr101-client-reviews" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;border-collapse:collapse;background-color:${PAGE_BG};" data-cr101-client-reviews="1">
   <tr>
-    <td align="center" bgcolor="${PAGE_BG}" style="padding:8px 16px 32px;background-color:${PAGE_BG};">
+    <td align="center" bgcolor="${PAGE_BG}" style="padding:24px 16px;background-color:${PAGE_BG};">
       <table role="presentation" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;">
         ${eyebrow}
         ${columns}

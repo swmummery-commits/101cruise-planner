@@ -120,9 +120,10 @@ const textOnly = Reviews.renderHtml({
 check("review without photos renders", textOnly.includes("data-cr101-client-reviews"));
 check("review without photos has no photo column", !textOnly.includes('class="cr101-review-col cr101-review-photos"'));
 check("review without photos uses the full text width", textOnly.includes('class="cr101-review-col cr101-review-copy"') && textOnly.includes("width:100%"));
-check("eyebrow uses the newsletter eyebrow style", textOnly.includes("letter-spacing:1.4px") && textOnly.includes("text-transform:uppercase") && textOnly.includes("color:#245C4E"));
-check("eyebrow is its own full-width row", textOnly.indexOf("letter-spacing:1.4px") < textOnly.indexOf("cr101-review-copy") && textOnly.includes('colspan="1"'));
+check("eyebrow uses the newsletter eyebrow style", textOnly.includes("letter-spacing:3px") && textOnly.includes("text-transform:uppercase") && textOnly.includes("font-size:14px;font-weight:400") && textOnly.includes("color:#545454;text-align:center"));
+check("eyebrow is its own full-width row", textOnly.indexOf("letter-spacing:3px") < textOnly.indexOf('class="cr101-review-col cr101-review-copy"') && textOnly.includes('colspan="1"'));
 check("headline sits above the review text", textOnly.indexOf("A week to remember") < textOnly.indexOf("The ship felt calm"));
+check("review body is 13px and the headline stays 22px", textOnly.includes("font-size:13px;line-height:1.65") && textOnly.includes("font-size:22px;font-weight:700"));
 check("blank lines become paragraphs", (textOnly.match(/<p /g) || []).length === 2);
 check("single line breaks stay inside a paragraph", Reviews.renderHtml({ text: "First line\nSecond line" }).includes("<br>"));
 
@@ -134,8 +135,9 @@ const several = Reviews.renderHtml({
 });
 check("several photos render in saved order", several.indexOf(PHOTO_A) < several.indexOf(PHOTO_B) && several.indexOf(PHOTO_B) < several.indexOf(PHOTO_C));
 check("photos sit in the left third", several.includes("cr101-review-photos") && several.includes("width:33%") && several.indexOf("cr101-review-photos") < several.indexOf("cr101-review-copy"));
-check("eyebrow spans the photo and text columns", several.includes('colspan="3"'));
-check("text fills the remaining width beside the photos", several.includes("cr101-review-copy") && !several.includes("width:67%") && several.includes("cr101-review-gap"));
+check("review photos have square corners", !several.includes("border-radius"));
+check("eyebrow spans the photo and text columns", several.includes('colspan="2"'));
+check("text fills the remaining width beside the photos", several.includes("cr101-review-copy") && !several.includes("width:67%") && several.includes("padding-left:24px") && several.includes("padding-left: 0 !important"));
 check("narrow screens stack the columns", several.includes("max-width: 620px") && several.includes(".cr101-review-col") && several.includes("display: block !important"));
 check("export html is not treated as opening copy", several.includes("cr101-client-reviews") && !several.includes("cr101-issue-opening"));
 check("export html has no script or event handlers", !/<script/i.test(several) && !/\son[a-z]+\s*=/i.test(several));
