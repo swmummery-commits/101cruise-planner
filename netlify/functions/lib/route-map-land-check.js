@@ -214,11 +214,19 @@ function polylineCrossesLand(coordinates, options = {}) {
   return { crosses: false, segment_index: null };
 }
 
+function pointOnLand(longitude, latitude) {
+  const index = getLandIndex("50m");
+  if (!index.entries.length) throw new Error("Coastline data is unavailable");
+  return candidatesForSegment(longitude, latitude, longitude, latitude, index)
+    .some(({ feature }) => pointInFeature(longitude, latitude, feature));
+}
+
 function resetLandIndexCache() {
   landIndex = null;
 }
 
 module.exports = {
+  pointOnLand,
   segmentCrossesLand,
   segmentIntersectsLandEdges,
   segmentInteriorOnLand,

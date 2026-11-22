@@ -17,6 +17,8 @@
 
 const { requireAdmin } = require("./admin-auth");
 const { resolvePort: resolvePortCoordinates } = require("./geocode-ports");
+const { nearestCoastalWater } = require("./lib/route-map-coastal-location");
+const { pointOnLand } = require("./lib/route-map-land-check");
 const { loadMarineRouteRow, saveMarineRouteRow, deleteMarineRouteRow } = require("./lib/marine-route-persist");
 const { generateMarineRouteForCruise, loadStructuredItinerary, buildRoutableStops, buildMarineItinerarySignature } = require("./lib/marine-route-itinerary");
 const { routeObjectEndpointsPlausible, routeObjectAvoidsLand } = require("./lib/marine-route");
@@ -270,7 +272,7 @@ async function handleDelete(featuredCruiseId) {
   });
 }
 
-async function repairMissingCoordinatesForCruise(featuredCruiseId) {
+async function resolveMissingRouteLocations(featuredCruiseId, { allowApproximate }) {
   const rows = await supabaseGet(
     `featured_cruise_itinerary_stops?featured_cruise_id=eq.${encodeURIComponent(featuredCruiseId)}` +
       `&port_id=not.is.null&select=port_id,ports(id,canonical_name,display_name,city,country,country_code,region,aliases,status,latitude,longitude)&order=display_order.asc`
@@ -283,19 +285,25 @@ async function repairMissingCoordinatesForCruise(featuredCruiseId) {
     missingById.set(port.id, port);
   }
   const ports = [...missingById.values()].slice(0, 10);
-  if (!ports.length) return { updated: 0, unresolved: 0, results: [] };
+  if (!ports.length) return { updated: 0, unresolved: 0, approximate: new Map() };
 
   const results = [];
+  const approximate = new Map();
   let requestIndex = 0;
   for (const port of ports) {
     try {
-      const hit = await resolvePortCoordinates(port, { requestIndex });
-      requestIndex += 1;
+      const hit = await resolvePortCoordinates(port, { requestIndex: requestIndex++, classifyLocation: true });
       if (!hit?.ok) {
         results.push({ id: port.id, canonical_name: port.canonical_name, ok: false, ...hit });
         continue;
       }
-      await supabase(`ports?id=eq.${encodeURIComponent(port.id)}`, {
+      if (hit.location_kind === "town") {
+        const water = allowApproximate && nearestCoastalWater(hit.latitude, hit.longitude, pointOnLand);
+        if (water) approximate.set(port.id, water);
+        else results.push({ ok: false });
+        continue;
+      }
+      await supabase(`ports?id=eq.${encodeURIComponent(port.id)}&or=(latitude.is.null,longitude.is.null)`, {
         method: "PATCH",
         body: {
           latitude: hit.latitude,
@@ -325,11 +333,11 @@ async function repairMissingCoordinatesForCruise(featuredCruiseId) {
   return {
     updated: results.filter((row) => row.ok).length,
     unresolved: results.filter((row) => !row.ok).length,
-    results
+    approximate
   };
 }
 
-async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
+async function ensureRouteObject(featuredCruiseId, forceReroute = false, { allowApproximate = false } = {}) {
   const timings = {};
   const t0 = Date.now();
 
@@ -380,16 +388,29 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
   const missingCoordinateError = (generated.errors || []).some((error) => error?.code === "missing_coordinates");
   if ((!generated.ok || !generated.routeObject) && missingCoordinateError) {
     const repairStarted = Date.now();
-    const repair = await repairMissingCoordinatesForCruise(featuredCruiseId);
+    const repair = await resolveMissingRouteLocations(featuredCruiseId, { allowApproximate });
     timings.coordinate_repair_ms = Date.now() - repairStarted;
     timings.coordinate_repair_updated = repair.updated;
     timings.coordinate_repair_unresolved = repair.unresolved;
 
-    if (repair.updated > 0) {
+    if (repair.updated || repair.approximate.size) {
       const retryStarted = Date.now();
+      const repaired = repair.updated ? await loadStructuredItinerary(supabaseGet, featuredCruiseId) : loadedItinerary;
+      const approximate = repaired.annotated.filter((stop) => (stop.latitude == null || stop.longitude == null) &&
+        repair.approximate.has(stop.port_id));
+      const estimates = new Set(approximate.map((stop) => stop.port_id));
+      const adjusted = { ...repaired, annotated: repaired.annotated.map((stop) => {
+        if (!estimates.has(stop.port_id) || (stop.latitude != null && stop.longitude != null)) return stop;
+        const name = stop.canonical_name || stop.display_name || stop.entered_port_text || "Port";
+        return { ...stop, ...repair.approximate.get(stop.port_id), canonical_name: `${name} (approx.)` };
+      }) };
       generated = await generateMarineRouteForCruise(supabaseGet, featuredCruiseId, {
-        simplifyPreset: "final-map"
+        simplifyPreset: "final-map",
+        loadedItinerary: adjusted
       });
+      if (estimates.size && generated.ok) {
+        generated.warnings.push({ code: "approximate_location", message: "Map uses a nearby coastal location for an unresolved terminal." });
+      }
       timings.generate_route_retry_ms = Date.now() - retryStarted;
     }
   }
@@ -583,7 +604,9 @@ async function handleGenerate(featuredCruiseId, body) {
   }
 
   mark("loading_route_object");
-  const routeResult = await ensureRouteObject(featuredCruiseId, Boolean(body.force_reroute));
+  const routeResult = await ensureRouteObject(featuredCruiseId, Boolean(body.force_reroute), {
+    allowApproximate: body.allow_approximate_locations === true
+  });
   if (!routeResult.ok) {
     const first = routeResult.errors?.[0] || {};
     const code = first.code || "missing_route_object";
@@ -595,7 +618,8 @@ async function handleGenerate(featuredCruiseId, body) {
       ok: false,
       stages,
       errors: [{ code, message, details: routeResult.errors }],
-      warnings: routeResult.warnings || []
+      warnings: routeResult.warnings || [],
+      timings: routeResult.timings
     });
   }
 
@@ -772,3 +796,5 @@ exports.handler = async (event) => {
     });
   }
 };
+
+exports.generateRouteMap = handleGenerate;

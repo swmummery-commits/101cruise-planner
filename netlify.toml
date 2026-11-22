@@ -362,3 +362,17 @@
   from = "/destination-experience/"
   to = "/destination-experience.html"
   status = 200
+
+[functions."newsletter-route-map-dispatch"]
+  schedule = "* * * * *"
+
+[functions."newsletter-route-map-worker-background"]
+  timeout = 900
+  external_node_modules = ["@resvg/resvg-js", "@resvg/resvg-js-linux-x64-gnu", "@resvg/resvg-wasm"]
+  included_files = [
+    "node_modules/@resvg/resvg-js/**",
+    "node_modules/@resvg/resvg-js-linux-x64-gnu/**",
+    "node_modules/@resvg/resvg-wasm/**",
+    "netlify/functions/fonts/**",
+    "node_modules/world-atlas/land-*.json"
+  ]

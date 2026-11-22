@@ -23,9 +23,8 @@
   let issueMessageTone = "";
   let issueWarnings = [];
   let routeMapSaveResults = [];
-  let routeMapSaveBusy = false;
-  let routeMapBatchId = 0;
-  const ROUTE_MAP_FETCH_MS = 120000;
+  let routeMapPoll = null;
+  const ROUTE_MAP_FETCH_MS = 12000;
   let issueHtml = {
     airline: "",
     general: "",
@@ -381,7 +380,7 @@
   }
 
   async function saveNewsletter() {
-    if (issueBusy || routeMapSaveBusy) return;
+    if (issueBusy) return;
     const active = getActiveNewsletter();
     if (!active?.id) {
       issueMessage = "Create or open a newsletter before saving.";
@@ -428,8 +427,7 @@
       return;
     }
 
-    const batchId = ++routeMapBatchId;
-
+    issueBusy = true;
     const runSave = async () => {
     try {
       issueNumber = nextNumber;
@@ -438,9 +436,6 @@
       if (typeof global.ensureAdminSession === "function") {
         await global.ensureAdminSession();
       }
-      issueBusy = true;
-      routeMapSaveBusy = true;
-      routeMapSaveResults = [];
       issueMessage = "Saving newsletter…";
       issueMessageTone = "running";
       rerender();
@@ -517,44 +512,22 @@
       };
 
       invalidateCache();
-      issueMessage = "Newsletter saved. Generating missing route maps…";
-      issueMessageTone = "running";
-      rerender();
-
-      if (batchId !== routeMapBatchId) return;
-
-      const cruises = cruisesForCurrentIssue();
-      const mapResults = await generateMissingRouteMaps(cruises, { batchId });
-      if (batchId !== routeMapBatchId) return;
-
-      routeMapSaveResults = mapResults;
-
-      if (typeof global.loadFeaturedCruises === "function") {
-        await global.loadFeaturedCruises();
+      issueMessage = "Newsletter saved.";
+      issueMessageTone = "success";
+      try {
+        await requestRouteMapJobs(savedNewsletter.id, "enqueue");
+        issueMessage = "Newsletter saved. Any maps due for generation will run in the background.";
+      } catch (error) {
+        issueMessage = `Newsletter saved. ${error.message || "Route maps could not be queued."}`;
+        issueMessageTone = "error";
       }
-
-      const generated = mapResults.filter((r) => r.status === "generated").length;
-      const retained = mapResults.filter((r) => r.status === "retained").length;
-      const needsCoords = mapResults.filter((r) => r.status === "needs_coordinates").length;
-      const failedMaps = mapResults.filter((r) => r.status === "failed");
-
-      const parts = ["Newsletter saved"];
-      if (generated) parts.push(`${generated} route map${generated === 1 ? "" : "s"} generated`);
-      if (retained) parts.push(`${retained} existing route map${retained === 1 ? "" : "s"} retained`);
-      if (needsCoords) parts.push(`${needsCoords} cruise${needsCoords === 1 ? "" : "s"} need coordinates`);
-      if (failedMaps.length) parts.push(`${failedMaps.length} route map failure${failedMaps.length === 1 ? "" : "s"}`);
-
-      issueMessage = parts.join(" · ");
-      issueMessageTone = failedMaps.length ? "error" : "success";
     } catch (error) {
       issueMessage = error.message || "Could not save newsletter.";
       issueMessageTone = "error";
     } finally {
-      if (batchId === routeMapBatchId) {
-        issueBusy = false;
-        routeMapSaveBusy = false;
-        rerender();
-      }
+      issueBusy = false;
+      rerender();
+      startRouteMapStatusPoll();
     }
     };
 
@@ -568,165 +541,72 @@
     }
   }
 
-  async function fetchRouteMapGenerate(body, { batchId } = {}) {
-    if (batchId != null && batchId !== routeMapBatchId) {
-      throw new Error("Route map batch superseded.");
-    }
-    const headers =
-      typeof global.adminAuthHeaders === "function"
-        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
-        : { "Content-Type": "application/json" };
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ROUTE_MAP_FETCH_MS);
-    try {
-      const response = await fetch("/.netlify/functions/route-map-generate", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: controller.signal
-      });
-      const data = await response.json().catch(() => ({}));
-      return { response, data };
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new Error("Route map generation timed out. Try again or use Generate on the cruise form.");
-      }
-      throw error;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  async function repairRouteMapCoordinates(featuredCruiseId, { batchId } = {}) {
-    if (batchId != null && batchId !== routeMapBatchId) {
-      throw new Error("Route map batch superseded.");
-    }
-    const headers =
-      typeof global.adminAuthHeaders === "function"
-        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
-        : { "Content-Type": "application/json" };
-    const response = await fetch("/.netlify/functions/geocode-ports", {
+  async function requestRouteMapJobs(newsletterId, action = "status", cruiseId = null) {
+    const response = await fetch("/.netlify/functions/newsletter-route-map-jobs", {
       method: "POST",
-      headers,
-      body: JSON.stringify({ featured_cruise_id: featuredCruiseId })
+      headers: await global.adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ action, newsletter_id: newsletterId, cruise_id: cruiseId }),
+      signal: AbortSignal.timeout(ROUTE_MAP_FETCH_MS)
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Coordinate lookup failed (HTTP ${response.status}).`);
+    if (!response.ok) throw new Error(data.error || "Route map status is unavailable.");
+    if (getActiveNewsletter()?.id !== newsletterId) return;
+    const cruises = cruisesForCurrentIssue();
+    routeMapSaveResults = (data.jobs || []).flatMap((job) => {
+      const cruise = cruises.find((row) => row.id === job.cruise_id);
+      if (!cruise) return [];
+      const assets = job.featured_cruises;
+      if (job.status === "ready" && assets?.route_map_generated_at &&
+          cruise.route_map_generated_at !== assets.route_map_generated_at) {
+        const { newsletter_id, ...mapFields } = assets;
+        Object.assign(cruise, mapFields);
+        invalidateCache();
+      }
+      return [{ cruiseId: job.cruise_id, name: cruise.headline || "Untitled cruise",
+        status: job.status, message: job.message }];
+    });
+    const reported = new Set(routeMapSaveResults.map((row) => row.cruiseId));
+    for (const cruise of cruises) {
+      if (reported.has(cruise.id)) continue;
+      const hasManual = cruise.route_map_media_id || cruise.route_map_image_url;
+      if (hasManual || (cruise.route_map_png_path && cruise.route_map_svg_path && cruise.route_map_status !== "needs_regeneration")) {
+        routeMapSaveResults.push({ cruiseId: cruise.id, name: cruise.headline || "Untitled cruise", status: "ready" });
+      }
     }
-    return data;
+    const target = document.getElementById("newsletterRouteMapStatus");
+    if (target) target.innerHTML = renderRouteMapSaveResults();
   }
 
-  async function generateMissingRouteMaps(cruises, { batchId } = {}) {
-    const results = [];
-    const inFlight = new Set();
-    for (const cruise of cruises) {
-      if (batchId != null && batchId !== routeMapBatchId) break;
-      const name = cruise.headline || "Untitled cruise";
-      const hasGenerated =
-        Boolean(cruise.route_map_png_path && cruise.route_map_svg_path) ||
-        Boolean(cruise.route_map_generated_at);
-      const hasManual = Boolean(cruise.route_map_media_id || cruise.route_map_image_url);
-      if (hasGenerated || hasManual) {
-        results.push({ cruiseId: cruise.id, name, status: "retained" });
-        continue;
-      }
-      const canGenerate =
-        typeof global.featuredCruiseCanGenerateRouteMap === "function"
-          ? global.featuredCruiseCanGenerateRouteMap(cruise)
-          : false;
-      let coordinateRepair = null;
-      if (!canGenerate) {
-        try {
-          coordinateRepair = await repairRouteMapCoordinates(cruise.id, { batchId });
-        } catch (error) {
-          coordinateRepair = {
-            ok: false,
-            failed: 1,
-            unresolved: 0,
-            results: [],
-            message: error.message || "Coordinate lookup failed."
-          };
-        }
-      }
-      if (inFlight.has(cruise.id)) continue;
-      inFlight.add(cruise.id);
+  function startRouteMapStatusPoll() {
+    const newsletterId = getActiveNewsletter()?.id;
+    if (!newsletterId || typeof document === "undefined" || !document.getElementById("newsletterRouteMapStatus")) return;
+    clearTimeout(routeMapPoll);
+    const poll = async () => {
+      if (getActiveNewsletter()?.id !== newsletterId || !document.getElementById("newsletterRouteMapStatus")) return;
       try {
-        const { response, data } = await fetchRouteMapGenerate(
-          {
-            action: "generate",
-            featured_cruise_id: cruise.id,
-            png_width: 2000,
-            force_reroute: false
-          },
-          { batchId }
-        );
-        if (response.ok && data.ok) {
-          results.push({ cruiseId: cruise.id, name, status: "generated" });
-          if (typeof global.loadFeaturedCruises === "function") {
-            await global.loadFeaturedCruises();
-          }
-        } else {
-          let errMsg =
-            data.errors?.[0]?.message || data.error || "Route map generation failed.";
-          const unresolved = Number(coordinateRepair?.unresolved || 0);
-          const failedLookup = Number(coordinateRepair?.failed || 0);
-          if ((unresolved || failedLookup) && /missing coordinates|missing canonical port/i.test(errMsg)) {
-            const unresolvedNames = (coordinateRepair?.results || [])
-              .filter((row) => !row.ok)
-              .map((row) => row.canonical_name)
-              .filter(Boolean);
-            const detail = unresolvedNames.length
-              ? ` Coordinate review still required for: ${[...new Set(unresolvedNames)].join(", ")}.`
-              : " Some port coordinates still need review.";
-            errMsg += detail;
-          }
-          results.push({
-            cruiseId: cruise.id,
-            name,
-            status: /missing coordinates|missing canonical port/i.test(errMsg) ? "needs_coordinates" : "failed",
-            message: errMsg
-          });
-        }
-      } catch (error) {
-        results.push({
-          cruiseId: cruise.id,
-          name,
-          status: "failed",
-          message: error.message || "Route map generation failed."
-        });
-      } finally {
-        inFlight.delete(cruise.id);
+        if (document.visibilityState !== "hidden") await requestRouteMapJobs(newsletterId);
+      } catch {
+        // A later poll can recover from a temporary connection or session issue.
       }
-    }
-    return results;
+      if (getActiveNewsletter()?.id === newsletterId && document.getElementById("newsletterRouteMapStatus")) {
+        clearTimeout(routeMapPoll);
+        routeMapPoll = setTimeout(poll, 12000);
+      }
+    };
+    routeMapPoll = setTimeout(poll, 0);
   }
 
   async function retryRouteMapForCruise(cruiseId) {
-    const cruise = getCruises().find((c) => c.id === cruiseId);
-    if (!cruise) return;
+    const newsletterId = getActiveNewsletter()?.id;
+    if (!newsletterId) return;
     try {
-      issueBusy = true;
-      routeMapSaveBusy = true;
-      issueMessage = `Generating route map for ${cruise.headline || "cruise"}…`;
-      issueMessageTone = "running";
-      rerender();
-      const [result] = await generateMissingRouteMaps([cruise], { batchId: ++routeMapBatchId });
-      routeMapSaveResults = [result];
-      if (typeof global.loadFeaturedCruises === "function") await global.loadFeaturedCruises();
-      issueMessage =
-        result.status === "generated"
-          ? `Route map generated for ${result.name}.`
-          : result.message || "Route map generation failed.";
-      issueMessageTone = result.status === "generated" ? "success" : "error";
+      await requestRouteMapJobs(newsletterId, "enqueue", cruiseId);
     } catch (error) {
-      issueMessage = error.message || "Route map generation failed.";
+      issueMessage = error.message || "Could not queue the route map.";
       issueMessageTone = "error";
-    } finally {
-      issueBusy = false;
-      routeMapSaveBusy = false;
       rerender();
     }
+    startRouteMapStatusPoll();
   }
 
   function heroThumbUrl(cruise) {
@@ -1920,24 +1800,15 @@
       <ul class="newsletter-route-map-results">
         ${routeMapSaveResults
           .map((row) => {
-            const statusLabel =
-              row.status === "generated"
-                ? "Generated"
-                : row.status === "retained"
-                  ? "Existing map kept"
-                  : row.status === "needs_coordinates"
-                    ? "Needs coordinates"
-                    : "Failed";
-            const tone =
-              row.status === "failed"
-                ? "admin-error"
-                : row.status === "needs_coordinates"
-                  ? "admin-muted"
-                  : "admin-success";
-            const retry =
-              row.status === "failed"
-                ? `<button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.retryRouteMapForCruise('${esc(row.cruiseId)}')" ${routeMapSaveBusy || issueBusy ? "disabled" : ""}>Retry</button>`
-                : "";
+            const statusLabel = {
+              queued: "Queued", generating: "Generating", ready: "Ready",
+              needs_attention: "Needs attention", failed: "Failed"
+            }[row.status] || row.status;
+            const tone = row.status === "ready" ? "admin-success"
+              : row.status === "failed" ? "admin-error" : "admin-muted";
+            const retry = ["failed", "needs_attention"].includes(row.status)
+              ? `<button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.retryRouteMapForCruise('${esc(row.cruiseId)}')" ${issueBusy ? "disabled" : ""}>Retry</button>`
+              : "";
             return `<li class="${tone}"><strong>${esc(row.name)}</strong>: ${esc(statusLabel)}${row.message ? ` — ${esc(row.message)}` : ""} ${retry}</li>`;
           })
           .join("")}
@@ -2030,6 +1901,7 @@
   function render() {
     ensureIssueSelected();
     const active = getActiveNewsletter();
+    if (active?.id) Promise.resolve().then(startRouteMapStatusPoll);
     const numbers = availableNewsletterNumbers();
     const cruises = cruisesForCurrentIssue();
     if (!issueWarnings.length && cruises.length && Object.keys(issuePricingByCruiseId).length) {
@@ -2065,7 +1937,7 @@
             <p class="admin-muted">Create or open a newsletter, add cruises, then save. Route maps generate automatically when coordinates allow.</p>
           </div>
           <div class="admin-actions-row">
-            ${active ? `<button type="button" class="admin-button black" onclick="NewsletterIssueComposer.saveNewsletter()" ${issueBusy || routeMapSaveBusy ? "disabled" : ""}>${routeMapSaveBusy ? "Generating maps…" : "Save Newsletter"}</button>` : ""}
+            ${active ? `<button type="button" class="admin-button black" onclick="NewsletterIssueComposer.saveNewsletter()" ${issueBusy ? "disabled" : ""}>Save Newsletter</button>` : ""}
             <button type="button" class="admin-button secondary" onclick="startNewFeaturedCruise()" ${issueBusy || !active ? "disabled" : ""} title="${active ? "" : "Open a newsletter first"}">+ Add Cruise</button>
           </div>
         </div>
@@ -2123,7 +1995,7 @@
         }
 
         ${issueMessage ? `<div class="admin-message ${msgClass}">${esc(issueMessage)}</div>` : ""}
-        ${renderRouteMapSaveResults()}
+        <div id="newsletterRouteMapStatus">${renderRouteMapSaveResults()}</div>
         ${
           issueWarnings.length
             ? `<ul class="newsletter-issue-warnings">${issueWarnings
@@ -2236,7 +2108,6 @@
     preview,
     exportHtml,
     printRecord,
-    retryRouteMapForCruise,
-    generateMissingRouteMaps
+    retryRouteMapForCruise
   };
 })(typeof window !== "undefined" ? window : globalThis);

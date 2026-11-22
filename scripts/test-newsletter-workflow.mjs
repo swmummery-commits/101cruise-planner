@@ -36,7 +36,7 @@ const staticChecks = [
   })()],
   ["saveNewsletter syncs linkage fields only", /const syncPayload = \{[\s\S]*newsletter_id[\s\S]*newsletter_number[\s\S]*newsletter_publication_date[\s\S]*\}/.test(composerJs)],
   ["saveNewsletter loads cruise ids from database", /\.eq\("newsletter_id", savedNewsletter\.id\)/.test(composerJs)],
-  ["saveNewsletter guards duplicate batch", /if \(issueBusy \|\| routeMapSaveBusy\) return/.test(composerJs)],
+  ["saveNewsletter guards duplicate saves and queues background maps", /async function saveNewsletter\(\) \{\s*if \(issueBusy\) return/.test(composerJs) && composerJs.includes('requestRouteMapJobs(savedNewsletter.id, "enqueue")') && !composerJs.includes("generateMissingRouteMaps")],
   ["route map fetch has timeout", /ROUTE_MAP_FETCH_MS|AbortController/.test(composerJs)],
   ["slug manual edit guard", /if \(featuredSlugManuallyEdited\) return/.test(adminJs)],
   ["duplicate slug validation message", /already used by/.test(adminJs)],

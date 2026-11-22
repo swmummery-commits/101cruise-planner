@@ -189,7 +189,8 @@ async function geocodeQuery(port, query) {
   if (cc) url.searchParams.set("countrycodes", cc);
 
   const response = await fetch(url.toString(), {
-    headers: { Accept: "application/json", "User-Agent": USER_AGENT }
+    headers: { Accept: "application/json", "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(8000)
   });
   if (!response.ok) throw new Error(`Nominatim HTTP ${response.status}`);
   const rows = await response.json();
@@ -215,7 +216,7 @@ async function geocodeQuery(port, query) {
   return candidates;
 }
 
-async function resolvePort(port, { requestIndex = 0 } = {}) {
+async function resolvePort(port, { requestIndex = 0, classifyLocation = false } = {}) {
   const suspicious = isSuspiciousPort(port);
   if (suspicious) {
     return { ok: false, error: "needs_review", reason: suspicious };
@@ -225,16 +226,34 @@ async function resolvePort(port, { requestIndex = 0 } = {}) {
   if (!queries.length) return { ok: false, error: "empty_query" };
 
   let best = null;
+  let coastalCandidate = null;
   let attempted = 0;
   for (const query of queries) {
     if (requestIndex > 0 || attempted > 0) await sleep(1100);
     attempted += 1;
     const hits = await geocodeQuery(port, query);
+    if (classifyLocation) {
+      for (const hit of hits) {
+        const type = norm(hit.type);
+        if (/^(harbour|port|pier|terminal|marina|ferry terminal|dock|quay)$/.test(type) && hit.score >= 75) {
+          if (!best || hit.score > best.score) best = { ...hit, query };
+        } else if (/^(city|town|village|hamlet)$/.test(type) && hit.score >= 75) {
+          if (!coastalCandidate || hit.score > coastalCandidate.score) coastalCandidate = { ...hit, query };
+        }
+      }
+      if (best) break;
+      continue;
+    }
     const top = hits[0];
     if (top && (!best || top.score > best.score)) best = { ...top, query };
     if (best && best.score >= 70) break;
   }
 
+  if (classifyLocation) {
+    if (best) return { ok: true, ...best, location_kind: "port" };
+    if (coastalCandidate) return { ok: true, ...coastalCandidate, location_kind: "town" };
+    return { ok: false, error: "no_confident_match" };
+  }
   if (!best) return { ok: false, error: "no_match", queries };
   if (best.score < 55) {
     return {
