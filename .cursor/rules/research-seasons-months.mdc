@@ -1,6 +1,6 @@
 ---
 description: Research content timing must use months for Australian readers
-globs: netlify/functions/lib/research-schemas.js,netlify/functions/lib/research-engine.js,js/admin-research-content.js
+globs: netlify/functions/lib/research-schemas.js, netlify/functions/lib/research-engine.js, netlify/functions/research-content-generate.js, netlify/functions/lib/research-public.js, js/admin-research-content.js
 alwaysApply: false
 ---
 
