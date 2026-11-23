@@ -1,3 +1,8 @@
+---
+description: 101cruise brand, layout, hosting, and coding standards
+alwaysApply: true
+---
+
 # 101CRUISE Development Rules
 
 ## Project Vision
@@ -36,19 +41,13 @@ CRM:
 
 ## Brand Colours
 
-Primary Green
+Primary green: `#8DD9BF` (`--brand-green`)
+Dark green for text/icons: `#245C4E` (`--brand-green-ink`)
 
-#8DD9BF
+Reuse established brand colours and existing design tokens in `css/planner.css` `:root` (hover, soft mint `#EFFAF6`, border). Do not invent new greens. Do not introduce new colours or redesign the established visual identity without Steve’s explicit approval. Do not restyle established accents (newsletter Other Info `#d9f2e8`, newsletter price `#1f7a66`) unless explicitly asked.
 
-Dark Green (text/icons only)
-
-#245C4E
-
-Never use any other greens unless explicitly instructed.
-
-Progress indicators always use:
-
-#8DD9BF
+Customer checklist/progress rings use `#8DD9BF`.
+The Hang-tight loading overlay uses the red nine-square logo (`#f80020`), not green.
 
 ---
 
@@ -84,13 +83,7 @@ Inside that shared shell, dense information or form pages may use a narrower cen
 
 ## Coding Standards
 
-Do not rewrite unrelated code.
-
-Modify only files required.
-
 Reuse existing components.
-
-Preserve current functionality.
 
 Do not introduce duplicate CSS.
 
@@ -103,10 +96,12 @@ Always explain which files were changed.
 Before making changes:
 
 1. Read the relevant files.
-2. Understand the existing implementation.
-3. Make the smallest safe change.
+2. Understand the existing implementation and the root cause.
+3. Make a focused, complete correction in the original module responsible for the behaviour.
 4. Preserve existing behaviour unless instructed otherwise.
+
+Never introduce patches, band-aids, temporary workarounds, duplicate implementations or hidden complexity. If the original implementation is wrong, fix it at the source. The nine Global User Rules continue to apply.
 
 Never redesign completed modules unless requested.
 
-The uploaded project is the source of truth.
+GitHub repository `swmummery-commits/101cruise-planner` is the authoritative repository, with `main` as the baseline. Before editing application code, verify whether an approved development branch contains newer work. Check the current GitHub branch and local changes before editing. Do not treat historical uploads, a stale checkout, or README sprint notes as authoritative over GitHub.
